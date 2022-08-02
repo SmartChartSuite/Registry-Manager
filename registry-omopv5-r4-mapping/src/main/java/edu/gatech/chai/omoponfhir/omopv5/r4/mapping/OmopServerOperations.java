@@ -123,7 +123,7 @@ public class OmopServerOperations {
 		// do patient first.
 		for (BundleEntryComponent entry : entries) {
 			Resource resource = entry.getResource();
-			if (resource.getResourceType() == ResourceType.Patient) {
+			if (resource != null && resource.getResourceType() == ResourceType.Patient) {
 				Long fhirId;
 				BundleEntryComponent newEntry;
 				USCorePatient patient = ExtensionUtil.usCorePatientFromResource(resource);
