@@ -147,15 +147,30 @@ public class ServerOperations {
 		Bundle returnBundle = new Bundle();
 
 		// Set parameterwrapper for the caseId if available
-		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
-		ParameterWrapper parameterWrapper = new ParameterWrapper();
+		List<ParameterWrapper> caseIdParamList = new ArrayList<ParameterWrapper>();
+		ParameterWrapper caseIdParameterWrapper = new ParameterWrapper();
 		if (theCaseId != null) {
-			parameterWrapper.setParameterType("Integer");
-			parameterWrapper.setParameters(Arrays.asList("id"));
-			parameterWrapper.setOperators(Arrays.asList("="));
-			parameterWrapper.setValues(Arrays.asList(theCaseId.getValue()));
-			parameterWrapper.setRelationship("or");
-			paramList.add(parameterWrapper);
+			caseIdParameterWrapper.setParameterType("Integer");
+			caseIdParameterWrapper.setParameters(Arrays.asList("id"));
+			caseIdParameterWrapper.setOperators(Arrays.asList("="));
+			caseIdParameterWrapper.setValues(Arrays.asList(theCaseId.getValue()));
+			caseIdParameterWrapper.setRelationship("or");
+			caseIdParamList.add(caseIdParameterWrapper);
+		}
+
+		List<ParameterWrapper> patientIdParamList = new ArrayList<ParameterWrapper>();
+		ParameterWrapper patientIdParameterWrapper = new ParameterWrapper();
+		String patientIdentifier = "";
+		if (thePatientIdentifier == null || thePatientIdentifier.isEmpty()) {
+			ThrowFHIRExceptions.unprocessableEntityException("Patient Identifier is required to create a new REQUEST");
+		} else {
+			patientIdentifier = thePatientIdentifier.getValue();
+			patientIdParameterWrapper.setParameterType("String");
+			patientIdParameterWrapper.setParameters(Arrays.asList("patientIdentifier"));
+			patientIdParameterWrapper.setOperators(Arrays.asList("="));
+			patientIdParameterWrapper.setValues(Arrays.asList(patientIdentifier));
+			patientIdParameterWrapper.setRelationship("or");
+			patientIdParamList.add(patientIdParameterWrapper);
 		}
 
 		// get the value of set-status parameter.
@@ -164,21 +179,13 @@ public class ServerOperations {
 			if (StaticValues.REQUEST.equals(newStatus)) {
 				// Set the status to REQUEST.
 				if (theCaseId != null) {
-					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, paramList, "id ASC");
+					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, caseIdParamList, "id ASC");
 					for (CaseInfo caseInfo : caseInfos) {
 						caseInfo.setStatus(StaticValues.REQUEST);
 						caseInfoService.update(caseInfo);
 					}
 				} else {
 					// This is a new REQUEST. 
-					// Get patient identifier if available.
-					String patientIdentifier = "";
-					if (thePatientIdentifier == null || thePatientIdentifier.isEmpty()) {
-						ThrowFHIRExceptions.unprocessableEntityException("Patient Identifier is required to create a new REQUEST");
-					} else {
-						patientIdentifier = thePatientIdentifier.getValue();
-					}
-
 					if (theLabResults == null || theLabResults.isEmpty()) {
 						ThrowFHIRExceptions.unprocessableEntityException("Lab Results with a patient are required to create a new REQUEST");
 					}
@@ -214,14 +221,26 @@ public class ServerOperations {
 						ThrowFHIRExceptions.unprocessableEntityException("Failed to create entiry resources: " + errMessage);
 					}
 
-					CaseInfo caseInfo = new CaseInfo();
-					caseInfo.setPatientIdentifier(patientIdentifier);
-					caseInfo.setFPerson(fPerson);
-					caseInfo.setStatus(StaticValues.REQUEST);
-					caseInfo.setServerHost(this.rcApiHost);
-					caseInfo.setServerUrl("/forms/start?asyncFlag=true");
-					caseInfo.setCreated(new Date());
-					caseInfoService.create(caseInfo);
+					// Even if this is a new request, we may already have a case for this patient.
+					// Check if we have a case
+					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, patientIdParamList, "id ASC");
+					boolean found = false;
+					for (CaseInfo caseInfo : caseInfos) {
+						caseInfo.setStatus(StaticValues.REQUEST);
+						caseInfoService.update(caseInfo);
+						found = true;
+					}
+
+					if (!found) {
+						CaseInfo caseInfo = new CaseInfo();
+						caseInfo.setPatientIdentifier(patientIdentifier);
+						caseInfo.setFPerson(fPerson);
+						caseInfo.setStatus(StaticValues.REQUEST);
+						caseInfo.setServerHost(this.rcApiHost);
+						caseInfo.setServerUrl("/forms/start?asyncFlag=true");
+						caseInfo.setCreated(new Date());
+						caseInfoService.create(caseInfo);
+					}	
 				}
 			}
 		}

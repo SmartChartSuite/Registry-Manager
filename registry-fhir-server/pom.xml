@@ -32,7 +32,7 @@
 
 	<properties>
 		<hapi_stable_version>5.5.1</hapi_stable_version>
-		<registry_mapping_version>1.2.3</registry_mapping_version>
+		<registry_mapping_version>1.2.4</registry_mapping_version>
 
 		<!-- configure timestamp in MANIFEST.MF for maven-war-provider -->
 		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
@@ -43,7 +43,7 @@
 		<derby_version>10.14.2.0</derby_version>
 		<jersey_version>2.25.1</jersey_version>
 		<jetty_version>9.4.42.v20210604</jetty_version>
-		<jackson_version>2.13.2</jackson_version>
+		<jackson_version>2.13.3</jackson_version>
 		<jaxb_api_version>2.3.1</jaxb_api_version>
 		<lucene_version>5.5.5</lucene_version>
 		<maven_assembly_plugin_version>3.1.0</maven_assembly_plugin_version>
@@ -288,7 +288,7 @@
 		<dependency>
 			<groupId>org.webjars.bower</groupId>
 			<artifactId>moment</artifactId>
-			<version>2.29.1</version>
+			<version>2.29.3</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.webjars/jquery-ui -->
 		<dependency>
