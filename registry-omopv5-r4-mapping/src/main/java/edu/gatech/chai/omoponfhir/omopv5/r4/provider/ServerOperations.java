@@ -189,10 +189,20 @@ public class ServerOperations {
 					if (theLabResults == null || theLabResults.isEmpty()) {
 						ThrowFHIRExceptions.unprocessableEntityException("Lab Results with a patient are required to create a new REQUEST");
 					}
-										
+
+					// Even if this is a new request, we may already have a case for this patient.
+					// Check if we have a case
+					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, patientIdParamList, "id ASC");
+					CaseInfo caseInfo = null;
+					if (caseInfos != null && !caseInfos.isEmpty()) {
+						caseInfo = caseInfos.get(0);
+						caseInfo.setStatus(StaticValues.REQUEST);
+						caseInfoService.update(caseInfo);
+					}
+
 					// We have a lab. Create these results in the
 					// OMOP database.
-					List<BundleEntryComponent> responseEntries = myMapper.createEntries(theLabResults.getEntry());
+					List<BundleEntryComponent> responseEntries = myMapper.createEntries(theLabResults.getEntry(), caseInfo);
 					int errorFlag = 0;
 					String errMessage = "";
 					FPerson fPerson = null;
@@ -221,18 +231,8 @@ public class ServerOperations {
 						ThrowFHIRExceptions.unprocessableEntityException("Failed to create entiry resources: " + errMessage);
 					}
 
-					// Even if this is a new request, we may already have a case for this patient.
-					// Check if we have a case
-					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, patientIdParamList, "id ASC");
-					boolean found = false;
-					for (CaseInfo caseInfo : caseInfos) {
-						caseInfo.setStatus(StaticValues.REQUEST);
-						caseInfoService.update(caseInfo);
-						found = true;
-					}
-
-					if (!found) {
-						CaseInfo caseInfo = new CaseInfo();
+					if (caseInfo == null) {
+						caseInfo = new CaseInfo();
 						caseInfo.setPatientIdentifier(patientIdentifier);
 						caseInfo.setFPerson(fPerson);
 						caseInfo.setStatus(StaticValues.REQUEST);
