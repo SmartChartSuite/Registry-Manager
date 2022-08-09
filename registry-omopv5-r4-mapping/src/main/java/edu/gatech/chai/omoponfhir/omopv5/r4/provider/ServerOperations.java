@@ -198,6 +198,10 @@ public class ServerOperations {
 						caseInfo = caseInfos.get(0);
 						caseInfo.setStatus(StaticValues.REQUEST);
 						caseInfoService.update(caseInfo);
+
+						if (caseInfos.size() > 1) {
+							logger.warn("More than one case_info found. Duplicate cases must be removed");
+						}
 					}
 
 					// We have a lab. Create these results in the

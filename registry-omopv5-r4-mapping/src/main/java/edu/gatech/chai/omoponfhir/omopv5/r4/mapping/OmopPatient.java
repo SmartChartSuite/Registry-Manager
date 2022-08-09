@@ -959,7 +959,9 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 
 		if (omopId != null) {
 			// update
-			fperson = getMyOmopService().findById(omopId);
+			if (fperson == null) {
+				fperson = getMyOmopService().findById(omopId);
+			}
 			if (fperson == null) {
 				try {
 					throw new FHIRException(patient.getId() + " does not exist");
@@ -1054,16 +1056,14 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 		// is set); list of addresses (?)
 		// this.death = patient.getDeceased();
 
-		fperson.setGenderConcept(new Concept());
-		String genderCode;
-		if (patient.getGender() != null) {
-			genderCode = patient.getGender().toCode();
-		} else {
-			genderCode = AdministrativeGender.NULL.toString();
-		}
 		try {
-			fperson.getGenderConcept().setId(OmopConceptMapping.omopForAdministrativeGenderCode(genderCode));
-			fperson.setGenderSourceConcept(fperson.getGenderConcept());
+			String genderCode = null;
+			if (patient.getGender() != null) {
+				Concept genderConcept = new Concept();
+				genderCode = patient.getGender().toCode();
+				genderConcept.setId(OmopConceptMapping.omopForAdministrativeGenderCode(genderCode));
+				fperson.setGenderConcept(genderConcept);
+			} 
 		} catch (FHIRException e) {
 			e.printStackTrace();
 		}
