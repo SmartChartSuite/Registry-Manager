@@ -25,6 +25,7 @@ import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Patient;
@@ -188,6 +189,45 @@ public class ServerOperations {
 					// This is a new REQUEST. 
 					if (theLabResults == null || theLabResults.isEmpty()) {
 						ThrowFHIRExceptions.unprocessableEntityException("Lab Results with a patient are required to create a new REQUEST");
+					}
+
+					// Sanity check. The lab results have a patient resource. The patient identifier must match the 
+					// patient identifier in the parameter.
+					boolean patientIdSystemOk = false;
+					boolean patientIdValueOk = false;
+					for ( BundleEntryComponent entry : theLabResults.getEntry()) {
+						Resource resource = entry.getResource();
+						if (resource instanceof Patient) {
+							for (Identifier identifier : ((Patient) resource).getIdentifier()) {
+								String patientIdParamSystem = thePatientIdentifier.getSystem();
+								String patientIdParamValue = thePatientIdentifier.getValue();
+
+								String patientIdSystem = identifier.getSystem();
+								String patientIdValue = identifier.getValue();
+
+								if (patientIdParamSystem == null || patientIdParamSystem.isBlank() || patientIdParamSystem.equalsIgnoreCase(patientIdSystem)) {
+									patientIdSystemOk = true;
+								}
+
+								if (patientIdParamValue.equalsIgnoreCase(patientIdValue)) {
+									patientIdValueOk = true;
+								}
+
+								if (patientIdSystemOk && patientIdValueOk) {
+									break;
+								}
+							}
+
+							if (patientIdSystemOk && patientIdValueOk) {
+								break;
+							}
+						}
+					}
+
+					if (!patientIdSystemOk || !patientIdValueOk) {
+						// Error the patient identifier in the parameter is not same as the patient identifier
+						// in the Patient resource. 
+						ThrowFHIRExceptions.unprocessableEntityException("Parameters.patient-identifier must match with Parameters.lab-results.entry.resource.Patient.identifier");
 					}
 
 					// Even if this is a new request, we may already have a case for this patient.
