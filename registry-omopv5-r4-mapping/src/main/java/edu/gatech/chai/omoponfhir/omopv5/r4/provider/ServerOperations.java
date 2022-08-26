@@ -183,6 +183,7 @@ public class ServerOperations {
 					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, caseIdParamList, "id ASC");
 					for (CaseInfo caseInfo : caseInfos) {
 						caseInfo.setStatus(StaticValues.REQUEST);
+						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 						caseInfoService.update(caseInfo);
 					}
 				} else {
@@ -237,6 +238,7 @@ public class ServerOperations {
 					if (caseInfos != null && !caseInfos.isEmpty()) {
 						caseInfo = caseInfos.get(0);
 						caseInfo.setStatus(StaticValues.REQUEST);
+						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 						caseInfoService.update(caseInfo);
 
 						if (caseInfos.size() > 1) {

@@ -57,6 +57,8 @@ public interface CaseInfoService extends IService<CaseInfo> {
 					caseInfo.setActivated(rs.getDate(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_created")) {
 					caseInfo.setCreated(rs.getDate(columnInfo));
+				} else if (columnInfo.equalsIgnoreCase(alias + "_tries_left")) {
+					caseInfo.setTriesLeft(rs.getInt(columnInfo));
 				}
 			}
 		} catch (SQLException e) {
@@ -117,6 +119,8 @@ public interface CaseInfoService extends IService<CaseInfo> {
 				if (date != null) {
 					caseInfo.setCreated(date);
 				}
+			} else if (columnInfo.equalsIgnoreCase(alias + "_tries_left")) {
+				caseInfo.setTriesLeft(Integer.parseInt(rowResult.get(columnInfo).getStringValue()));
 			}
 		}
 
