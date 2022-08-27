@@ -26,6 +26,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Patient;
@@ -285,6 +286,7 @@ public class ServerOperations {
 						caseInfo.setServerHost(this.rcApiHost);
 						caseInfo.setServerUrl("/forms/start?asyncFlag=true");
 						caseInfo.setCreated(new Date());
+						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 						caseInfoService.create(caseInfo);
 					}	
 				}
