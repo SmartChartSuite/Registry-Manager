@@ -25,6 +25,8 @@ import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Patient;
@@ -182,12 +184,52 @@ public class ServerOperations {
 					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, caseIdParamList, "id ASC");
 					for (CaseInfo caseInfo : caseInfos) {
 						caseInfo.setStatus(StaticValues.REQUEST);
+						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 						caseInfoService.update(caseInfo);
 					}
 				} else {
 					// This is a new REQUEST. 
 					if (theLabResults == null || theLabResults.isEmpty()) {
 						ThrowFHIRExceptions.unprocessableEntityException("Lab Results with a patient are required to create a new REQUEST");
+					}
+
+					// Sanity check. The lab results have a patient resource. The patient identifier must match the 
+					// patient identifier in the parameter.
+					boolean patientIdSystemOk = false;
+					boolean patientIdValueOk = false;
+					for ( BundleEntryComponent entry : theLabResults.getEntry()) {
+						Resource resource = entry.getResource();
+						if (resource instanceof Patient) {
+							for (Identifier identifier : ((Patient) resource).getIdentifier()) {
+								String patientIdParamSystem = thePatientIdentifier.getSystem();
+								String patientIdParamValue = thePatientIdentifier.getValue();
+
+								String patientIdSystem = identifier.getSystem();
+								String patientIdValue = identifier.getValue();
+
+								if (patientIdParamSystem == null || patientIdParamSystem.isBlank() || patientIdParamSystem.equalsIgnoreCase(patientIdSystem)) {
+									patientIdSystemOk = true;
+								}
+
+								if (patientIdParamValue.equalsIgnoreCase(patientIdValue)) {
+									patientIdValueOk = true;
+								}
+
+								if (patientIdSystemOk && patientIdValueOk) {
+									break;
+								}
+							}
+
+							if (patientIdSystemOk && patientIdValueOk) {
+								break;
+							}
+						}
+					}
+
+					if (!patientIdSystemOk || !patientIdValueOk) {
+						// Error the patient identifier in the parameter is not same as the patient identifier
+						// in the Patient resource. 
+						ThrowFHIRExceptions.unprocessableEntityException("Parameters.patient-identifier must match with Parameters.lab-results.entry.resource.Patient.identifier");
 					}
 
 					// Even if this is a new request, we may already have a case for this patient.
@@ -197,7 +239,12 @@ public class ServerOperations {
 					if (caseInfos != null && !caseInfos.isEmpty()) {
 						caseInfo = caseInfos.get(0);
 						caseInfo.setStatus(StaticValues.REQUEST);
+						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 						caseInfoService.update(caseInfo);
+
+						if (caseInfos.size() > 1) {
+							logger.warn("More than one case_info found. Duplicate cases must be removed");
+						}
 					}
 
 					// We have a lab. Create these results in the
@@ -239,6 +286,7 @@ public class ServerOperations {
 						caseInfo.setServerHost(this.rcApiHost);
 						caseInfo.setServerUrl("/forms/start?asyncFlag=true");
 						caseInfo.setCreated(new Date());
+						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 						caseInfoService.create(caseInfo);
 					}	
 				}

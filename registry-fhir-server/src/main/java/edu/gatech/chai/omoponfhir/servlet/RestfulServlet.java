@@ -22,13 +22,12 @@ import edu.gatech.chai.omoponfhir.omopv5.r4.provider.*;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
 import edu.gatech.chai.omoponfhir.r4.security.SMARTonFHIRConformanceStatement;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.narrative.INarrativeGenerator;
 import ca.uhn.fhir.rest.api.EncodingEnum;
+import ca.uhn.fhir.rest.openapi.OpenApiInterceptor;
 import ca.uhn.fhir.rest.server.FifoMemoryPagingProvider;
 import ca.uhn.fhir.rest.server.HardcodedServerAddressStrategy;
 import ca.uhn.fhir.rest.server.IResourceProvider;
@@ -180,6 +179,9 @@ public class RestfulServlet extends RestfulServer {
 
 		CorsInterceptor corsInterceptor = new CorsInterceptor(config);
 		registerInterceptor(corsInterceptor);
+
+		OpenApiInterceptor openApiInterceptor = new OpenApiInterceptor();
+		registerInterceptor(openApiInterceptor);
 
 		/*
 		 * This server interceptor causes the server to return nicely formatter and

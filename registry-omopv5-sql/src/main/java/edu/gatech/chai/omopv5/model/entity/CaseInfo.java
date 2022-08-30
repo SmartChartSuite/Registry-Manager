@@ -72,6 +72,9 @@ public class CaseInfo extends BaseEntity {
 	
 	@Column(name="created", nullable = false)
 	private Date created;
+
+	@Column(name="tries_left")
+	private Integer triesLeft;
 	
 	public CaseInfo() {
 		super();
@@ -171,6 +174,14 @@ public class CaseInfo extends BaseEntity {
 
 	public void setCreated(Date created) {
 		this.created = created;
+	}
+
+	public Integer getTriesLeft() {
+		return triesLeft;
+	}
+
+	public void setTriesLeft(Integer triesLeft) {
+		this.triesLeft = triesLeft;
 	}
 
 	@Override

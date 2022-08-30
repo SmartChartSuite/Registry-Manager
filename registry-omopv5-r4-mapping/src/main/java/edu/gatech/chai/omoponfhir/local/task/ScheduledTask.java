@@ -145,11 +145,6 @@ public class ScheduledTask {
 		caseLogService.create(caseLog);	
 	}
 
-	protected void changeCaseInfoStatus (CaseInfo caseInfo, String status) {
-		caseInfo.setStatus(status);
-		caseInfoService.update(caseInfo);
-	}
-
 	protected String getEndPoint (String serverHost, String apiPoint) {
 		String endPoint;
 
@@ -176,12 +171,23 @@ public class ScheduledTask {
 			Date currentTime = new Date();
 			String serverHost = caseInfo.getServerHost();
 
-			if (StaticValues.ACTIVE.equals(caseInfo.getStatus())) {
+			if (StaticValues.ACTIVE.equals(caseInfo.getStatus()) ||
+				StaticValues.ERROR_IN_SERVER.equals(caseInfo.getStatus()) ||
+				StaticValues.ERROR_UNKNOWN.equals(caseInfo.getStatus())) {
 				// check if it's time to do the query.
 				if (currentTime.before(caseInfo.getTriggerAt())) {
 					logger.debug("Case (" + caseInfo.getId() + ") passing. TriggerTime: " + caseInfo.getTriggerAt().toString());
 					continue;
 				}
+
+				Integer triesLeft = caseInfo.getTriesLeft();
+				if (triesLeft <= 0) {
+					// used up the number of tries
+					continue;
+				}
+
+				// decrement the counter
+				caseInfo.setTriesLeft(triesLeft-1);
 
 				// call status URL to get FHIR syphilis registry data.
 				String statusUrl = caseInfo.getStatusUrl();
@@ -200,22 +206,33 @@ public class ScheduledTask {
 				} catch (HttpClientErrorException e) {
 					String rBody = e.getResponseBodyAsString();
 					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n" + rBody);		
-					changeCaseInfoStatus(caseInfo, StaticValues.REQUEST);
+					caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
+					caseInfoService.update(caseInfo);
 					continue;
 				} catch (HttpServerErrorException e) {
 					String rBody = e.getResponseBodyAsString();
 					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") SERVER ERROR: " + e.getStatusCode() + "\n" + rBody);
+					caseInfo.setStatus(StaticValues.ERROR_IN_SERVER);
+					caseInfoService.update(caseInfo);
 					continue;
 					// We do not change the status as this is a server error.
 				} catch (UnknownHttpStatusCodeException e) {
 					String rBody = e.getResponseBodyAsString();
 					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED with Unknown code\n" + rBody);		
-					changeCaseInfoStatus(caseInfo, StaticValues.ERROR);
+					caseInfo.setStatus(StaticValues.ERROR_UNKNOWN);
+					caseInfoService.update(caseInfo);
 					continue;
 				}
 
 				HttpStatus statusCode = response.getStatusCode();
 				if (!statusCode.is2xxSuccessful()) {
+					if (statusCode.is4xxClientError()) {
+						caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
+					} else if (statusCode.is5xxServerError()) {
+						caseInfo.setStatus(StaticValues.ERROR_IN_SERVER);
+					} else {
+						caseInfo.setStatus(StaticValues.ERROR_UNKNOWN);
+					}
 					logger.debug("Status Query Failed and Responded with statusCode:" + statusCode.toString());
 					OperationOutcome oo = parser.parseResource(OperationOutcome.class, response.getBody());
 					if (oo != null && !oo.isEmpty()) {
@@ -235,11 +252,14 @@ public class ScheduledTask {
 						Parameters parameters = parser.parseResource(Parameters.class, responseBody);
 						StringType jobStatus = (StringType) parameters.getParameter("jobStatus");
 						if (jobStatus == null || jobStatus.isEmpty()) {
+							caseInfoService.update(caseInfo);
 							continue;
 						}
 
 						if (jobStatus != null && !jobStatus.isEmpty() && !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
 							logger.debug("jobStatus: " + jobStatus.asStringValue() + " skipping ... ");
+							writeToLog(caseInfo, "jobStatus: " + jobStatus.asStringValue() + " skipping ... ");
+							caseInfoService.update(caseInfo);
 							continue;
 						}
 
@@ -259,6 +279,9 @@ public class ScheduledTask {
 								responseEntries = myMapper.createEntries(entries, caseInfo);
 							} catch (Exception e) {
 								logger.error("Error occured while creating resources in the Output FHIR Bundle entries");
+								writeToLog(caseInfo, "Error occured while creating resources in the Output FHIR Bundle entries");
+								caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
+								caseInfoService.update(caseInfo);
 								e.printStackTrace();
 								continue;
 							}
@@ -277,7 +300,11 @@ public class ScheduledTask {
 							if (errorFlag == 1) {
 								// Error occurred on one of resources.
 								writeToLog(caseInfo, errMessage);
+								caseInfo.setStatus(StaticValues.ERROR_UNKNOWN);
 							} else {
+								// case query was successful. Reset the counter.
+								caseInfo.setTriesLeft(StaticValues.MAX_TRY);
+
 								logger.debug("TRIGGER: current_time=" + currentTime.getTime() + ", activated_time = " + caseInfo.getActivated().getTime() + ", thresholdDuration1 = " + thresholdDuration1 + ", threshold_at = " + (new Date(caseInfo.getActivated().getTime()+thresholdDuration1)).getTime() + ", trigger_at=" + (new Date(currentTime.getTime()+queryPeriod1).getTime()));
 								if (currentTime.before(new Date(caseInfo.getActivated().getTime()+thresholdDuration1))) {
 									caseInfo.setTriggerAt(new Date(currentTime.getTime()+queryPeriod1));
@@ -289,9 +316,7 @@ public class ScheduledTask {
 									caseInfo.setStatus(StaticValues.INACTIVE);
 									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") changed status to " + caseInfo.getStatus());
 								}
-								caseInfoService.update(caseInfo);
 							}
-							// }
 						} else {
 							writeToLog(caseInfo, "The response for PACER query has no results");
 						}
@@ -299,6 +324,18 @@ public class ScheduledTask {
 				}
 			} else if (StaticValues.REQUEST.equals(caseInfo.getStatus()) 
 				|| StaticValues.REQUEST_IN_ACTIVE.equals(caseInfo.getStatus())) {
+
+				logger.debug("Case (" + caseInfo.getId() + ") requesting to RC-API");
+
+				Integer triesLeft = caseInfo.getTriesLeft();
+				if (triesLeft <= 0) {
+					// used up the number of tries
+					continue;
+				}
+
+				// decrement the counter
+				caseInfo.setTriesLeft(triesLeft-1);
+
 				// Send a request. This is triggered by a new ELR or NoSuchRequest from PACER server
 				String patientIdentifier = caseInfo.getPatientIdentifier();
 				if (patientIdentifier != null) {
@@ -331,6 +368,7 @@ public class ScheduledTask {
 							if (serverHost == null || serverHost.isEmpty()) {
 								writeToLog(caseInfo, "server endpoint error: " + serverHost + serverUrl);
 								logger.error("server endpoint error: " + serverHost + serverUrl);
+								caseInfoService.update(caseInfo);
 								continue;
 							} 
 
@@ -341,6 +379,7 @@ public class ScheduledTask {
 					} catch (Exception e) {
 						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") REQUEST FAILED: " + e.getMessage());
 						e.printStackTrace();
+						caseInfoService.update(caseInfo);
 						continue;
 					}
 			
@@ -369,12 +408,11 @@ public class ScheduledTask {
 									caseInfo.setActivated(currentTime);
 								}
 								caseInfo.setStatus(StaticValues.ACTIVE);
+								caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 
 								// set the triggered_at. Since this is a REQUEST, we set it to now.
 								Long triggeredAt = currentTime.getTime();
 								caseInfo.setTriggerAt(new Date(triggeredAt));
-
-								caseInfoService.update(caseInfo);
 
 								// log this session
 								writeToLog(caseInfo, "caes info (" + caseInfo.getId() + ") is updated to " + StaticValues.ACTIVE);
@@ -400,10 +438,14 @@ public class ScheduledTask {
 					// This cannot happen as patient identifier is a required field.
 					// BUt, if this ever happens, we write this in session log and return.
 					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") without patient identifier");
+					continue;
 				}
 			} else {
-				logger.debug("Status Not Found: " + caseInfo.getStatus());
+				// status that we do not need to do anything
+				continue;
 			}
+
+			caseInfoService.update(caseInfo);
 		}
 	}
 
