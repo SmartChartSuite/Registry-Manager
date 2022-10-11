@@ -35,3 +35,5 @@ RUN chmod +x /tmp/ssh_setup.sh \
 COPY --from=builder /usr/src/app/registry-fhir-server/target/registry-fhir-server.war $CATALINA_HOME/webapps/registrymanager.war
 
 EXPOSE 8080 2222
+
+CMD ["sh", "-c", "catalina.sh run ; /usr/sbin/sshd"]
