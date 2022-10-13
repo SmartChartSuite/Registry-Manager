@@ -279,7 +279,7 @@ public class ScheduledTask {
 								responseEntries = myMapper.createEntries(entries, caseInfo);
 							} catch (Exception e) {
 								logger.error("Error occured while creating resources in the Output FHIR Bundle entries");
-								writeToLog(caseInfo, "Error occured while creating resources in the Output FHIR Bundle entries");
+								writeToLog(caseInfo, "Error occured while creating resources in the Output FHIR Bundle entries.\n"+e.getMessage());
 								caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
 								caseInfoService.update(caseInfo);
 								e.printStackTrace();

@@ -44,6 +44,7 @@ import org.hl7.fhir.r4.model.Type;
 import org.hl7.fhir.r4.model.Observation.ObservationComponentComponent;
 import org.hl7.fhir.r4.model.Observation.ObservationReferenceRangeComponent;
 import org.hl7.fhir.r4.model.Observation.ObservationStatus;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IIdType;
@@ -1189,6 +1190,9 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 						}
 					}
 				}
+
+				// We need to escape single quote
+				valueString = StringEscapeUtils.escapeSql(valueString);
 				observation.setValueAsString(valueString);
 			}
 		} else if (valueType instanceof Ratio) {
