@@ -26,7 +26,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jaxb_api_version>2.3.1</jaxb_api_version>
 		<spring_version>5.3.20</spring_version>
-		<registry_omopv5_version>1.4.0</registry_omopv5_version>
+		<registry_omopv5_version>1.4.1</registry_omopv5_version>
 	</properties>
 	
 	<dependencies>
@@ -100,12 +100,6 @@
 			<artifactId>opencsv</artifactId>
 			<version>4.6</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/commons-lang/commons-lang -->
-		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-			<version>2.6</version>
-		</dependency>
 
 	</dependencies>
 	<build>
@@ -123,8 +117,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.0</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<release>17</release>
 				</configuration>
 			</plugin>
 		</plugins>

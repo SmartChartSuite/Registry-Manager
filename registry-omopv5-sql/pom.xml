@@ -13,7 +13,7 @@
 	<groupId>edu.gatech.chai</groupId>
 	<artifactId>registry-omopv5-sql</artifactId>
 	<packaging>jar</packaging>
-	<version>1.4.0</version>
+	<version>1.4.1</version>
 	<name>registry-omopv5-sql</name>
 	<description>Registry OMOP SQL for version 5.4</description>
 	<url>http://maven.apache.org</url>
@@ -136,6 +136,12 @@
 			<version>1.116.0</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/commons-lang/commons-lang -->
+		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+			<version>2.6</version>
+		</dependency>
 
 	</dependencies>
 	<build>
@@ -153,8 +159,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.0</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<release>17</release>
 				</configuration>
 			</plugin>
 		</plugins>

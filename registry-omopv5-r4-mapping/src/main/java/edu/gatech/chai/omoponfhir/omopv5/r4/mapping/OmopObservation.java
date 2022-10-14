@@ -1191,8 +1191,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 					}
 				}
 
-				// We need to escape single quote
-				valueString = StringEscapeUtils.escapeSql(valueString);
+				// // We need to escape single quote - moved to sql layer
+				// valueString = StringEscapeUtils.escapeSql(valueString);
 				observation.setValueAsString(valueString);
 			}
 		} else if (valueType instanceof Ratio) {
