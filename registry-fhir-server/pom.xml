@@ -16,7 +16,7 @@
 	<groupId>edu.gatech.chai</groupId>
 	<artifactId>registry-fhir-server</artifactId>
 	<packaging>war</packaging>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 
 	<name>registry-fhir-server</name>
 
@@ -42,8 +42,8 @@
 		<!-- Dependency Versions -->
 		<derby_version>10.14.2.0</derby_version>
 		<jersey_version>2.25.1</jersey_version>
-		<jetty_version>9.4.47.v20220610</jetty_version>
-		<jackson_version>2.13.3</jackson_version>
+		<jetty_version>9.4.49.v20220914</jetty_version>
+		<jackson_version>2.14.0-rc1</jackson_version>
 		<jaxb_api_version>2.3.1</jaxb_api_version>
 		<lucene_version>5.5.5</lucene_version>
 		<maven_assembly_plugin_version>3.1.0</maven_assembly_plugin_version>
