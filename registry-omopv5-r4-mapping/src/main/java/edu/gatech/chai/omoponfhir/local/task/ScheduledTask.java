@@ -259,8 +259,8 @@ public class ScheduledTask {
 						}
 
 						if (jobStatus != null && !jobStatus.isEmpty() && !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
-							logger.debug("jobStatus: " + jobStatus.asStringValue() + " skipping ... ");
-							writeToLog(caseInfo, "jobStatus: " + jobStatus.asStringValue() + " skipping ... ");
+							logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " waiting ... ");
+							writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " waiting ... ");
 							caseInfoService.update(caseInfo);
 							continue;
 						}
