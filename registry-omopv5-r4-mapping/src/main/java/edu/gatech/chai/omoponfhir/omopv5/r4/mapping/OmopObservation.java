@@ -888,7 +888,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 			// value.
 			String unitString = ((Quantity) valueType).getUnit();
 			if (unitString != null && !unitString.isEmpty()) {
-				measurement.setUnitSourceValue(unitString.replace("'", "''"));
+				measurement.setUnitSourceValue(unitString);
 			}
 
 			if (concept != null) {
@@ -1105,7 +1105,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		observation.setObservationSourceConcept(concept);
 		
 		// observation.setObservationSourceValue(valueSourceString.substring(0, valueSourceString.length()>50?49:valueSourceString.length()));
-		observation.setObservationSourceValue(valueSourceString.replace("'", "''"));
+		observation.setObservationSourceValue(valueSourceString);
 
 		if (concept != null)
 			observation.setObservationSourceConcept(concept);
@@ -1492,7 +1492,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 			isOMOPObservation = true;
 			observation = (edu.gatech.chai.omopv5.model.entity.Observation) entityMap.get("entity");
 			if (isSurvey || ExtensionUtil.isInUserSpace(observation.getObservationConcept().getId())) {
-				observation.setObservationSourceValue(commentText.replace("'", "''"));
+				observation.setObservationSourceValue(commentText);
 
 				// We may already have a question for this. Check if we have this question
 				String sql = "SELECT observation.observation_id AS observation_observation_id "
@@ -1508,8 +1508,12 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 			
 				List<String> valueList = new ArrayList<String>();
 				valueList.add(String.valueOf(observation.getObservationConcept().getId()));
-				valueList.add("'" + observation.getValueAsString() + "'");
-				valueList.add("'" + observation.getObservationSourceValue() + "'");
+
+				String escapedFieldValue = StringEscapeUtils.escapeSql(((String) observation.getValueAsString()));
+				valueList.add("'" + escapedFieldValue + "'");
+
+				escapedFieldValue = StringEscapeUtils.escapeSql(((String) observation.getObservationSourceValue()));
+				valueList.add("'" + escapedFieldValue + "'");
 			
 				List<edu.gatech.chai.omopv5.model.entity.Observation> existingObservations = observationService.searchBySql(0, 0, sql, parameterList, valueList, null);
 				if (!existingObservations.isEmpty()) {

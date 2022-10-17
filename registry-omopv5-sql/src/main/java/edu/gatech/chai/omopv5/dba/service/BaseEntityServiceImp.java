@@ -1155,7 +1155,9 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 	}
 
 	@Override
-	public List<T> searchByColumnString(String column, String value) {
+	public List<T> searchByColumnString(String column, String valueOrignial) {
+		String value = StringEscapeUtils.escapeSql(valueOrignial);
+
 		List<T> entities = new ArrayList<T>();
 
 		List<String> parameterList = new ArrayList<String>();

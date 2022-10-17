@@ -3,6 +3,8 @@ package edu.gatech.chai.omoponfhir.local.task;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -278,11 +280,16 @@ public class ScheduledTask {
 							try {
 								responseEntries = myMapper.createEntries(entries, caseInfo);
 							} catch (Exception e) {
-								logger.error("Error occured while creating resources in the Output FHIR Bundle entries");
-								writeToLog(caseInfo, "Error occured while creating resources in the Output FHIR Bundle entries.\n"+e.getMessage());
+								StringWriter sw = new StringWriter();
+								PrintWriter pw = new PrintWriter(sw);
+								e.printStackTrace(pw);
+
+								logger.error("Error occured while creating resources in the Output FHIR Bundle entries. \n"+sw.toString());
+								writeToLog(caseInfo, "Error occured while creating resources in the Output FHIR Bundle entries.\n"+sw.toString());
+
 								caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
 								caseInfoService.update(caseInfo);
-								e.printStackTrace();
+
 								continue;
 							}
 							int errorFlag = 0;

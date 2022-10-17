@@ -426,7 +426,7 @@ public class OmopDocumentReference extends BaseOmopResource<DocumentReference, N
 			ThrowFHIRExceptions.unprocessableEntityException("content.attachment.data and hash data seems to be empty");
 		}
 		
-		note.setNoteText(note_text.replace("'", "''"));
+		note.setNoteText(note_text);
 		
 		// default for non-null fields
 		note.setNoteClassConcept(new Concept(0L));
