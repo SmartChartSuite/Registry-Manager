@@ -254,13 +254,14 @@ public class ScheduledTask {
 						Parameters parameters = parser.parseResource(Parameters.class, responseBody);
 						StringType jobStatus = (StringType) parameters.getParameter("jobStatus");
 						if (jobStatus == null || jobStatus.isEmpty()) {
+							writeToLog(caseInfo, "RC-API jobStatus is null or empty. Waiting ... ");
 							caseInfoService.update(caseInfo);
 							continue;
 						}
 
 						if (jobStatus != null && !jobStatus.isEmpty() && !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
-							logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " waiting ... ");
-							writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " waiting ... ");
+							logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Waiting ... ");
+							writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Waiting ... ");
 							caseInfoService.update(caseInfo);
 							continue;
 						}
