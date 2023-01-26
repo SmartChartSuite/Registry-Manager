@@ -134,6 +134,11 @@ public class FlagInfo extends BaseEntity {
 		return FlagInfo._getColumnName(columnVariable);
 	}
 
+	@Override
+	public String getFirstColumnName() {
+		return "flag_info_id";
+	}
+	
     public static String _getColumnName(String columnVariable) {
 
 		try {

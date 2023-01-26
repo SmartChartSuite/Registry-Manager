@@ -122,6 +122,11 @@ public class FactRelationship extends BaseEntity {
 		return FactRelationship._getTableName();
 	}
 	
+	@Override
+	public String getFirstColumnName() {
+		return "domain_concept_id_1";
+	}
+	
 	public static String _getTableName() {
 		Table annotation = FactRelationship.class.getDeclaredAnnotation(Table.class);
 		if (annotation != null) {

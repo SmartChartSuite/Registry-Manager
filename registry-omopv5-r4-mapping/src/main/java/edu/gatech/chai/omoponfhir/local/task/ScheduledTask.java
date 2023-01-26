@@ -324,6 +324,12 @@ public class ScheduledTask {
 									caseInfo.setStatus(StaticValues.INACTIVE);
 									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") changed status to " + caseInfo.getStatus());
 								}
+
+								if (StaticValues.INACTIVE.equals(caseInfo.getStatus())) {
+									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. And case becomes " + StaticValues.INACTIVE);
+								} else {
+									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. Next trigger at " + caseInfo.getTriggerAt().toString());
+								}
 							}
 						} else {
 							writeToLog(caseInfo, "The response for PACER query has no results");

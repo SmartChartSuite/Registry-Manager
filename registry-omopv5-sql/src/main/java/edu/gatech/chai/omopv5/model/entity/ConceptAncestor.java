@@ -114,6 +114,11 @@ public class ConceptAncestor extends BaseEntity {
 		return ConceptAncestor._getTableName();
 	}
 	
+	@Override
+	public String getFirstColumnName() {
+		return "ancestor_concept_id";
+	}
+	
 	public static String _getTableName() {
 		Table annotation = ConceptAncestor.class.getDeclaredAnnotation(Table.class);
 		if (annotation != null) {

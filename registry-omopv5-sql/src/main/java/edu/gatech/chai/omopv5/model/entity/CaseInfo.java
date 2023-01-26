@@ -189,8 +189,12 @@ public class CaseInfo extends BaseEntity {
 		return CaseInfo._getColumnName(columnVariable);
 	}
 
+	@Override
+	public String getFirstColumnName() {
+		return "case_info_id";
+	}
+	
     public static String _getColumnName(String columnVariable) {
-
 		try {
 			Field field = CaseInfo.class.getDeclaredField(columnVariable);
 			if (field != null) {

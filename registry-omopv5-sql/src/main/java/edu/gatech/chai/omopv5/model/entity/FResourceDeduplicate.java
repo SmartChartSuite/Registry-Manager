@@ -124,6 +124,11 @@ public class FResourceDeduplicate extends BaseEntity {
 		return FResourceDeduplicate._getTableName();
     }
 
+	@Override
+	public String getFirstColumnName() {
+		return "id";
+	}
+	
     public static String _getTableName() {
 		Table annotation = FResourceDeduplicate.class.getDeclaredAnnotation(Table.class);
 		if (annotation != null) {

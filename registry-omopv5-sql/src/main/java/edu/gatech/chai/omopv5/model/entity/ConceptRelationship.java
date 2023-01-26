@@ -176,6 +176,11 @@ public class ConceptRelationship extends BaseEntity {
 		return ConceptRelationship._getTableName();
 	}
 	
+	@Override
+	public String getFirstColumnName() {
+		return "concept_id_1";
+	}
+	
 	public static String _getTableName() {
 		Table annotation = ConceptRelationship.class.getDeclaredAnnotation(Table.class);
 		if (annotation != null) {

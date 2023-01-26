@@ -98,6 +98,11 @@ public class CaseLog extends BaseEntity {
 		return CaseLog._getTableName();
     }
 
+	@Override
+	public String getFirstColumnName() {
+		return "case_log_id";
+	}
+	
     public static String _getTableName() {
 		Table annotation = CaseLog.class.getDeclaredAnnotation(Table.class);
 		if (annotation != null) {
