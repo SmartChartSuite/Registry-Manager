@@ -163,7 +163,7 @@ public class ScheduledTask {
 		return endPoint;
 	}
 
-	@Scheduled(initialDelay = 30000, fixedDelay = 30000)
+	@Scheduled(initialDelay = 30000, fixedDelay = 60000)
 	public void runPeriodicQuery() {
 		List<CaseInfo> caseInfos = caseInfoService.searchWithoutParams(0, 0, "id ASC");
 		RestTemplate restTemplate = new RestTemplate();
@@ -463,7 +463,7 @@ public class ScheduledTask {
 		}
 	}
 
-	@Scheduled(fixedDelay = 60000)
+	@Scheduled(fixedDelay = 120000)
 	public void localCodeMappingTask() {
 		// We may need to load local mapping data. Get a path where the mapping CSV
 		// file(s) are located and load them if files exist. The files will then be

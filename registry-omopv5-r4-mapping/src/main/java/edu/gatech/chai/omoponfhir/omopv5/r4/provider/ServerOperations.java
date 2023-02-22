@@ -47,6 +47,7 @@ import org.hl7.fhir.exceptions.FHIRException;
 import ca.uhn.fhir.rest.annotation.Operation;
 import ca.uhn.fhir.rest.annotation.OperationParam;
 import ca.uhn.fhir.rest.api.server.RequestDetails;
+import ca.uhn.fhir.rest.param.NumberParam;
 import ca.uhn.fhir.rest.param.StringParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopServerOperations;
@@ -144,9 +145,15 @@ public class ServerOperations {
 		@OperationParam(name = "case-id") StringParam theCaseId,
 		@OperationParam(name = "patient-identifier") TokenParam thePatientIdentifier,
 		@OperationParam(name = "set-status") StringParam theSetStatus,
+		@OperationParam(name = "set-tries-left") NumberParam theTriesLeft,
 		@OperationParam(name = "lab-results") Bundle theLabResults) {
 
 		Bundle returnBundle = new Bundle();
+
+		Integer triesLeft = StaticValues.MAX_TRY;
+		if (theTriesLeft != null) {
+			triesLeft = theTriesLeft.getValue().intValue();
+		}
 
 		// Set parameterwrapper for the caseId if available
 		List<ParameterWrapper> caseIdParamList = new ArrayList<ParameterWrapper>();
@@ -184,7 +191,7 @@ public class ServerOperations {
 					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, caseIdParamList, "id ASC");
 					for (CaseInfo caseInfo : caseInfos) {
 						caseInfo.setStatus(StaticValues.REQUEST);
-						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
+						caseInfo.setTriesLeft(triesLeft);
 						caseInfoService.update(caseInfo);
 					}
 				} else {
@@ -239,7 +246,7 @@ public class ServerOperations {
 					if (caseInfos != null && !caseInfos.isEmpty()) {
 						caseInfo = caseInfos.get(0);
 						caseInfo.setStatus(StaticValues.REQUEST);
-						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
+						caseInfo.setTriesLeft(triesLeft);
 						caseInfoService.update(caseInfo);
 
 						if (caseInfos.size() > 1) {
@@ -286,7 +293,7 @@ public class ServerOperations {
 						caseInfo.setServerHost(this.rcApiHost);
 						caseInfo.setServerUrl("/forms/start?asyncFlag=true");
 						caseInfo.setCreated(new Date());
-						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
+						caseInfo.setTriesLeft(triesLeft);
 						caseInfoService.create(caseInfo);
 					}	
 				}
