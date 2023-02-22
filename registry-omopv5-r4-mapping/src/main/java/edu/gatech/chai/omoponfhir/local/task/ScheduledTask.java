@@ -185,6 +185,10 @@ public class ScheduledTask {
 				Integer triesLeft = caseInfo.getTriesLeft();
 				if (triesLeft <= 0) {
 					// used up the number of tries
+					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") Timed Out");		
+					caseInfo.setStatus(StaticValues.TIMED_OUT);
+					caseInfoService.update(caseInfo);
+
 					continue;
 				}
 
