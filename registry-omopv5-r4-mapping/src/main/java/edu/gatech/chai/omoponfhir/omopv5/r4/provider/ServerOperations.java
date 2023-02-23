@@ -170,9 +170,9 @@ public class ServerOperations {
 		List<ParameterWrapper> patientIdParamList = new ArrayList<ParameterWrapper>();
 		ParameterWrapper patientIdParameterWrapper = new ParameterWrapper();
 		String patientIdentifier = "";
-		if (thePatientIdentifier == null || thePatientIdentifier.isEmpty()) {
-			ThrowFHIRExceptions.unprocessableEntityException("Patient Identifier is required to create a new REQUEST");
-		} else {
+		if ((thePatientIdentifier == null || thePatientIdentifier.isEmpty()) && theCaseId == null) {
+			ThrowFHIRExceptions.unprocessableEntityException("Either Patient Identifier or case Id is required to trigger the query");
+		} else if (thePatientIdentifier != null && !thePatientIdentifier.isEmpty()){
 			patientIdentifier = thePatientIdentifier.getValue();
 			patientIdParameterWrapper.setParameterType("String");
 			patientIdParameterWrapper.setParameters(Arrays.asList("patientIdentifier"));
@@ -296,6 +296,22 @@ public class ServerOperations {
 						caseInfo.setTriesLeft(triesLeft);
 						caseInfoService.create(caseInfo);
 					}	
+				}
+			} else if (StaticValues.REQUEST_IN_ACTIVE.equals(newStatus)) {
+				List<ParameterWrapper> IdParamList = null;
+				if (theCaseId != null) {
+					IdParamList = caseIdParamList;
+				} else if (thePatientIdentifier != null) {
+					IdParamList = patientIdParamList;
+				} else {
+					ThrowFHIRExceptions.unprocessableEntityException("Either case ID or patient identifer must be provided to refresh the case");
+				}
+
+				List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, IdParamList, "id ASC");
+				for (CaseInfo caseInfo : caseInfos) {
+					caseInfo.setStatus(StaticValues.REQUEST_IN_ACTIVE);
+					caseInfo.setTriesLeft(triesLeft);
+					caseInfoService.update(caseInfo);
 				}
 			}
 		}

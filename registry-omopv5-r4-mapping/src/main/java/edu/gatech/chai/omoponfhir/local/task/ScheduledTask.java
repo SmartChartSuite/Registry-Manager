@@ -185,7 +185,7 @@ public class ScheduledTask {
 				Integer triesLeft = caseInfo.getTriesLeft();
 				if (triesLeft <= 0) {
 					// used up the number of tries
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") Timed Out");		
+					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") Timed Out");
 					caseInfo.setStatus(StaticValues.TIMED_OUT);
 					caseInfoService.update(caseInfo);
 
@@ -347,7 +347,10 @@ public class ScheduledTask {
 
 				Integer triesLeft = caseInfo.getTriesLeft();
 				if (triesLeft <= 0) {
-					// used up the number of tries
+					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") Request Timed Out");
+					caseInfo.setStatus(StaticValues.TIMED_OUT);
+					caseInfoService.update(caseInfo);
+
 					continue;
 				}
 
@@ -424,9 +427,9 @@ public class ScheduledTask {
 								caseInfo.setJobId(jobId.asStringValue());
 								if (StaticValues.REQUEST.equals(caseInfo.getStatus())) {
 									caseInfo.setActivated(currentTime);
+									caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 								}
 								caseInfo.setStatus(StaticValues.ACTIVE);
-								caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 
 								// set the triggered_at. Since this is a REQUEST, we set it to now.
 								Long triggeredAt = currentTime.getTime();
