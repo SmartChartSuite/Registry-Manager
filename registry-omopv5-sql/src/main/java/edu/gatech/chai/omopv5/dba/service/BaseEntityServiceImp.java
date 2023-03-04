@@ -108,6 +108,10 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		return "sql server".equals(databaseConfig.getSqlRenderTargetDialect());
 	}
 
+	public boolean isPostgreSql() {
+		return "postgresql".equals(databaseConfig.getSqlRenderTargetDialect());
+	}
+
 	public BigQuery getBigQuery() {
 		if (bigQuery == null) {
 			bigQuery = BigQueryOptions.getDefaultInstance().getService();
@@ -169,17 +173,22 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		// sql string is full completed string rendered by SqlRender.
 		// Now, we translate this to attached database SQL.
 		query = SqlTranslate.translateSql(query, databaseConfig.getSqlRenderTargetDialect());
-		logger.debug("runQuery: Query after SqlRender translate to " + databaseConfig.getSqlRenderTargetDialect() + ": " + query);
-
-		Statement stmt = getConnection().createStatement();
-		ResultSet rs = stmt.executeQuery(query);
-		while (rs.next()) {
-			newEntity = construct(rs, myEntity, alias);
-			if (newEntity != null) {
-				entities.add(newEntity);
-			}
-		}
 		
+		logger.debug("runQuery: Query after SqlRender translate to " + databaseConfig.getSqlRenderTargetDialect() + ": " + query);
+		
+		try (Statement stmt = getConnection().createStatement();) {
+			ResultSet rs = stmt.executeQuery(query);
+			while (rs.next()) {
+				newEntity = construct(rs, myEntity, alias);
+				if (newEntity != null) {
+					entities.add(newEntity);
+				}
+			}
+		} catch (Exception e) {
+			getConnection().rollback();
+			e.printStackTrace();
+		}
+ 		
 		return entities;
 	}
 
@@ -191,27 +200,34 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		query = SqlTranslate.translateSql(query, databaseConfig.getSqlRenderTargetDialect());
 
 		logger.debug("[updateQuery]querySql: " + query);
-		PreparedStatement stmt = getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-		int affectedRows = stmt.executeUpdate();
-		connection.commit();
+		try (PreparedStatement stmt = getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);) {
+			int affectedRows = stmt.executeUpdate();
+			getConnection().commit();
 
-		if (affectedRows == 0) {
-			logger.error("UPDATE failed with " + query);
-			return retVal;
+			if (affectedRows == 0) {
+				logger.error("UPDATE failed with " + query);
+				return retVal;
+			}
+	
+			ResultSet generatedKeys = stmt.getGeneratedKeys();
+			retVal = generatedKeys.getLong(1);
+		} catch (Exception e) {
+			getConnection().rollback();
+			e.printStackTrace();
 		}
-		
-		ResultSet generatedKeys = stmt.getGeneratedKeys();
-		ResultSetMetaData rsmd = generatedKeys.getMetaData();
-        int columnCount = rsmd.getColumnCount();
-		if (generatedKeys.next()) {
-			do {
-				for (int i=1; i<=columnCount; i++) {
-                    String key = generatedKeys.getString(i);
-                    System.out.println("KEY " + i + " = " + key);
-                }
-				retVal = generatedKeys.getLong(1);
-			} while (generatedKeys.next()); 
-		}
+				
+		// ResultSet generatedKeys = stmt.getGeneratedKeys();
+		// ResultSetMetaData rsmd = generatedKeys.getMetaData();
+        // int columnCount = rsmd.getColumnCount();
+		// if (generatedKeys.next()) {
+		// 	do {
+		// 		// for (int i=1; i<=columnCount; i++) {
+        //         //     String key = generatedKeys.getString(i);
+        //         //     System.out.println("KEY " + i + " = " + key);
+        //         // }
+		// 		retVal = generatedKeys.getLong(1);
+		// 	} while (generatedKeys.next()); 
+		// }
 
 		if (retVal == null || retVal == 0) {
 			logger.warn("update Query failed, no ID generated, with " + query);
@@ -225,10 +241,14 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 
 		query = SqlTranslate.translateSql(query, databaseConfig.getSqlRenderTargetDialect());
 
-		Statement stmt = getConnection().createStatement();
-		ResultSet rs = stmt.executeQuery(query);
-		if (rs.next()) {
-			retVal = (long) rs.getInt(alias);
+		try (Statement stmt = getConnection().createStatement();) {
+			ResultSet rs = stmt.executeQuery(query);
+			if (rs.next()) {
+				retVal = (long) rs.getInt(alias);
+			}
+		} catch (Exception e) {
+			getConnection().rollback();
+			e.printStackTrace();
 		}
 
 		return retVal;
@@ -557,8 +577,25 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		Long retVal = 0L;
 
 		String queryString = "";
+		
 		if (sql == null) {
-			sql = "select count(*) as count from " + getSqlTableName() + ";";
+			// this is size for entire table, which is expensive. Do an estimate if possible
+			String myTable = getSqlTableName();
+
+			if (isPostgreSql()) {
+				if ("f_observation_view".equalsIgnoreCase(myTable)) {
+					sql = "SELECT ((SELECT reltuples FROM pg_class where relname = 'measurement')::integer + (SELECT reltuples FROM pg_class WHERE relname = 'observation')::integer) as count;";
+				} else {
+					if ("f_immunization_view".equalsIgnoreCase(myTable)) {
+						sql = "select count(*) as count from " + myTable + ";";
+					} else {
+						sql = "SELECT reltuples as count FROM pg_class where relname = '" + myTable + "';";
+					}
+				}
+
+			} else {
+				sql = "select count(*) as count from " + myTable + ";";
+			}
 		} 
 
 		if (parameterList == null) {

@@ -256,7 +256,14 @@ public class ScheduledTask {
 
 					if (responseBody != null && !responseBody.isEmpty()) {
 						Parameters parameters = parser.parseResource(Parameters.class, responseBody);
-						StringType jobStatus = (StringType) parameters.getParameter("jobStatus");
+						// StringType jobStatus = (StringType) parameters.getParameter("jobStatus");
+						ParametersParameterComponent parameter = parameters.getParameter("jobStatus");
+						StringType jobStatus = null;
+						if (parameter == null || parameter.isEmpty()) {
+							continue;
+						}
+
+						jobStatus = (StringType) parameter.getValue();
 						if (jobStatus == null || jobStatus.isEmpty()) {
 							writeToLog(caseInfo, "RC-API jobStatus is null or empty. Waiting ... ");
 							caseInfoService.update(caseInfo);
@@ -414,7 +421,12 @@ public class ScheduledTask {
 						if (responseBody != null && !responseBody.isEmpty()) {
 							logger.debug("response body for REQUEST status: " + responseBody);
 							Parameters returnedParameters = parser.parseResource(Parameters.class, responseBody);
-							jobId = (StringType) returnedParameters.getParameter("jobId");
+							// jobId = (StringType) returnedParameters.getParameter("jobId");
+							ParametersParameterComponent parameter = returnedParameters.getParameter("jobId");
+							if (parameter == null || parameter.isEmpty())
+								continue;
+								
+							jobId = (StringType) parameter.getValue();
 						}
 
 						if (jobId == null || jobId.isEmpty()) {
