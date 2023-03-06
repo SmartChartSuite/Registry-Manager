@@ -210,25 +210,23 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			}
 	
 			ResultSet generatedKeys = stmt.getGeneratedKeys();
-			retVal = generatedKeys.getLong(1);
+			// ResultSetMetaData rsmd = generatedKeys.getMetaData();
+			// int columnCount = rsmd.getColumnCount();
+
+			if (generatedKeys.next()) {
+				do {
+					// for (int i=1; i<=columnCount; i++) {
+					//     String key = generatedKeys.getString(i);
+					//     System.out.println("KEY " + i + " = " + key);
+					// }
+					retVal = generatedKeys.getLong(1);
+				} while (generatedKeys.next()); 
+			}
 		} catch (Exception e) {
 			getConnection().rollback();
 			e.printStackTrace();
 		}
 				
-		// ResultSet generatedKeys = stmt.getGeneratedKeys();
-		// ResultSetMetaData rsmd = generatedKeys.getMetaData();
-        // int columnCount = rsmd.getColumnCount();
-		// if (generatedKeys.next()) {
-		// 	do {
-		// 		// for (int i=1; i<=columnCount; i++) {
-        //         //     String key = generatedKeys.getString(i);
-        //         //     System.out.println("KEY " + i + " = " + key);
-        //         // }
-		// 		retVal = generatedKeys.getLong(1);
-		// 	} while (generatedKeys.next()); 
-		// }
-
 		if (retVal == null || retVal == 0) {
 			logger.warn("update Query failed, no ID generated, with " + query);
 		}
