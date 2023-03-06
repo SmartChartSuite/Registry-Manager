@@ -7,7 +7,7 @@
 	<groupId>edu.gatech.chai</groupId>
 	<artifactId>registry-fhir</artifactId>
 	<packaging>pom</packaging>
-	<version>1.0.1</version>
+	<version>1.1.0</version>
 	<name>Registry-FHIR</name>
 	<url>http://omoponfhir.org</url>
 
@@ -15,11 +15,6 @@
 		<name>Georgia Tech Research Institute - CHAI</name>
 		<url>http://chai.gatech.edu</url>
 	</organization>
-
-	<properties>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
-	</properties>
 
 	<repositories>
 		<repository>
