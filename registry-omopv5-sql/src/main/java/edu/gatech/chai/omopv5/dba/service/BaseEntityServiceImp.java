@@ -80,6 +80,9 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 	@Autowired
 	DatabaseConfiguration databaseConfig;
 
+	@Autowired
+	FCacheService fCacheService;
+
 	/**
 	 * Instantiates a new base entity service imp.
 	 *
@@ -537,7 +540,15 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		return getSize(null, null, null);
 	}
 
+	public Long getSize(boolean cacheOnly) {
+		return getSize(null, null, null, cacheOnly);
+	}
+
 	public Long getSize(List<ParameterWrapper> paramList) {
+		return getSize(paramList, false);
+	}
+
+	public Long getSize(List<ParameterWrapper> paramList, boolean cacheOnly) {
 		Long retVal = 0L;
 
 		List<String> parameterList = new ArrayList<String>();
@@ -552,6 +563,19 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			}
 
 			sql = renderedSql(sql, parameterList, valueList);
+
+			// check if we have cached this value.
+			Integer count = fCacheService.searchQueryCount(sql);
+			if (count >= 0) {
+				return count.longValue();
+			}
+	
+			if (cacheOnly) {
+				/// We only add this as an entry for cache db.
+				fCacheService.updateQuery(sql, null, -1, -1);
+				return null;
+			}
+		
 			if (isBigQuery()) {
 				TableResult result = runBigQuery(sql);
 				for (FieldValueList row : result.iterateAll()) {
@@ -572,10 +596,15 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			e.printStackTrace();
 		}
 
+		fCacheService.updateQuery(sql, null, retVal.intValue(), 0);
 		return retVal;
 	}
 
 	public Long getSize(String sql, List<String> parameterList, List<String> valueList) {
+		return getSize(sql, parameterList, valueList, false);
+	}
+
+	public Long getSize(String sql, List<String> parameterList, List<String> valueList, boolean cacheOnly) {
 		Long retVal = 0L;
 
 		String queryString = "";
@@ -584,20 +613,21 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			// this is size for entire table, which is expensive. Do an estimate if possible
 			String myTable = getSqlTableName();
 
-			if (isPostgreSql()) {
-				if ("f_observation_view".equalsIgnoreCase(myTable)) {
-					sql = "SELECT ((SELECT reltuples FROM pg_class where relname = 'measurement')::integer + (SELECT reltuples FROM pg_class WHERE relname = 'observation')::integer) as count;";
-				} else {
-					if ("f_immunization_view".equalsIgnoreCase(myTable)) {
-						sql = "select count(*) as count from " + myTable + ";";
-					} else {
-						sql = "SELECT reltuples as count FROM pg_class where relname = '" + myTable + "';";
-					}
-				}
+			// if (isPostgreSql()) {
+			// 	if ("f_observation_view".equalsIgnoreCase(myTable)) {
+			// 		sql = "SELECT ((SELECT reltuples FROM pg_class where relname = 'measurement')::integer + (SELECT reltuples FROM pg_class WHERE relname = 'observation')::integer) as count;";
+			// 	} else {
+			// 		if ("f_immunization_view".equalsIgnoreCase(myTable)) {
+			// 			sql = "select count(*) as count from " + myTable + ";";
+			// 		} else {
+			// 			sql = "SELECT reltuples as count FROM pg_class where relname = '" + myTable + "';";
+			// 		}
+			// 	}
 
-			} else {
-				sql = "select count(*) as count from " + myTable + ";";
-			}
+			// } else {
+			// 	sql = "select count(*) as count from " + myTable + ";";
+			// }
+			sql = "select count(*) as count from " + myTable + ";";
 		} 
 
 		if (parameterList == null) {
@@ -609,6 +639,16 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		}
 		
 		queryString = renderedSql(sql, parameterList, valueList);
+		Integer count = fCacheService.searchQueryCount(queryString);
+		if (count >= 0) {
+			return count.longValue();
+		}
+
+		if (cacheOnly) {
+			/// We only add this as an entry for cache db.
+			fCacheService.updateQuery(queryString, null, -1, -1);
+			return null;
+		}
 
 		try {
 			if (isBigQuery()) {
@@ -631,6 +671,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			e.printStackTrace();
 		}
 
+		fCacheService.updateQuery(queryString, null, retVal.intValue(), 0);
 		return retVal;
 	}
 
@@ -989,6 +1030,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			return null;
 		}
 
+		fCacheService.invalidate(getSqlTableName(clazz));
 		return entity;
 	}
 
@@ -1156,6 +1198,8 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			logger.error("Failed to update table: " + getSqlTableName(clazz));
 			return null;
 		}
+
+		fCacheService.invalidate(getSqlTableName(clazz));
 
 		return entity;
 	}

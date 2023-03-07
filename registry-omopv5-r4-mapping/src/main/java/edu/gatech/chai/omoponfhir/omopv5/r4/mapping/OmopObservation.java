@@ -110,7 +110,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		super(context, FObservationView.class, FObservationViewService.class, ObservationResourceProvider.getType());
 		initialize(context);
 
-		getSize();
+		getSize(true);
 	}
 
 	public OmopObservation() {
@@ -1777,13 +1777,13 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 			List<IBaseResource> listResources, List<String> includes, String sort) {
 		paramList.add(exceptionParam4Search);
 
-		long start = System.currentTimeMillis();
+		// long start = System.currentTimeMillis();
 		
 		List<FObservationView> fObservationViews = getMyOmopService().searchWithParams(fromIndex, toIndex, paramList,
 				sort);
 
-		long gettingObses = System.currentTimeMillis()-start;
-		logger.debug("gettingObses: at "+Long.toString(gettingObses)+" duration: "+Long.toString(gettingObses));
+		// long gettingObses = System.currentTimeMillis()-start;
+		// logger.debug("gettingObses: at "+Long.toString(gettingObses)+" duration: "+Long.toString(gettingObses));
 
 		for (FObservationView fObservationView : fObservationViews) {
 			Long omopId = fObservationView.getId();

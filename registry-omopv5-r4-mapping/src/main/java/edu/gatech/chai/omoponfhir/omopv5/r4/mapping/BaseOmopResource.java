@@ -106,6 +106,10 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 		return myOmopService.removeById(myId);
 	}
 
+	public Long getSize(boolean cacheOnly) {
+		return myOmopService.getSize(true);
+	}
+
 	public Long getSize() {
 		Long size = myOmopService.getSize();
 		
@@ -114,8 +118,16 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 		return size;
 	}
 
+	public Long getSize(List<ParameterWrapper> mapList, boolean cacheOnly) {
+		return myOmopService.getSize(mapList, cacheOnly);
+	}
+
 	public Long getSize(List<ParameterWrapper> mapList) {
 		return myOmopService.getSize(mapList);
+	}
+
+	public Long getSize(String queryString, List<String> parameterList, List<String> valueList, boolean cacheOnly) {
+		return myOmopService.getSize(queryString, parameterList, valueList, cacheOnly);
 	}
 
 	public Long getSize(String queryString, List<String> parameterList, List<String> valueList) {

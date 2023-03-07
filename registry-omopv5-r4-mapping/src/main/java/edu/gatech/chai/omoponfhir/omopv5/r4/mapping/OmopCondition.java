@@ -58,7 +58,7 @@ public class OmopCondition extends BaseOmopResource<Condition, ConditionOccurren
 		initialize(context);
 		
 		// Get count and put it in the counts.
-		getSize();
+		getSize(true);
 	}
 
 	public OmopCondition() {

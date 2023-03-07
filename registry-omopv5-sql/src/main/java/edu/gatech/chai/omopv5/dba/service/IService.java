@@ -114,6 +114,8 @@ public interface IService<v extends BaseEntity> {
 	 */
 	Long getSize();
 	
+	Long getSize(boolean cacheOnly);
+
 	/**
 	 * Gets the size.
 	 *
@@ -121,9 +123,11 @@ public interface IService<v extends BaseEntity> {
 	 * @return the size
 	 */
 	Long getSize(List<ParameterWrapper> paramList);
-	
-	Long getSize(String sqlString, List<String> parameterList, List<String> valueList);
+	Long getSize(List<ParameterWrapper> paramList, boolean cacheOnly);
 
+	Long getSize(String sqlString, List<String> parameterList, List<String> valueList);
+	Long getSize(String sqlString, List<String> parameterList, List<String> valueList, boolean cacheOnly);
+	
 	//	Long getNextId();
 	
 	v construct (ResultSet rs, v entity, String alias);
