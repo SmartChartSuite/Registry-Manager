@@ -324,8 +324,12 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				try {
 					field = parentClazz.getDeclaredField(columnName);
 					sqlColumnName = getSqlTableColumnName(field);
-				} catch (NoSuchFieldException | SecurityException e1) {
-					e1.printStackTrace();
+				} catch (NoSuchFieldException e1) {
+					if (!"id".equals(columnName)) {
+						e1.printStackTrace();
+					}
+				} catch (SecurityException e2) {
+					e2.printStackTrace();
 				}
 			} else {
 				e.printStackTrace();

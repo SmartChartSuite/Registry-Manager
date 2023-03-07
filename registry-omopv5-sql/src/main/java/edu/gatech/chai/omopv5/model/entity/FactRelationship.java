@@ -92,7 +92,7 @@ public class FactRelationship extends BaseEntity {
 				}
 			}
 		} catch (NoSuchFieldException e) {
-			e.printStackTrace();
+			if (!"id".equals(columnVariable)) e.printStackTrace();
 		} catch (SecurityException e) {
 			e.printStackTrace();
 		}
