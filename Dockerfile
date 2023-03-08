@@ -32,7 +32,7 @@ RUN chmod +x /tmp/ssh_setup.sh \
     && (sleep 1;/tmp/ssh_setup.sh 2>&1 > /dev/null)
 
 # Copy war file to webapps.
-COPY --from=builder /usr/src/app/registry-fhir-server/target/registry-fhir-server.war $CATALINA_HOME/webapps/registrymanager.war
+COPY --from=builder /usr/src/app/registry-fhir-server/target/registry-fhir-server.war $CATALINA_HOME/webapps/ROOT.war
 
 EXPOSE 8080 2222
 
