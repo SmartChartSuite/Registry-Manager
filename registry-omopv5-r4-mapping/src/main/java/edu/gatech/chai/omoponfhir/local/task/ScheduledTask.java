@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -165,22 +166,33 @@ public class ScheduledTask {
 
 	@Scheduled(initialDelay = 30000, fixedDelay = 60000)
 	public void runPeriodicQuery() {
-		List<CaseInfo> caseInfos = caseInfoService.searchWithoutParams(0, 0, "id ASC");
+		Date currentTime = new Date();
+		Long currentTimeEpoch = currentTime.getTime();
+		List<ParameterWrapper> params = new ArrayList<ParameterWrapper>();
+
+		// Add triggerAt parameter
+		ParameterWrapper param = new ParameterWrapper("Date", Arrays.asList("triggerAt"), Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
+		params.add(param);
+
+		// Add status != time out
+		param = new ParameterWrapper("String", Arrays.asList("status", "status", "status"), Arrays.asList("!=", "!=", "!="), Arrays.asList(StaticValues.TIMED_OUT, StaticValues.ERROR_IN_CLIENT, StaticValues.INACTIVE), "and");
+		params.add(param);
+
+		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 2, params, "id ASC");
 		RestTemplate restTemplate = new RestTemplate();
 		IParser parser = StaticValues.myFhirContext.newJsonParser();
 
 		for (CaseInfo caseInfo : caseInfos) {
-			Date currentTime = new Date();
 			String serverHost = caseInfo.getServerHost();
 
 			if (StaticValues.ACTIVE.equals(caseInfo.getStatus()) ||
 				StaticValues.ERROR_IN_SERVER.equals(caseInfo.getStatus()) ||
 				StaticValues.ERROR_UNKNOWN.equals(caseInfo.getStatus())) {
 				// check if it's time to do the query.
-				if (currentTime.before(caseInfo.getTriggerAt())) {
-					logger.debug("Case (" + caseInfo.getId() + ") passing. TriggerTime: " + caseInfo.getTriggerAt().toString());
-					continue;
-				}
+				// if (currentTime.before(caseInfo.getTriggerAt())) {
+				// 	logger.debug("Case (" + caseInfo.getId() + ") passing. TriggerTime: " + caseInfo.getTriggerAt().toString());
+				// 	continue;
+				// }
 
 				Integer triesLeft = caseInfo.getTriesLeft();
 				if (triesLeft <= 0) {
@@ -211,8 +223,12 @@ public class ScheduledTask {
 					response = restTemplate.exchange(statusEndPoint, HttpMethod.GET, reqAuth, String.class);
 				} catch (HttpClientErrorException e) {
 					String rBody = e.getResponseBodyAsString();
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n" + rBody);		
-					caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
+					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n" + rBody);
+					if (e.getRawStatusCode() == 404) {
+						caseInfo.setStatus(StaticValues.REQUEST_IN_ACTIVE);
+					} else {
+						caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
+					}
 					caseInfoService.update(caseInfo);
 					continue;
 				} catch (HttpServerErrorException e) {
