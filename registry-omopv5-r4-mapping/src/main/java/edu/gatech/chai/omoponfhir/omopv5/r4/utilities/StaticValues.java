@@ -27,7 +27,7 @@ public class StaticValues {
 	public static final long SEVEN_DAYS_IN_SEC = 604800L;
 	public static final long FOURTEEN_DAYS_IN_SEC = 1209600L;
 
-	public static final Integer MAX_TRY = 5;
+	public static final Integer MAX_TRY = 10;
 	
 	private StaticValues() {}
 

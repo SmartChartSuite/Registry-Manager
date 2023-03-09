@@ -185,6 +185,8 @@ public class ServerOperations {
 		// get the value of set-status parameter.
 		if (theSetStatus != null) {
 			String newStatus = theSetStatus.getValue();
+			Date currentTime = new Date();
+
 			if (StaticValues.REQUEST.equals(newStatus)) {
 				// Set the status to REQUEST.
 				if (theCaseId != null) {
@@ -292,7 +294,8 @@ public class ServerOperations {
 						caseInfo.setStatus(StaticValues.REQUEST);
 						caseInfo.setServerHost(this.rcApiHost);
 						caseInfo.setServerUrl("/forms/start?asyncFlag=true");
-						caseInfo.setCreated(new Date());
+						caseInfo.setCreated(currentTime);
+						caseInfo.setTriggerAt(currentTime);
 						caseInfo.setTriesLeft(triesLeft);
 						caseInfoService.create(caseInfo);
 					}	
@@ -310,6 +313,7 @@ public class ServerOperations {
 				List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, IdParamList, "id ASC");
 				for (CaseInfo caseInfo : caseInfos) {
 					caseInfo.setStatus(StaticValues.REQUEST_IN_ACTIVE);
+					caseInfo.setTriggerAt(currentTime);
 					caseInfo.setTriesLeft(triesLeft);
 					caseInfoService.update(caseInfo);
 				}

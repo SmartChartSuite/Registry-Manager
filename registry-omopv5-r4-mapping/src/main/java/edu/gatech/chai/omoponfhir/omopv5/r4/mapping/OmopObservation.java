@@ -828,8 +828,11 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 			// This is UPDATE.
 			measurement = measurementService.findById(omopId);
 			if (measurement == null) {
-				// We have no observation to update.
-				throw new FHIRException("We have no matching FHIR Observation (Observation) to update.");
+				// We have a request to add with a non-existing id. 
+				// In this case, we create this with this ID. 
+				// throw new FHIRException("We have no matching FHIR Observation (Observation) to update.");
+				measurement = new Measurement();
+				measurement.setId(omopId);
 			}
 		}
 
@@ -857,7 +860,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 
 		// Set this in the source column
 		if (concept == null || concept.getIdAsLong() == 0L) {
-			measurement.setValueSourceValue(valueSourceString.substring(0, valueSourceString.length()>50?49:valueSourceString.length()));
+			// measurement.setValueSourceValue(valueSourceString.substring(0, valueSourceString.length()>50?49:valueSourceString.length()));
+			measurement.setValueSourceValue(valueSourceString);
 		}
 
 		/* Set the value of the observation */

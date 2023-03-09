@@ -858,6 +858,9 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 //								String sqlUpdateSequenceTable = "";
 //								nextIdString = sequenceTable + ".nextval";
 							}
+						} else {
+							if (nextId < 0) nextId = -nextId;
+							nextIdString = String.valueOf(nextId);
 						}
 					}
 				} catch (SecurityException e) {
@@ -1183,6 +1186,12 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			if (id == null || id == 0L) {
 				logger.error("Update needs id != null for table: " + getSqlTableName(clazz));
 				return null;
+			}
+
+			if (id < 0) {
+				// This is a quick and dirty solution. Sometimes, we miss data due to possible crash. But,
+				// it made to deduplicate table. In this case, the id comes as - (negative value). We create.
+				return create(entity);
 			}
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException e) {
