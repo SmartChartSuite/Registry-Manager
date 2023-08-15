@@ -164,6 +164,7 @@ public class ScheduledTask {
 		return endPoint;
 	}
 
+	// @Scheduled(initialDelay = 30000, fixedDelay = 60000000)
 	@Scheduled(initialDelay = 30000, fixedDelay = 60000)
 	public void runPeriodicQuery() {
 		Date currentTime = new Date();

@@ -29,10 +29,10 @@ import edu.gatech.chai.omopv5.model.entity.custom.JoinColumn;
 import edu.gatech.chai.omopv5.model.entity.custom.Table;
 
 /** 
- * This class maintains case information for Syphilis registry.
+ * This class maintains case information for data registry.
  * @author Myung Choi
  */
-@Table(name="case_info")
+@Table(name="flag_info", schema = "data")
 public class FlagInfo extends BaseEntity {
 	private static final Logger logger = LoggerFactory.getLogger(FlagInfo.class);
 
@@ -40,10 +40,10 @@ public class FlagInfo extends BaseEntity {
 	@Column(name = "flag_info_id", nullable = false)
 	private Long id;
 
-	@Column(name="case_info_id", nullable = false)
+	@JoinColumn(name="case_info_id", table="data.case_info", nullable = false)
 	private CaseInfo caseInfo;
 
-	@JoinColumn(name = "person_id", table="f_person:fPerson,person:person", nullable = false)
+	@JoinColumn(name = "person_id", table="data.f_person:fPerson,data.person:person", nullable = false)
 	private FPerson fPerson;
 	
 	@Column(name="domain")

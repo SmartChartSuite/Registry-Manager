@@ -14,7 +14,7 @@ import edu.gatech.chai.omopv5.model.entity.custom.Table;
  * This class maintains fhir resources to avoid duplications.
  * @author Myung Choi
  */
-@Table(name="f_resource_deduplicate")
+@Table(name="f_resource_deduplicate", schema = "data")
 public class FResourceDeduplicate extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="fresourcededuplicate_seq_gen")

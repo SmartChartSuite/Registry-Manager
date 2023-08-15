@@ -341,6 +341,24 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 		
 		return orderParam;
 	}
+
+	public String codingInString(Coding coding, int limit) {
+		String system = coding.getSystem();
+		String code = coding.getCode();
+		String display = coding.getDisplay();
+
+		if (system.startsWith("http:")) {
+			int lastPartOfUrlIndex = system.lastIndexOf("/");
+			system = system.substring(lastPartOfUrlIndex+1);
+		}
+
+		String retv = system + " " + code + " " + display;
+		if (retv.length() > limit) {
+			retv = retv.substring(0, limit-1);
+		}
+
+		return retv.trim();
+	}	
 	
 	public Concept fhirCode2OmopConcept(ConceptService conceptService, CodeableConcept code, String valueSourceString) {
 		List<Coding> codings = code.getCoding();

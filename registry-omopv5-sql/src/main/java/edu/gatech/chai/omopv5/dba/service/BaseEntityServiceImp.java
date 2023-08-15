@@ -279,17 +279,21 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 	}
 
 	protected String getSqlTableName() {
-		return getSqlTableName(getEntityClass());
+		return SqlUtil.getTableName(getEntityClass());
 	}
 
-	protected String getSqlTableName(Class<T> clazz) {
-		Table annotation = clazz.getDeclaredAnnotation(Table.class);
-		if (annotation != null) {
-			return annotation.name();
-		} else {
-			return null;
-		}
+	protected String getFullTableName() {
+		return SqlUtil.getFullTableName(getEntityClass());
 	}
+
+	// protected String getSqlTableName(Class<T> clazz) {
+	// 	Table annotation = clazz.getDeclaredAnnotation(Table.class);
+	// 	if (annotation != null) {
+	// 		return annotation.name();
+	// 	} else {
+	// 		return null;
+	// 	}
+	// }
 
 	public String getSqlTableColumnName(Field field) {
 		if (field != null) {
@@ -372,8 +376,10 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 //		}
 
 		if (rootTableName == null) {
-			rootTableName = SqlUtil.getTableName(clazz);
+			rootTableName = SqlUtil.getFullTableName(clazz);
 		}
+
+		String aliasRootTableName = SqlUtil.getTableName(clazz);
 
 		// We should have a rootTableName now.
 		if (rootTableName == null) {
@@ -382,7 +388,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		}
 
 		// main table that will be joined to
-		String sqlFromTableList = rootTableName + " " + rootTableName;
+		String sqlFromTableList = rootTableName + " " + aliasRootTableName;
 
 		Field[] fields = null;
 		Field[] fields_ = clazz.getDeclaredFields();
@@ -434,16 +440,16 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 						if (table.equalsIgnoreCase("")) {
 							// JoinColumn does not have table specified. In this case,
 							// we need to get the table from field class.
-							referenceTableName = SqlUtil.getTableName(foreignTableClazz);
+							referenceTableName = SqlUtil.getFullTableName(foreignTableClazz);
 							if (referenceTableName == null) {
 								continue;
 							}
 						} else {
-							referenceTableName = table;
+							referenceTableName = SqlUtil.getFullTableNameFromString(table);
 						}
 						referenceTableAlias = variableName;
 					} else {
-						referenceTableName = tableInfo[0];
+						referenceTableName = SqlUtil.getFullTableNameFromString(tableInfo[0]);
 						referenceTableAlias = tableInfo[1];
 					}
 
@@ -476,7 +482,33 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 					if (fTableAnnotation == null && foreignTableParentClazz != null)
 						fTableAnnotation = foreignTableParentClazz.getDeclaredAnnotation(Table.class);
 
-					if (fTableAnnotation != null && referenceTableName.equalsIgnoreCase(fTableAnnotation.name())) {
+					String fTableAnnotationFullName;
+					if (fTableAnnotation != null) {
+						if (!fTableAnnotation.schema().isBlank()) {
+							if ("data".equals(fTableAnnotation.schema())) {
+								String dataSchema = System.getenv("JDBC_DATA_SCHEMA");
+								if (dataSchema != null && !dataSchema.isBlank()) {
+									fTableAnnotationFullName = dataSchema + "." + fTableAnnotation.name();
+								}  else {
+									fTableAnnotationFullName = fTableAnnotation.name();
+								}
+							} else if ("vocab".equals(fTableAnnotation.schema())) {
+								String vocabSchema = System.getenv("JDBC_VOCABS_SCHEMA");
+								if (vocabSchema != null && !vocabSchema.isBlank()) {
+									fTableAnnotationFullName = vocabSchema + "." + fTableAnnotation.name();
+								} else {
+									fTableAnnotationFullName = fTableAnnotation.name();
+								}
+							} else {
+								fTableAnnotationFullName = fTableAnnotation.name();
+							}
+						} else {
+							fTableAnnotationFullName = fTableAnnotation.name();
+						}
+					} else {
+						fTableAnnotationFullName = "";
+					}
+					if (fTableAnnotation != null && referenceTableName.equalsIgnoreCase(fTableAnnotationFullName)) {
 						Field[] foreignFields = foreignTableClazz.getDeclaredFields();
 						for (Field foreignField : foreignFields) {
 							Column foreignFieldColumnAnnotation = foreignField.getDeclaredAnnotation(Column.class);
@@ -611,7 +643,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		
 		if (sql == null) {
 			// this is size for entire table, which is expensive. Do an estimate if possible
-			String myTable = getSqlTableName();
+			String myTable = getFullTableName();
 
 			// if (isPostgreSql()) {
 			// 	if ("f_observation_view".equalsIgnoreCase(myTable)) {
@@ -810,7 +842,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		List<String> valueList = new ArrayList<String>();
 
 		String primaryId = getSqlTableColumnName("id");
-		String tableName = getSqlTableName(clazz);
+		String tableName = SqlUtil.getFullTableName(clazz);
 
 		String sql = "insert into @table ";
 		parameterList.add("table");
@@ -1033,7 +1065,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			return null;
 		}
 
-		fCacheService.invalidate(getSqlTableName(clazz));
+		fCacheService.invalidate(SqlUtil.getFullTableName(clazz));
 		return entity;
 	}
 
@@ -1059,7 +1091,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		String where = "@whereId = @whereIdVal";
 
 		parameterList.add("table");
-		valueList.add(getSqlTableName(clazz));
+		valueList.add(SqlUtil.getFullTableName(clazz));
 
 		parameterList.add("whereIdVal");
 		valueList.add(Long.toString(id));
@@ -1184,7 +1216,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		try {
 			id = idEqualTo(clazz, entity);
 			if (id == null || id == 0L) {
-				logger.error("Update needs id != null for table: " + getSqlTableName(clazz));
+				logger.error("Update needs id != null for table: " + SqlUtil.getFullTableName(clazz));
 				return null;
 			}
 
@@ -1204,11 +1236,11 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		}
 
 		if (updateEntity(id, clazz, entity) == null) {
-			logger.error("Failed to update table: " + getSqlTableName(clazz));
+			logger.error("Failed to update table: " + SqlUtil.getFullTableName(clazz));
 			return null;
 		}
 
-		fCacheService.invalidate(getSqlTableName(clazz));
+		fCacheService.invalidate(SqlUtil.getFullTableName(clazz));
 
 		return entity;
 	}
@@ -1217,7 +1249,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();
 
-		String rootTableName = SqlUtil.getTableName(getEntityClass());
+		String rootTableName = SqlUtil.getFullTableName(getEntityClass());
 		String sql = constructSqlSelectWithoutWhere(rootTableName);
 		sql = sql + " where @cname=@value";
 		parameterList.add("cname");
@@ -1246,7 +1278,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		parameterList.add("parameter");
 		parameterList.add("value");
 
-		valueList.add(getSqlTableName());
+		valueList.add(getFullTableName());
 		valueList.add(getSqlTableColumnName("id"));
 		valueList.add(id.toString());
 
