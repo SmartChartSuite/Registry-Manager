@@ -15,6 +15,11 @@ This project requires the following environment variables defined:
 * JDBC_URL - Should be the URL for the Registry Database provided as a PostgreSQL JDBC connection string such as: `jdbc:postgresql://examplepsql.com:5432/database`.
 * JDBC_USERNAME - The username for the Registry Database.
 * JDBC_PASSWORD - The password for the associated user in the Registry Database.
+* JDBC_DATASOURCENAME=org.postgresql.ds.PGSimpleDataSource
+* JDBC_POOLSIZE=5
+And, belows are schema naems for data and vocabulary in the database specified above.
+* JDBC_DATA_SCHEMA="syphilis"
+* JDBC_VOCABS_SCHEMA="vocab"
 
 To run this image, you can define these in a `.env` file as follows:
 
