@@ -1250,11 +1250,12 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		List<String> valueList = new ArrayList<String>();
 
 		String rootTableName = SqlUtil.getFullTableName(getEntityClass());
+		String tableName = SqlUtil.getTableName(getEntityClass());
 		String sql = constructSqlSelectWithoutWhere(rootTableName);
 		sql = sql + " where @cname=@value";
 		parameterList.add("cname");
 		parameterList.add("value");
-		valueList.add(rootTableName + "." + getSqlTableColumnName("id"));
+		valueList.add(tableName + "." + getSqlTableColumnName("id"));
 		valueList.add(id.toString());
 
 		sql = renderedSql(sql, parameterList, valueList);
