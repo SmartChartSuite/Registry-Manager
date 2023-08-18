@@ -61,17 +61,17 @@ public class CaseInfo extends BaseEntity {
 	@Column(name="server_url", nullable = false)
 	private String serverUrl;
 
-	@Column(name="trigger_at")
-	private Date triggerAt;
+	@Column(name="trigger_at_datetime")
+	private Date triggerAtDateTime;
 
-	@Column(name="last_updated")
-	private Date lastUpdated;
+	@Column(name="last_updated_datetime")
+	private Date lastUpdatedDateTime;
 
-	@Column(name="activated")
-	private Date activated;
+	@Column(name="activated_datetime")
+	private Date activatedDateTime;
 	
-	@Column(name="created", nullable = false)
-	private Date created;
+	@Column(name="created_datetime", nullable = false)
+	private Date createdDateTime;
 
 	@Column(name="tries_left")
 	private Integer triesLeft;
@@ -144,36 +144,36 @@ public class CaseInfo extends BaseEntity {
 		this.serverUrl = serverUrl;
 	}
 
-	public Date getTriggerAt() {
-		return triggerAt;
+	public Date getTriggerAtDateTime() {
+		return triggerAtDateTime;
 	}
 
-	public void setTriggerAt(Date triggerAt) {
-		this.triggerAt = triggerAt;
+	public void setTriggerAtDateTime(Date triggerAtDateTime) {
+		this.triggerAtDateTime = triggerAtDateTime;
 	}
 
-	public Date getLastUpdated() {
-		return lastUpdated;
+	public Date getLastUpdatedDateTime() {
+		return lastUpdatedDateTime;
 	}
 
-	public void setLastUpdated(Date lastUpdated) {
-		this.lastUpdated = lastUpdated;
+	public void setLastUpdatedDateTime(Date lastUpdatedDateTime) {
+		this.lastUpdatedDateTime = lastUpdatedDateTime;
 	}
 
-	public Date getActivated() {
-		return activated;
+	public Date getActivatedDateTime() {
+		return activatedDateTime;
 	}
 
-	public void setActivated(Date activated) {
-		this.activated = activated;
+	public void setActivatedDateTime(Date activatedDateTime) {
+		this.activatedDateTime = activatedDateTime;
 	}
 
-	public Date getCreated() {
-		return created;
+	public Date getCreatedDateTime() {
+		return createdDateTime;
 	}
 
-	public void setCreated(Date created) {
-		this.created = created;
+	public void setCreatedDateTime(Date createdDateTime) {
+		this.createdDateTime = createdDateTime;
 	}
 
 	public Integer getTriesLeft() {

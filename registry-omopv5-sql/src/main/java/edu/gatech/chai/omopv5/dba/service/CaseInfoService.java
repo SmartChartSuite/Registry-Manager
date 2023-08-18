@@ -49,14 +49,14 @@ public interface CaseInfoService extends IService<CaseInfo> {
 					caseInfo.setServerUrl(rs.getString(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_patient_identifier")) {
 					caseInfo.setPatientIdentifier(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_trigger_at")) {
-					caseInfo.setTriggerAt(rs.getDate(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_last_updated")) {
-					caseInfo.setLastUpdated(rs.getDate(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_activated")) {
-					caseInfo.setActivated(rs.getDate(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_created")) {
-					caseInfo.setCreated(rs.getDate(columnInfo));
+				} else if (columnInfo.equalsIgnoreCase(alias + "_trigger_at_datetime")) {
+					caseInfo.setTriggerAtDateTime(rs.getDate(columnInfo));
+				} else if (columnInfo.equalsIgnoreCase(alias + "_last_updated_datetime")) {
+					caseInfo.setLastUpdatedDateTime(rs.getDate(columnInfo));
+				} else if (columnInfo.equalsIgnoreCase(alias + "_activated_datetime")) {
+					caseInfo.setActivatedDateTime(rs.getDate(columnInfo));
+				} else if (columnInfo.equalsIgnoreCase(alias + "_created_datetime")) {
+					caseInfo.setCreatedDateTime(rs.getDate(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_tries_left")) {
 					caseInfo.setTriesLeft(rs.getInt(columnInfo));
 				}
@@ -99,25 +99,25 @@ public interface CaseInfoService extends IService<CaseInfo> {
 				caseInfo.setServerUrl(rowResult.get(columnInfo).getStringValue());
 			} else if (columnInfo.equalsIgnoreCase(alias + "_patient_identifier")) {
 				caseInfo.setPatientIdentifier(rowResult.get(columnInfo).getStringValue());
-			} else if (columnInfo.equalsIgnoreCase(alias + "_trigger_at")) {
+			} else if (columnInfo.equalsIgnoreCase(alias + "_trigger_at_datetime")) {
 				Date date = SqlUtil.string2DateTime(rowResult.get(columnInfo).getStringValue());
 				if (date != null) {
-					caseInfo.setTriggerAt(date);
+					caseInfo.setTriggerAtDateTime(date);
 				}
-			} else if (columnInfo.equalsIgnoreCase(alias + "_last_updated")) {
+			} else if (columnInfo.equalsIgnoreCase(alias + "_last_updated_datetime")) {
 				Date date = SqlUtil.string2DateTime(rowResult.get(columnInfo).getStringValue());
 				if (date != null) {
-					caseInfo.setLastUpdated(date);
+					caseInfo.setLastUpdatedDateTime(date);
 				}
-			} else if (columnInfo.equalsIgnoreCase(alias + "_activated")) {
+			} else if (columnInfo.equalsIgnoreCase(alias + "_activated_datetime")) {
 				Date date = SqlUtil.string2DateTime(rowResult.get(columnInfo).getStringValue());
 				if (date != null) {
-					caseInfo.setActivated(date);
+					caseInfo.setActivatedDateTime(date);
 				}
-			} else if (columnInfo.equalsIgnoreCase(alias + "_created")) {
+			} else if (columnInfo.equalsIgnoreCase(alias + "_created_datetime")) {
 				Date date = SqlUtil.string2DateTime(rowResult.get(columnInfo).getStringValue());
 				if (date != null) {
-					caseInfo.setCreated(date);
+					caseInfo.setCreatedDateTime(date);
 				}
 			} else if (columnInfo.equalsIgnoreCase(alias + "_tries_left")) {
 				caseInfo.setTriesLeft(Integer.parseInt(rowResult.get(columnInfo).getStringValue()));

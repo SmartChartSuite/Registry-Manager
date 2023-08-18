@@ -172,7 +172,7 @@ public class ScheduledTask {
 		List<ParameterWrapper> params = new ArrayList<ParameterWrapper>();
 
 		// Add triggerAt parameter
-		ParameterWrapper param = new ParameterWrapper("Date", Arrays.asList("triggerAt"), Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
+		ParameterWrapper param = new ParameterWrapper("Date", Arrays.asList("triggerAtDateTime"), Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
 		params.add(param);
 
 		// Add status != time out
@@ -341,13 +341,13 @@ public class ScheduledTask {
 								// case query was successful. Reset the counter.
 								caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 
-								logger.debug("TRIGGER: current_time=" + currentTime.getTime() + ", activated_time = " + caseInfo.getActivated().getTime() + ", thresholdDuration1 = " + thresholdDuration1 + ", threshold_at = " + (new Date(caseInfo.getActivated().getTime()+thresholdDuration1)).getTime() + ", trigger_at=" + (new Date(currentTime.getTime()+queryPeriod1).getTime()));
-								if (currentTime.before(new Date(caseInfo.getActivated().getTime()+thresholdDuration1))) {
-									caseInfo.setTriggerAt(new Date(currentTime.getTime()+queryPeriod1));
-								} else if (currentTime.before(new Date(caseInfo.getActivated().getTime()+thresholdDuration2))) {
-									caseInfo.setTriggerAt(new Date(currentTime.getTime()+queryPeriod2));
-								} else if (currentTime.before(new Date(caseInfo.getActivated().getTime()+thresholdDuration3))) {
-									caseInfo.setTriggerAt(new Date(currentTime.getTime()+queryPeriod3));
+								logger.debug("TRIGGER: current_time=" + currentTime.getTime() + ", activated_time = " + caseInfo.getActivatedDateTime().getTime() + ", thresholdDuration1 = " + thresholdDuration1 + ", threshold_at = " + (new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1)).getTime() + ", trigger_at=" + (new Date(currentTime.getTime()+queryPeriod1).getTime()));
+								if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1))) {
+									caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod1));
+								} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration2))) {
+									caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod2));
+								} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration3))) {
+									caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod3));
 								} else {
 									caseInfo.setStatus(StaticValues.INACTIVE);
 									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") changed status to " + caseInfo.getStatus());
@@ -356,7 +356,7 @@ public class ScheduledTask {
 								if (StaticValues.INACTIVE.equals(caseInfo.getStatus())) {
 									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. And case becomes " + StaticValues.INACTIVE);
 								} else {
-									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. Next trigger at " + caseInfo.getTriggerAt().toString());
+									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. Next trigger at " + caseInfo.getTriggerAtDateTime().toString());
 								}
 							}
 						} else {
@@ -455,14 +455,14 @@ public class ScheduledTask {
 								caseInfo.setStatusUrl(statusUri.toString());
 								caseInfo.setJobId(jobId.asStringValue());
 								if (StaticValues.REQUEST.equals(caseInfo.getStatus())) {
-									caseInfo.setActivated(currentTime);
+									caseInfo.setActivatedDateTime(currentTime);
 									caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 								}
 								caseInfo.setStatus(StaticValues.ACTIVE);
 
 								// set the triggered_at. Since this is a REQUEST, we set it to now.
 								Long triggeredAt = currentTime.getTime();
-								caseInfo.setTriggerAt(new Date(triggeredAt));
+								caseInfo.setTriggerAtDateTime(new Date(triggeredAt));
 
 								// log this session
 								writeToLog(caseInfo, "caes info (" + caseInfo.getId() + ") is updated to " + StaticValues.ACTIVE);
