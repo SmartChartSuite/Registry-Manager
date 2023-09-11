@@ -723,9 +723,6 @@ public class OmopMedicationStatement extends BaseOmopResource<MedicationStatemen
 			    }
 				drugExposure.setStopReason(reasonsForStopped);
 			}
-			else {
-			    drugExposure.setStopReason("Unknown Reason");
-			}
 		}
 
 		// Get medication[x]
