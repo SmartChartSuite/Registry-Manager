@@ -718,7 +718,9 @@ public class OmopMedicationStatement extends BaseOmopResource<MedicationStatemen
 			// See if we have any reasons found. If so, put them in the stop
 			// reason field.
 			if (!"".equals(reasonsForStopped)) {
-				reasonsForStopped = reasonsForStopped.trim().substring(0, 20);
+			    if(reasonsForStopped.trim() > 20){
+			        reasonsForStopped = reasonsForStopped.trim().substring(0, 20);
+			    }
 				drugExposure.setStopReason(reasonsForStopped);
 			}
 		}
