@@ -92,12 +92,12 @@ public class SqlUtil {
 			return tableAnnotation.name();
 		} else { 
 			if ("data".equals(tableAnnotation.schema())) {
-				String dataSchema = System.getenv("JDBC_DATA_SCHEMA");
+				String dataSchema = SqlUtil.dataSchema();
 				if (dataSchema != null && !dataSchema.isBlank()) {
 					return dataSchema + "." + tableAnnotation.name();
 				}
 			} else if ("vocab".equals(tableAnnotation.schema())) {
-				String vocabSchema = System.getenv("JDBC_VOCABS_SCHEMA");
+				String vocabSchema = SqlUtil.vocabSchema();
 				if (vocabSchema != null && !vocabSchema.isBlank()) {
 					return vocabSchema + "." + tableAnnotation.name();
 				}
@@ -179,4 +179,11 @@ public class SqlUtil {
 		return date;
 	}
 
+	public static String vocabSchema() {
+		return System.getenv("JDBC_VOCABS_SCHEMA");
+	}
+
+	public static String dataSchema() {
+		return System.getenv("JDBC_DATA_SCHEMA");
+	}
 }
