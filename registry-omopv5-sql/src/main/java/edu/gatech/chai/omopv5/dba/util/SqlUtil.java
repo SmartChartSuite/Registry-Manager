@@ -73,7 +73,7 @@ public class SqlUtil {
 		return null;
 	}
 
-	public static String getFullTableName(Class<?> clazz) {
+	public static String getFullTableName(String dataSchema, String vocabSchema, Class<?> clazz) {
 		Table tableAnnotation = clazz.getDeclaredAnnotation(Table.class);
 		if (tableAnnotation == null) {
 			clazz = clazz.getSuperclass();
@@ -92,12 +92,12 @@ public class SqlUtil {
 			return tableAnnotation.name();
 		} else { 
 			if ("data".equals(tableAnnotation.schema())) {
-				String dataSchema = SqlUtil.dataSchema();
+				// String dataSchema = SqlUtil.dataSchema();
 				if (dataSchema != null && !dataSchema.isBlank()) {
 					return dataSchema + "." + tableAnnotation.name();
 				}
 			} else if ("vocab".equals(tableAnnotation.schema())) {
-				String vocabSchema = SqlUtil.vocabSchema();
+				// String vocabSchema = SqlUtil.vocabSchema();
 				if (vocabSchema != null && !vocabSchema.isBlank()) {
 					return vocabSchema + "." + tableAnnotation.name();
 				}
@@ -124,15 +124,15 @@ public class SqlUtil {
 		return tableAnnotation.name();
 	}
 
-	public static String getFullTableNameFromString(String tableAnnotationName) {
+	public static String getFullTableNameFromString(String dataSchema, String vocabSchema, String tableAnnotationName) {
 		if (tableAnnotationName != null && !tableAnnotationName.isBlank()) {
 			if (tableAnnotationName.startsWith("data.")) {
-				String dataSchema = System.getenv("JDBC_DATA_SCHEMA");
+				// String dataSchema = SqlUtil.dataSchema(); 
 				if (dataSchema != null && !dataSchema.isBlank()) {
 					tableAnnotationName = tableAnnotationName.replace("data.", dataSchema+".");
 				}
 			} else if (tableAnnotationName.startsWith("vocab.")) {
-				String vocabSchema = System.getenv("JDBC_VOCABS_SCHEMA");
+				// String vocabSchema = SqlUtil.vocabSchema(); 
 				if (vocabSchema != null && !vocabSchema.isBlank()) {
 					tableAnnotationName = tableAnnotationName.replace("vocab.", vocabSchema+".");
 				}
@@ -177,13 +177,5 @@ public class SqlUtil {
 		}
 
 		return date;
-	}
-
-	public static String vocabSchema() {
-		return System.getenv("JDBC_VOCABS_SCHEMA");
-	}
-
-	public static String dataSchema() {
-		return System.getenv("JDBC_DATA_SCHEMA");
 	}
 }

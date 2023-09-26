@@ -20,16 +20,19 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.TableResult;
 
-import edu.gatech.chai.omopv5.dba.util.SqlUtil;
 import edu.gatech.chai.omopv5.model.entity.Concept;
 
 @Service
 public class ConceptServiceImp extends BaseEntityServiceImp<Concept> implements ConceptService {
+
+	@Value("${schema.vocabularies}")
+	private String vocabSchema;
 
 	/**
 	 * Instantiates a new concept service imp.
@@ -56,7 +59,7 @@ public class ConceptServiceImp extends BaseEntityServiceImp<Concept> implements 
 
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();
-		String vocabSchema = SqlUtil.vocabSchema();
+		// String vocabSchema = SqlUtil.vocabSchema();
 		if (vocabSchema == null || vocabSchema.isBlank()) {
 			vocabSchema = "";
 		} else {

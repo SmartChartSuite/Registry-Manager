@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
@@ -41,6 +40,7 @@ import org.ohdsi.sql.SqlTranslate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.google.api.client.util.DateTime;
 import com.google.cloud.bigquery.BigQuery;
@@ -82,6 +82,12 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 
 	@Autowired
 	FCacheService fCacheService;
+
+	@Value("${schema.registry}")
+    private String dataSchema;
+
+	@Value("${schema.vocabularies}")
+	private String vocabSchema;
 
 	/**
 	 * Instantiates a new base entity service imp.
@@ -283,7 +289,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 	}
 
 	protected String getFullTableName() {
-		return SqlUtil.getFullTableName(getEntityClass());
+		return SqlUtil.getFullTableName(dataSchema, vocabSchema, getEntityClass());
 	}
 
 	// protected String getSqlTableName(Class<T> clazz) {
@@ -376,7 +382,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 //		}
 
 		if (rootTableName == null) {
-			rootTableName = SqlUtil.getFullTableName(clazz);
+			rootTableName = SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz);
 		}
 
 		String aliasRootTableName = SqlUtil.getTableName(clazz);
@@ -440,16 +446,16 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 						if (table.equalsIgnoreCase("")) {
 							// JoinColumn does not have table specified. In this case,
 							// we need to get the table from field class.
-							referenceTableName = SqlUtil.getFullTableName(foreignTableClazz);
+							referenceTableName = SqlUtil.getFullTableName(dataSchema, vocabSchema, foreignTableClazz);
 							if (referenceTableName == null) {
 								continue;
 							}
 						} else {
-							referenceTableName = SqlUtil.getFullTableNameFromString(table);
+							referenceTableName = SqlUtil.getFullTableNameFromString(dataSchema, vocabSchema, table);
 						}
 						referenceTableAlias = variableName;
 					} else {
-						referenceTableName = SqlUtil.getFullTableNameFromString(tableInfo[0]);
+						referenceTableName = SqlUtil.getFullTableNameFromString(dataSchema, vocabSchema, tableInfo[0]);
 						referenceTableAlias = tableInfo[1];
 					}
 
@@ -486,14 +492,14 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 					if (fTableAnnotation != null) {
 						if (!fTableAnnotation.schema().isBlank()) {
 							if ("data".equals(fTableAnnotation.schema())) {
-								String dataSchema = System.getenv("JDBC_DATA_SCHEMA");
+								// String dataSchema = System.getenv("JDBC_DATA_SCHEMA");
 								if (dataSchema != null && !dataSchema.isBlank()) {
 									fTableAnnotationFullName = dataSchema + "." + fTableAnnotation.name();
 								}  else {
 									fTableAnnotationFullName = fTableAnnotation.name();
 								}
 							} else if ("vocab".equals(fTableAnnotation.schema())) {
-								String vocabSchema = System.getenv("JDBC_VOCABS_SCHEMA");
+								// String vocabSchema = System.getenv("JDBC_VOCABS_SCHEMA");
 								if (vocabSchema != null && !vocabSchema.isBlank()) {
 									fTableAnnotationFullName = vocabSchema + "." + fTableAnnotation.name();
 								} else {
@@ -843,7 +849,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		List<String> valueList = new ArrayList<String>();
 
 		String primaryId = getSqlTableColumnName("id");
-		String tableName = SqlUtil.getFullTableName(clazz);
+		String tableName = SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz);
 
 		String sql = "insert into @table ";
 		parameterList.add("table");
@@ -1066,7 +1072,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			return null;
 		}
 
-		fCacheService.invalidate(SqlUtil.getFullTableName(clazz));
+		fCacheService.invalidate(SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz));
 		return entity;
 	}
 
@@ -1092,7 +1098,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		String where = "@whereId = @whereIdVal";
 
 		parameterList.add("table");
-		valueList.add(SqlUtil.getFullTableName(clazz));
+		valueList.add(SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz));
 
 		parameterList.add("whereIdVal");
 		valueList.add(Long.toString(id));
@@ -1217,7 +1223,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		try {
 			id = idEqualTo(clazz, entity);
 			if (id == null || id == 0L) {
-				logger.error("Update needs id != null for table: " + SqlUtil.getFullTableName(clazz));
+				logger.error("Update needs id != null for table: " + SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz));
 				return null;
 			}
 
@@ -1237,11 +1243,11 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		}
 
 		if (updateEntity(id, clazz, entity) == null) {
-			logger.error("Failed to update table: " + SqlUtil.getFullTableName(clazz));
+			logger.error("Failed to update table: " + SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz));
 			return null;
 		}
 
-		fCacheService.invalidate(SqlUtil.getFullTableName(clazz));
+		fCacheService.invalidate(SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz));
 
 		return entity;
 	}
@@ -1250,7 +1256,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();
 
-		String rootTableName = SqlUtil.getFullTableName(getEntityClass());
+		String rootTableName = SqlUtil.getFullTableName(dataSchema, vocabSchema, getEntityClass());
 		String tableName = SqlUtil.getTableName(getEntityClass());
 		String sql = constructSqlSelectWithoutWhere(rootTableName);
 		sql = sql + " where @cname=@value";

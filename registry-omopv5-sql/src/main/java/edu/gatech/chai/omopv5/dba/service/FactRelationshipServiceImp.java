@@ -9,6 +9,7 @@ import java.util.List;
 import org.ohdsi.sql.SqlTranslate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.google.cloud.bigquery.FieldValueList;
@@ -27,6 +28,9 @@ import edu.gatech.chai.omopv5.model.entity.Note;
 public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelationship>
 		implements FactRelationshipService {
 	private static final Logger logger = LoggerFactory.getLogger(FactRelationshipServiceImp.class);
+
+	@Value("${schema.registry}")
+    private String schema;
 
 	/**
 	 * Instantiates a new fact relationship service imp.
@@ -49,7 +53,8 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 		// 44818800 = Using finding method
 		// 58 = Type Concept, 26 = Note Type
 		// 44818721 = Contains
-		String schema = System.getenv("JDBC_DATA_SCHEMA");
+
+		// String schema = System.getenv("JDBC_DATA_SCHEMA");
 		if (schema != null && !schema.isBlank()) {
 			schema = schema + ".";
 		} else {
@@ -138,7 +143,7 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 		List<String> valueList = new ArrayList<String>();
 
 		// 44818721 = Contains
-		String schema = System.getenv("JDBC_DATA_SCHEMA");
+		// String schema = System.getenv("JDBC_DATA_SCHEMA");
 		if (schema != null && !schema.isBlank()) {
 			schema = schema + ".";
 		} else {
@@ -200,7 +205,7 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 			Long factId2, Long relationshipId) {
 		List<FactRelationship> entities = new ArrayList<FactRelationship>();
 
-		String schema = System.getenv("JDBC_DATA_SCHEMA");
+		// String schema = System.getenv("JDBC_DATA_SCHEMA");
 		if (schema != null && !schema.isBlank()) {
 			schema = schema + ".";
 		} else {
