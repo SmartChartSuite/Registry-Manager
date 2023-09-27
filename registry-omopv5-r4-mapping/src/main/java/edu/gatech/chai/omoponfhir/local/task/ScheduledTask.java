@@ -340,6 +340,7 @@ public class ScheduledTask {
 							} else {
 								// case query was successful. Reset the counter.
 								caseInfo.setTriesLeft(StaticValues.MAX_TRY);
+								caseInfo.setLastUpdatedDateTime(currentTime);
 
 								logger.debug("TRIGGER: current_time=" + currentTime.getTime() + ", activated_time = " + caseInfo.getActivatedDateTime().getTime() + ", thresholdDuration1 = " + thresholdDuration1 + ", threshold_at = " + (new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1)).getTime() + ", trigger_at=" + (new Date(currentTime.getTime()+queryPeriod1).getTime()));
 								if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1))) {
