@@ -75,7 +75,6 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 	private DataSource ds;
 	private Class<T> entityClass;
 	private T entity;
-	private static Connection connection;
 
 	@Autowired
 	DatabaseConfiguration databaseConfig;
@@ -129,21 +128,19 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		return bigQuery;
 	}
 	
-	public void closeConnection() throws SQLException {
+	public void closeConnection(Connection connection) throws SQLException {
 		if (connection != null) {
 			connection.close();
 		}
 	}
 
 	public Connection getConnection() throws SQLException {
-		if (connection == null || connection.isClosed()) {
-			connection = ds.getConnection();
-			if (connection.getAutoCommit()) {
-				try {
-					connection.setAutoCommit(false);
-				} catch (SQLFeatureNotSupportedException ignored) {
-					logger.debug("SetAutoCommit failed.");
-				}
+		Connection connection = ds.getConnection();
+		if (connection.getAutoCommit()) {
+			try {
+				connection.setAutoCommit(false);
+			} catch (SQLFeatureNotSupportedException ignored) {
+				logger.debug("SetAutoCommit failed.");
 			}
 		}
 
@@ -184,8 +181,9 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		query = SqlTranslate.translateSql(query, databaseConfig.getSqlRenderTargetDialect());
 		
 		logger.debug("runQuery: Query after SqlRender translate to " + databaseConfig.getSqlRenderTargetDialect() + ": " + query);
-		
-		try (Statement stmt = getConnection().createStatement();) {
+		Connection connection = getConnection();
+
+		try (Statement stmt = connection.createStatement();) {
 			ResultSet rs = stmt.executeQuery(query);
 			while (rs.next()) {
 				newEntity = construct(rs, myEntity, alias);
@@ -194,10 +192,11 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				}
 			}
 		} catch (Exception e) {
-			getConnection().rollback();
 			e.printStackTrace();
 		}
  		
+		closeConnection(connection);
+		
 		return entities;
 	}
 
@@ -209,9 +208,11 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		query = SqlTranslate.translateSql(query, databaseConfig.getSqlRenderTargetDialect());
 
 		logger.debug("[updateQuery]querySql: " + query);
-		try (PreparedStatement stmt = getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);) {
+		Connection connection = getConnection();
+
+		try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);) {
 			int affectedRows = stmt.executeUpdate();
-			getConnection().commit();
+			connection.commit();
 
 			if (affectedRows == 0) {
 				logger.error("UPDATE failed with " + query);
@@ -232,7 +233,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				} while (generatedKeys.next()); 
 			}
 		} catch (Exception e) {
-			getConnection().rollback();
+			connection.rollback();
 			e.printStackTrace();
 		}
 				
@@ -240,6 +241,8 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			logger.warn("update Query failed, no ID generated, with " + query);
 		}
 
+		closeConnection(connection);
+		
 		return retVal;
 	}
 
@@ -247,16 +250,18 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		Long retVal = 0L;
 
 		query = SqlTranslate.translateSql(query, databaseConfig.getSqlRenderTargetDialect());
+		Connection connection = getConnection();
 
-		try (Statement stmt = getConnection().createStatement();) {
+		try (Statement stmt = connection.createStatement();) {
 			ResultSet rs = stmt.executeQuery(query);
 			if (rs.next()) {
 				retVal = (long) rs.getInt(alias);
 			}
 		} catch (Exception e) {
-			getConnection().rollback();
 			e.printStackTrace();
 		}
+
+		closeConnection(connection);
 
 		return retVal;
 	}

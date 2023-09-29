@@ -1,5 +1,6 @@
 package edu.gatech.chai.omopv5.dba.service;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -71,6 +72,7 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 		valueList.add(domainId.toString());
 
 		queryString = renderedSql(queryString, parameterList, valueList);
+		Connection connection = null;
 
 		try {
 			if (isBigQuery()) {
@@ -99,8 +101,9 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 
 				String query = SqlTranslate.translateSql(queryString, databaseConfig.getSqlRenderTargetDialect());
 				logger.debug("searchMeasurementUsingMethod: Query after SqlRender translate to " + databaseConfig.getSqlRenderTargetDialect() + ": " + query);
+				connection = getConnection();
 				
-				Statement stmt = getConnection().createStatement();
+				Statement stmt = connection.createStatement();
 				ResultSet rs = stmt.executeQuery(query);
 	
 				while (rs.next()) {
@@ -123,7 +126,7 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 			}
 		} catch (Exception e) {
 			try {
-				closeConnection();
+				closeConnection(connection);
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			}
@@ -161,6 +164,7 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 		valueList.add(domainId.toString());
 
 		queryString = renderedSql(queryString, parameterList, valueList);
+		Connection connection = null;
 
 		try {
 			if (isBigQuery()) {
@@ -176,8 +180,9 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 				// ResultSet rs = getQueryEntityDao().runQuery(queryString);
 				String query = SqlTranslate.translateSql(queryString, databaseConfig.getSqlRenderTargetDialect());
 				logger.debug("searchMeasurementContainsComments: Query after SqlRender translate to " + databaseConfig.getSqlRenderTargetDialect() + ": " + query);
-		
-				Statement stmt = getConnection().createStatement();
+				connection = getConnection();
+
+				Statement stmt = connection.createStatement();
 				ResultSet rs = stmt.executeQuery(query);
 	
 				while (rs.next()) {
@@ -188,7 +193,7 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 			}
 		} catch (Exception e) {
 			try {
-				closeConnection();
+				closeConnection(connection);
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			}
@@ -303,11 +308,6 @@ public class FactRelationshipServiceImp extends BaseEntityServiceImp<FactRelatio
 				// }
 			}
 		} catch (Exception e) {
-			try {
-				closeConnection();
-			} catch (SQLException e1) {
-				e1.printStackTrace();
-			}
 			e.printStackTrace();
 		}
 
