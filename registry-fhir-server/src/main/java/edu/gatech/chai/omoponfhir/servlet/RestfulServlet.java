@@ -56,12 +56,7 @@ public class RestfulServlet extends RestfulServer {
 	@Override
 	public void initialize() {
 		// Set server name
-		String myName = System.getenv("REGISTRYMANAGER_NAME");
-		if (myName != null && !myName.isBlank()) {
-			setServerName(myName);
-		} else {
-			setServerName("Registry Manager Restful Server");
-		}
+		setServerName("Registry FHIR Server");
 		
 		// If we have system environment variable to hardcode the base URL, do it now.
 		String serverBaseUrl = System.getenv("SERVERBASE_URL");
