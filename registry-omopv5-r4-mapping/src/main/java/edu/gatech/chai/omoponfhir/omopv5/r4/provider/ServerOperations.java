@@ -15,6 +15,8 @@
  *******************************************************************************/
 package edu.gatech.chai.omoponfhir.omopv5.r4.provider;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -46,6 +48,7 @@ import org.hl7.fhir.exceptions.FHIRException;
 
 import ca.uhn.fhir.rest.annotation.Operation;
 import ca.uhn.fhir.rest.annotation.OperationParam;
+import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.api.server.RequestDetails;
 import ca.uhn.fhir.rest.param.NumberParam;
 import ca.uhn.fhir.rest.param.StringParam;
@@ -140,8 +143,8 @@ public class ServerOperations {
 		return retVal;
 	}
 
-	@Operation(name="$registry-control")
-	public Bundle registryControlOperation(RequestDetails theRequestDetails,
+	@Operation(name="$registry-control", manualResponse = true)
+	public void registryControlOperation(RequestDetails theRequestDetails,
 		@OperationParam(name = "case-id") StringParam theCaseId,
 		@OperationParam(name = "patient-identifier") TokenParam thePatientIdentifier,
 		@OperationParam(name = "set-status") StringParam theSetStatus,
@@ -321,7 +324,28 @@ public class ServerOperations {
 			}
 		}
 
-		return returnBundle;
+		// return returnBundle;
 	}
 
+	@Operation(name="$registry-test", manualResponse = true)
+	public Bundle rcApiResponseTest(RequestDetails theRequestDetails,
+		@OperationParam(name = "name") StringParam theName,
+		@OperationParam(name = "caseId") NumberParam theCaseId,
+		@OperationParam(name = "resource") Bundle theResource) {
+		
+		CaseInfo myCase = caseInfoService.findById(theCaseId.getValue().longValue());
+		if (myCase == null) {
+			throw new FHIRException("case, " + theCaseId.getValue().longValue() + ", not found");
+		}
+
+		if ("rc-api".equalsIgnoreCase(theName.getValue())) {
+			if (theResource != null && !theResource.isEmpty()) {
+				List<BundleEntryComponent> entries = theResource.getEntry();
+
+				myMapper.createEntries(entries, myCase);
+			}
+		}
+
+		return null;
+	}
 }

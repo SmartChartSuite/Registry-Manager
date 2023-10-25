@@ -29,14 +29,18 @@ import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.DocumentReference;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.MedicationRequest;
 import org.hl7.fhir.r4.model.MedicationStatement;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.Type;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryResponseComponent;
+import org.hl7.fhir.r4.model.Condition.ConditionEvidenceComponent;
+import org.hl7.fhir.r4.model.Condition.ConditionStageComponent;
 import org.hl7.fhir.r4.model.DocumentReference.DocumentReferenceContentComponent;
 import org.hl7.fhir.r4.model.DocumentReference.DocumentReferenceRelatesToComponent;
 import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
@@ -46,6 +50,7 @@ import org.springframework.web.context.WebApplicationContext;
 import edu.gatech.chai.omoponfhir.omopv5.r4.model.USCorePatient;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.ConditionResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.DocumentReferenceResourceProvider;
+import edu.gatech.chai.omoponfhir.omopv5.r4.provider.MedicationRequestResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.MedicationStatementResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.ObservationResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PatientResourceProvider;
@@ -90,6 +95,14 @@ public class OmopServerOperations {
 			} else {
 				reference.setReferenceElement(new IdType(newId));
 			}
+		} else {
+			// delete all contents
+			reference.setReference(null);
+			reference.setType(null);
+			reference.setIdentifier(null);
+			reference.setDisplay(null);
+			reference.setId(null);
+			reference.setExtension(null);
 		}
 	}
 
@@ -199,6 +212,19 @@ public class OmopServerOperations {
 				MedicationStatement medicationStatement = (MedicationStatement) resource;
 				updateReference(medicationStatement.getSubject());
 
+				updateReferences(medicationStatement.getBasedOn());
+				updateReferences(medicationStatement.getPartOf());
+
+				// Type medicationType = medicationStatement.getMedication();
+				// if (medicationType instanceof Reference) {
+				// 	updateReference((Reference) medicationType);
+				// }
+
+				updateReference(medicationStatement.getContext());
+				updateReference(medicationStatement.getInformationSource());
+				updateReferences(medicationStatement.getDerivedFrom());
+				updateReferences(medicationStatement.getReasonReference());
+
 				Long fhirId = OmopMedicationStatement.getInstance().toDbase(medicationStatement, null);
 				BundleEntryComponent newEntry;
 				if (fhirId == null || fhirId == 0L) {
@@ -214,6 +240,58 @@ public class OmopServerOperations {
 			}
 		}
 
+		// Process the MedicationRequest
+		for (BundleEntryComponent entry : entries) {
+			Resource resource = entry.getResource();
+			
+			if (resource.getResourceType() == ResourceType.MedicationRequest) {
+				logger.debug("Trying to add medication request: " + entry.getFullUrl());
+				MedicationRequest medicationRequest = (MedicationRequest) resource;
+
+				updateReference(medicationRequest.getSubject());
+
+				Type reportedType = medicationRequest.getReported();
+				if (reportedType instanceof Reference) {
+					updateReference((Reference) reportedType);
+				}
+
+				// Type medicationType = medicationRequest.getMedication();
+				// if (medicationType instanceof Reference) {
+				// 	updateReference((Reference) medicationType);
+				// }
+
+				updateReference(medicationRequest.getEncounter());
+				updateReferences(medicationRequest.getSupportingInformation());
+				updateReference(medicationRequest.getRequester());
+				updateReference(medicationRequest.getPerformer());
+				updateReference(medicationRequest.getRecorder());
+				updateReferences(medicationRequest.getReasonReference());
+				updateReferences(medicationRequest.getBasedOn());
+				updateReferences(medicationRequest.getInsurance());
+
+				if (medicationRequest.getDispenseRequest() != null && !medicationRequest.getDispenseRequest().isEmpty()) {
+					updateReference(medicationRequest.getDispenseRequest().getPerformer());
+				}
+
+				updateReference((medicationRequest.getPriorPrescription()));
+				updateReferences(medicationRequest.getDetectedIssue());
+				updateReference(medicationRequest.addEventHistory());
+
+				Long fhirId = OmopMedicationRequest.getInstance().toDbase(medicationRequest, null);
+				BundleEntryComponent newEntry;
+				if (fhirId == null || fhirId == 0L) {
+					newEntry = addResponseEntry("400 Bad Request", null);
+					newEntry.setResource(medicationRequest);
+				} else {
+					referenceIds.put(entry.getFullUrl(), MedicationRequestResourceProvider.getType() + "/" + fhirId);
+					newEntry = addResponseEntry("201 Created", "MedicationRequest/" + fhirId);
+				}
+
+				responseEntries.add(newEntry);
+				logger.debug("Added medication request info to referenceIds " + entry.getFullUrl() + "->" + fhirId);
+			}			
+		}
+
 		// Process Condition
 		for (BundleEntryComponent entry : entries) {
 			Resource resource = entry.getResource();
@@ -221,6 +299,17 @@ public class OmopServerOperations {
 			if (resource.getResourceType() == ResourceType.Condition) {
 				Condition condition = (Condition) resource;
 				updateReference(condition.getSubject());
+				updateReference(condition.getEncounter());
+				updateReference(condition.getRecorder());
+				updateReference(condition.getAsserter());
+
+				for (ConditionStageComponent stage : condition.getStage()) {
+					updateReferences(stage.getAssessment());
+				}
+
+				for (ConditionEvidenceComponent evidence : condition.getEvidence()) {
+					updateReferences(evidence.getDetail());
+				}
 
 				Long fhirId = OmopCondition.getInstance().toDbase(condition, null);
 				BundleEntryComponent newEntry;
@@ -255,6 +344,15 @@ public class OmopServerOperations {
 				} else {
 					updateReference(observation.getSubject());
 				}
+
+				updateReferences(observation.getBasedOn());
+				updateReferences(observation.getPartOf());
+				updateReference(observation.getEncounter());
+				updateReferences(observation.getPerformer());
+				updateReference(observation.getSpecimen());
+				updateReference(observation.getDevice());
+				updateReferences(observation.getHasMember());
+				updateReferences(observation.getDerivedFrom());
 
 				Long fhirId = OmopObservation.getInstance().toDbase(observation, null);
 				BundleEntryComponent newEntry;
@@ -332,6 +430,14 @@ public class OmopServerOperations {
 
 				}
 				updateReferences(observation.getFocus());
+				updateReferences(observation.getBasedOn());
+				updateReferences(observation.getPartOf());
+				updateReference(observation.getEncounter());
+				updateReferences(observation.getPerformer());
+				updateReference(observation.getSpecimen());
+				updateReference(observation.getDevice());
+				updateReferences(observation.getHasMember());
+				updateReferences(observation.getDerivedFrom());
 
 				Long fhirId = OmopObservation.getInstance().toDbase(observation, null);
 				BundleEntryComponent newEntry;

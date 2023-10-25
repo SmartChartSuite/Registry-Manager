@@ -568,7 +568,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 		CodeableConcept medicationCodeableConcept = null;
 		if (medicationType instanceof Reference) {
 			// We may have reference.
-			Reference medicationReference;
+			Reference medicationReference = null;
 			try {
 				medicationReference = fhirResource.getMedicationReference();
 				if (medicationReference.isEmpty()) {
@@ -588,14 +588,19 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 								break;
 							}
 						}
-					} else {
-						throw new FHIRException("Medication Reference must have the medication in the contained");
-					}
+					} 
 				}			
 			} catch (FHIRException e) {
 				e.printStackTrace();
 			}
 
+			if (medicationCodeableConcept == null || medicationCodeableConcept.isEmpty()) {
+				String medicationReferenceDisplay = medicationReference.getDisplay();
+				if (medicationReferenceDisplay != null && !medicationReferenceDisplay.isBlank()) {
+					medicationCodeableConcept = new CodeableConcept();
+					medicationCodeableConcept.setText(medicationReferenceDisplay);
+				}
+			}
 		} else {
 			try {
 				medicationCodeableConcept = fhirResource.getMedicationCodeableConcept();
@@ -611,7 +616,13 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 		try {
 			omopConcept = CodeableConceptUtil.searchConcept(conceptService, medicationCodeableConcept);
 			if (omopConcept == null) {
-				throw new FHIRException("Medication[CodeableConcept or Reference] could not be found");
+				if (medicationCodeableConcept.getText() != null && !medicationCodeableConcept.getText().isEmpty()) {
+					drugExposure.setDrugSourceValue(medicationCodeableConcept.getText());
+				} else {
+					drugExposure.setDrugSourceValue(CodeableConceptUtil.convert2String(medicationCodeableConcept.getCodingFirstRep()));
+				}
+				drugExposure.setDrugConcept(new Concept(0L));
+				// throw new FHIRException("Medication[CodeableConcept or Reference] could not be found");
 			} else {
 				drugExposure.setDrugConcept(omopConcept);
 			}
@@ -627,6 +638,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 		// Set start date from authored on date 
 		Date authoredDate = fhirResource.getAuthoredOn();
 		drugExposure.setDrugExposureStartDate(authoredDate);
+		drugExposure.setDrugExposureEndDate(authoredDate);
 
 		// Set VisitOccurrence 
 		Reference encounterReference = fhirResource.getEncounter();

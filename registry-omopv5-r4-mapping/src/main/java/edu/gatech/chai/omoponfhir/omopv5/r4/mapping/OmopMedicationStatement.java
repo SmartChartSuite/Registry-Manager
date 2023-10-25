@@ -731,29 +731,39 @@ public class OmopMedicationStatement extends BaseOmopResource<MedicationStatemen
 		CodeableConcept medicationCodeableConcept = null;
 		if (medicationType instanceof Reference) {
 			// We may have reference.
-			Reference medicationReference;
-			medicationReference = fhirResource.getMedicationReference();
-			if (medicationReference.isEmpty()) {
-				// This is an error. We require this.
-				throw new FHIRException("Medication[CodeableConcept or Reference] is missing");
-			} else {
-				String medicationReferenceId = medicationReference.getReferenceElement().getIdPart();
-				if (medicationReference.getReferenceElement().isLocal()) {
-					List<Resource> contains = fhirResource.getContained();
-					for (Resource resource : contains) {
-						if (!resource.isEmpty()
-								&& resource.getIdElement().getIdPart().equals(medicationReferenceId)) {
+			Reference medicationReference = null;
+			try {
+				medicationReference = fhirResource.getMedicationReference();
+				if (medicationReference.isEmpty()) {
+					// This is an error. We require this.
+					throw new FHIRException("Medication[CodeableConcept or Reference] is missing");
+				} else {
+					String medicationReferenceId = medicationReference.getReferenceElement().getIdPart();
+					if (medicationReference.getReferenceElement().isLocal()) {
+						List<Resource> contains = fhirResource.getContained();
+						for (Resource resource : contains) {
+							if (!resource.isEmpty()
+									&& resource.getIdElement().getIdPart().equals(medicationReferenceId)) {
 
-							// This must medication resource.
-							Medication medicationResource = (Medication) resource;
-							medicationCodeableConcept = medicationResource.getCode();
-							break;
+								// This must medication resource.
+								Medication medicationResource = (Medication) resource;
+								medicationCodeableConcept = medicationResource.getCode();
+								break;
+							}
 						}
 					}
-				} else {
-					throw new FHIRException("Medication Reference must have the medication in the contained");
 				}
+			} catch (FHIRException e) {
+				e.printStackTrace();
 			}
+
+			if (medicationCodeableConcept == null || medicationCodeableConcept.isEmpty()) {
+				String medicationReferenceDisplay = medicationReference.getDisplay();
+				if (medicationReferenceDisplay != null && !medicationReferenceDisplay.isBlank()) {
+					medicationCodeableConcept = new CodeableConcept();
+					medicationCodeableConcept.setText(medicationReferenceDisplay);
+				}
+			}				
 		} else {
 			try {
 				medicationCodeableConcept = fhirResource.getMedicationCodeableConcept();
@@ -768,7 +778,13 @@ public class OmopMedicationStatement extends BaseOmopResource<MedicationStatemen
 
 		omopConcept = CodeableConceptUtil.searchConcept(conceptService, medicationCodeableConcept);
 		if (omopConcept == null) {
-			throw new FHIRException("Medication[CodeableConcept or Reference] could not be found");
+			if (medicationCodeableConcept.getText() != null && !medicationCodeableConcept.getText().isEmpty()) {
+				drugExposure.setDrugSourceValue(medicationCodeableConcept.getText());
+			} else {
+				drugExposure.setDrugSourceValue(CodeableConceptUtil.convert2String(medicationCodeableConcept.getCodingFirstRep()));
+			}
+			drugExposure.setDrugConcept(new Concept(0L));
+			// throw new FHIRException("Medication[CodeableConcept or Reference] could not be found");
 		} else {
 			drugExposure.setDrugConcept(omopConcept);
 		}
