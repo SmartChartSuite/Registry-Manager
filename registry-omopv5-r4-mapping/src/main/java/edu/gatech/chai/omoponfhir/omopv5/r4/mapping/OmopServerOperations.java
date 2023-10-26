@@ -432,7 +432,7 @@ public class OmopServerOperations {
 					}
 
 				}
-				updateReferences(observation.getFocus());
+				// updateReferences(observation.getFocus());
 				updateReferences(observation.getBasedOn());
 				updateReferences(observation.getPartOf());
 				updateReference(observation.getEncounter());
