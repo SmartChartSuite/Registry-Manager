@@ -140,6 +140,9 @@ public class OmopServerOperations {
 				Long fhirId;
 				BundleEntryComponent newEntry;
 				USCorePatient patient = ExtensionUtil.usCorePatientFromResource(resource);
+
+				updateReferences(patient.getGeneralPractitioner());
+				
 				if (caseInfo == null) {
 					fhirId = OmopPatient.getInstance().toDbase(patient, null);
 					newEntry = addResponseEntry("201 Created", "Patient/" + fhirId);

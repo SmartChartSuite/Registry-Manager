@@ -1,4 +1,4 @@
-# SMART-PACER-Registry-Manager
+# Registry-Manager
 
 
 ## Docker
