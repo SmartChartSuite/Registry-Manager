@@ -61,6 +61,7 @@ import ca.uhn.fhir.rest.param.TokenParamModifier;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.ConditionResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.DocumentReferenceResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.EncounterResourceProvider;
+import edu.gatech.chai.omoponfhir.omopv5.r4.provider.MedicationRequestResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.MedicationStatementResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.ObservationResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PatientResourceProvider;
@@ -1695,7 +1696,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		Long factId2 = referenceIdType.getIdPartAsLong();
 
 		Long domainConceptId2;
-		if (MedicationStatementResourceProvider.getType().equals(targetResourceType)) {
+		if (MedicationStatementResourceProvider.getType().equals(targetResourceType) 
+			|| MedicationRequestResourceProvider.getType().equals(targetResourceType)) {
 			domainConceptId2 = 13L;
 		} else if (ConditionResourceProvider.getType().equals(targetResourceType)) {
 			domainConceptId2 = 19L;
