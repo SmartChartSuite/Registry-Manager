@@ -16,6 +16,7 @@
 package edu.gatech.chai.omoponfhir.omopv5.r4.mapping;
 
 import java.math.BigDecimal;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -53,7 +54,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.WebApplicationContext;
 
-import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.api.SortSpec;
 import ca.uhn.fhir.rest.param.DateRangeParam;
 import ca.uhn.fhir.rest.param.TokenParam;
@@ -67,10 +67,9 @@ import edu.gatech.chai.omoponfhir.omopv5.r4.provider.ObservationResourceProvider
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PatientResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PractitionerResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.CodeableConceptUtil;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.SchemaConfig;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.DateUtil;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ExtensionUtil;
-import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
-import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ThrowFHIRExceptions;
 import edu.gatech.chai.omopv5.dba.service.ConceptService;
 import edu.gatech.chai.omopv5.dba.service.FObservationViewService;
 import edu.gatech.chai.omopv5.dba.service.FactRelationshipService;
@@ -107,6 +106,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	private NoteService noteService;
 	private FactRelationshipService factRelationshipService;
 
+    private SchemaConfig schemaConfig;
+
 	public OmopObservation(WebApplicationContext context) {
 		super(context, FObservationView.class, FObservationViewService.class, ObservationResourceProvider.getType());
 		initialize(context);
@@ -128,6 +129,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		visitOccurrenceService = context.getBean(VisitOccurrenceService.class);
 		noteService = context.getBean(NoteService.class);
 		factRelationshipService = context.getBean(FactRelationshipService.class);
+		schemaConfig = context.getBean(SchemaConfig.class);
 	}
 
 	public Long getDiastolicConcept() {
@@ -1501,15 +1503,19 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 
 				// We may already have a question for this. Check if we have this question
 				String sql = "SELECT observation.observation_id AS observation_observation_id "
-					+ "FROM observation observation "
+					+ "FROM " + schemaConfig.getDataSchema() + ".observation observation "
 					+ "WHERE observation.observation_concept_id = @obs_concept AND "
 					+ "observation.value_as_string = @value AND "
-					+ "observation.observation_source_value = @valueSource";
+					+ "observation.observation_source_value = @valueSource AND "
+					+ "observation.person_id = @person AND "
+					+ "observation.observation_date = @obs_date";
 				
 				List<String> parameterList = new ArrayList<String>();
 				parameterList.add("obs_concept");
 				parameterList.add("value");
 				parameterList.add("valueSource");
+				parameterList.add("person");
+				parameterList.add("obs_date");
 			
 				List<String> valueList = new ArrayList<String>();
 				valueList.add(String.valueOf(observation.getObservationConcept().getId()));
@@ -1520,6 +1526,13 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 				escapedFieldValue = StringEscapeUtils.escapeSql(((String) observation.getObservationSourceValue()));
 				valueList.add("'" + escapedFieldValue + "'");
 			
+				valueList.add(String.valueOf(observation.getFPerson().getId()));
+
+				Date myDate = observation.getObservationDate();
+				DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+				String valueName = "'" + dateFormat.format(myDate) + "'";
+				valueList.add(valueName);
+
 				List<edu.gatech.chai.omopv5.model.entity.Observation> existingObservations = observationService.searchBySql(0, 0, sql, parameterList, valueList, null);
 				if (!existingObservations.isEmpty()) {
 					observation.setId(existingObservations.get(0).getId());					

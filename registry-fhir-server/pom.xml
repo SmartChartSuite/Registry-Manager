@@ -31,7 +31,7 @@
 	</repositories>
 
 	<properties>
-		<hapi_stable_version>6.4.1</hapi_stable_version>
+		<hapi_stable_version>6.8.2</hapi_stable_version>
 		<registry_mapping_version>1.5.4</registry_mapping_version>
 
 		<!-- configure timestamp in MANIFEST.MF for maven-war-provider -->
@@ -43,26 +43,23 @@
 		<derby_version>10.14.2.0</derby_version>
 		<jersey_version>2.25.1</jersey_version>
 		<jetty_version>9.4.49.v20220914</jetty_version>
-		<jackson_version>2.14.2</jackson_version>
+		<jackson_version>2.15.2</jackson_version>
 		<lucene_version>5.5.5</lucene_version>
-		<maven_assembly_plugin_version>3.1.0</maven_assembly_plugin_version>
+		<maven_assembly_plugin_version>3.3.0</maven_assembly_plugin_version>
 		<maven_license_plugin_version>1.8</maven_license_plugin_version>
-		<phloc_schematron_version>5.2.0</phloc_schematron_version>
-		<phloc_commons_version>9.3.8</phloc_commons_version>
 
-		<spring_version>5.3.23</spring_version>
+		<spring_version>5.3.27</spring_version>
 		<spring_data_version>2.2.0.RELEASE</spring_data_version>
 
-		<thymeleaf-version>3.0.14.RELEASE</thymeleaf-version>
+		<thymeleaf-version>3.1.2.RELEASE</thymeleaf-version>
 
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<ebay_cors_filter_version>1.0.1</ebay_cors_filter_version>
 
-		<ucum_version>1.0.2</ucum_version>
+		<ucum_version>1.0.8</ucum_version>
 	</properties>
 
 	<dependencies>
-
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-server-openapi</artifactId>
@@ -78,14 +75,21 @@
 		<!-- https://mvnrepository.com/artifact/ca.uhn.hapi.fhir/org.hl7.fhir.r4 -->
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
-			<artifactId>org.hl7.fhir.r4</artifactId>
-			<version>5.6.971</version>
+			<artifactId>hapi-fhir-converter</artifactId>
+			<version>${hapi_stable_version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
-			<artifactId>hapi-fhir-converter</artifactId>
-			<version>6.4.0</version>
+			<artifactId>hapi-fhir-jpaserver-base</artifactId>
+			<version>${hapi_stable_version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-jpaserver-hfql</artifactId>
+			<version>${hapi_stable_version}</version>
+			<scope>compile</scope>
 		</dependency>
 
 		<!-- This dependency is used for the "FHIR Tester" web app overlay -->
@@ -215,10 +219,14 @@
 
 		<!-- webjars -->
 		<dependency>
-			<groupId>org.webjars</groupId>
+			<groupId>org.webjars.npm</groupId>
+			<artifactId>ace-builds</artifactId>
+			<version>1.22.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.webjars.npm</groupId>
 			<artifactId>bootstrap</artifactId>
-			<version>5.1.0</version>
-			<scope>runtime</scope>
+			<version>4.5.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars</groupId>
@@ -282,7 +290,6 @@
 			<artifactId>moment</artifactId>
 			<version>2.29.4</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>popper.js</artifactId>
