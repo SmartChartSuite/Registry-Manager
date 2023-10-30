@@ -41,7 +41,7 @@ import ca.uhn.fhir.interceptor.api.Hook;
 import ca.uhn.fhir.interceptor.api.Interceptor;
 import ca.uhn.fhir.interceptor.api.Pointcut;
 import ca.uhn.fhir.util.ExtensionConstants;
-import edu.gatech.chai.omoponfhir.config.ConfigValues;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.SchemaConfig;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ExtensionUtil;
 
 /**
@@ -58,7 +58,7 @@ public class SMARTonFHIRConformanceStatement {
 	String authorizeUrlValue = "http://localhost:8080/authorize";
  	String tokenUrlValue = "http://localhost:8080/token";
 
-	private ConfigValues configValues;
+	private SchemaConfig configValues;
 
 	public SMARTonFHIRConformanceStatement() {
 		String authorizeUrl = System.getenv("SMART_AUTHSERVERURL");
@@ -73,7 +73,7 @@ public class SMARTonFHIRConformanceStatement {
 		}
 
 		WebApplicationContext context = ContextLoaderListener.getCurrentWebApplicationContext();
-		configValues = context.getBean(ConfigValues.class);
+		configValues = context.getBean(SchemaConfig.class);
 	}
 
 	@Hook(Pointcut.SERVER_CAPABILITY_STATEMENT_GENERATED)

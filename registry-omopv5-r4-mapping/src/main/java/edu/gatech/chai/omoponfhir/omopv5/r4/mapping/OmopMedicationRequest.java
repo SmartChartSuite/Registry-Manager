@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Dosage.DosageDoseAndRateComponent;
 import org.hl7.fhir.r4.model.Medication.MedicationIngredientComponent;
 import org.hl7.fhir.r4.model.MedicationRequest.MedicationRequestDispenseRequestComponent;
 import org.hl7.fhir.exceptions.FHIRException;
@@ -35,7 +36,6 @@ import ca.uhn.fhir.rest.param.TokenParam;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.EncounterResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.MedicationRequestResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.MedicationResourceProvider;
-import edu.gatech.chai.omoponfhir.omopv5.r4.provider.MedicationStatementResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PatientResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PractitionerResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.CodeableConceptUtil;
@@ -95,7 +95,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 	}
 	
 	public OmopMedicationRequest() {
-		super(ContextLoaderListener.getCurrentWebApplicationContext(), DrugExposure.class, DrugExposureService.class, MedicationStatementResourceProvider.getType());
+		super(ContextLoaderListener.getCurrentWebApplicationContext(), DrugExposure.class, DrugExposureService.class, MedicationRequestResourceProvider.getType());
 		initialize(ContextLoaderListener.getCurrentWebApplicationContext());
 	}
 
@@ -138,7 +138,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 			retOmopId = getMyOmopService().update(drugExposure).getId();
 		}
 		
-		return IdMapping.getFHIRfromOMOP(retOmopId, MedicationStatementResourceProvider.getType());
+		return IdMapping.getFHIRfromOMOP(retOmopId, MedicationRequestResourceProvider.getType());
 	}
 	
 	@Override
@@ -505,61 +505,37 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 	@Override
 	public DrugExposure constructOmop(Long omopId, MedicationRequest fhirResource) {
 		DrugExposure drugExposure = null;
-		if (omopId != null) {
-			// Update
-			drugExposure = getMyOmopService().findById(omopId);
-			if (drugExposure == null) { 
-				try {
-					throw new FHIRException(fhirResource.getId()+" does not exist");
-				} catch (FHIRException e) {
-					e.printStackTrace();
-				}
-			}
-		} else {
-			// Create
-			List<Identifier> identifiers = fhirResource.getIdentifier();
-			for (Identifier identifier: identifiers) {
-				if (identifier.isEmpty()) continue;
-				String identifierValue = identifier.getValue();
-				List<DrugExposure> results = getMyOmopService().searchByColumnString("drugSourceValue", identifierValue);
-				if (results.size() > 0) {
-					drugExposure = results.get(0);
-					omopId = drugExposure.getId();
-					break;
-				}
-			}
-			
-			if (drugExposure == null) {
-				drugExposure = new DrugExposure();
-				// Add the source column.
-				Identifier identifier = fhirResource.getIdentifierFirstRep();
-				if (!identifier.isEmpty()) {
-					drugExposure.setDrugSourceValue(identifier.getValue());
-				}
-			}
-		}
-				
+
 		// Set patient.
-		 Reference patientReference = fhirResource.getSubject();
-		if (patientReference == null)
-			try {
-				throw new FHIRException("Patient must exist.");
-			} catch (FHIRException e) {
-				e.printStackTrace();
-			} 
+		Reference patientReference = fhirResource.getSubject();
+		if (patientReference == null) {
+			throw new FHIRException("Patient must exist.");
+		}
 		
 		Long patientFhirId = patientReference.getReferenceElement().getIdPartAsLong();
 		Long omopFPersonId = IdMapping.getOMOPfromFHIR(patientFhirId, PatientResourceProvider.getType());
 
 		FPerson fPerson = fPersonService.findById(omopFPersonId);
-		if (fPerson == null)
-			try {
-				throw new FHIRException("Patient/"+patientFhirId+" is not valid");
-			} catch (FHIRException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		if (fPerson == null) {
+			throw new FHIRException("Patient/"+patientFhirId+" is not valid");
+		}
 		
+		// Get start date from authored on date 
+		Date authoredDate = fhirResource.getAuthoredOn();
+
+
+		if (omopId != null) {
+			// Update
+			drugExposure = getMyOmopService().findById(omopId);
+			if (drugExposure == null) { 
+				throw new FHIRException(fhirResource.getId()+" does not exist");
+			}
+		} else {
+			// Create
+			drugExposure = new DrugExposure();
+		}
+
+		// we should have a valid drugExposure.
 		drugExposure.setFPerson(fPerson);
 
 		// Get medication[x]
@@ -635,8 +611,6 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 		drugExposureType.setId(MEDICATIONREQUEST_CONCEPT_TYPE_ID);
 		drugExposure.setDrugTypeConcept(drugExposureType);
 				
-		// Set start date from authored on date 
-		Date authoredDate = fhirResource.getAuthoredOn();
 		drugExposure.setDrugExposureStartDate(authoredDate);
 		drugExposure.setDrugExposureEndDate(authoredDate);
 
@@ -655,51 +629,89 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 		}		
 
 		// dosageInstruction
-//		List<Dosage> dosageInstructions = fhirResource.getDosageInstruction();
-//		for (Dosage dosageInstruction: dosageInstructions) {
-//			SimpleQuantity doseQty;
-//			try {
-//				doseQty = dosageInstruction.getDoseSimpleQuantity();
-//				if (doseQty.isEmpty()) continue;
-//				drugExposure.setEffectiveDrugDose(doseQty.getValue().doubleValue());
-//				String doseCode = doseQty.getCode();
-//				String doseSystem = doseQty.getSystem();
-//				String vocabId = OmopCodeableConceptMapping.omopVocabularyforFhirUri(doseSystem);
-//				Concept unitConcept = 
-//						CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, vocabId, doseCode);
-//				drugExposure.setDoseUnitConcept(unitConcept);
-//				break;
-//			} catch (FHIRException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//		}
-		
-		// dispense request 
-		MedicationRequestDispenseRequestComponent dispenseRequest = fhirResource.getDispenseRequest();
-		if (dispenseRequest != null && !dispenseRequest.isEmpty()) {
-			Integer refills = dispenseRequest.getNumberOfRepeatsAllowed();
-			if (refills != null) {
-				drugExposure.setRefills(refills);
-			}
-
-			Quantity qty = dispenseRequest.getQuantity();
-			if (qty != null) {
-				drugExposure.setQuantity(qty.getValue().doubleValue());
-				String doseCode = qty.getCode();
-				String doseSystem = qty.getSystem();
-				String vocabId;
-				try {
-					vocabId = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(doseSystem);
-					Concept unitConcept = 
-							CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, vocabId, doseCode);
-					if (unitConcept != null) {
-						drugExposure.setDoseUnitSourceValue(unitConcept.getConceptCode());
-					} else {
-						drugExposure.setDoseUnitSourceValue(doseCode);
+		List<Dosage> dosageInstructions = fhirResource.getDosageInstruction();
+		if (dosageInstructions != null && !dosageInstructions.isEmpty()) {
+			for (Dosage dosageInstruction: dosageInstructions) {
+				CodeableConcept route = dosageInstruction.getRoute();
+				if (route != null && !route.isEmpty()) {
+					for (Coding routeCoding : route.getCoding()) {
+						Concept routeConept = CodeableConceptUtil.getOmopConceptWithFhirConcept(conceptService, routeCoding);
+						if (routeConept != null && routeConept.getId() != null && routeConept.getId() != 0) {
+							drugExposure.setRouteConcept(routeConept);
+							if (route.getText() != null && !route.getText().isEmpty()) {
+								drugExposure.setRouteSourceValue(route.getText());
+							} else {
+								drugExposure.setRouteSourceValue(routeCoding.getDisplay());
+							}
+							break;
+						} 
 					}
-				} catch (FHIRException e) {
-					e.printStackTrace();
+
+					if (drugExposure.getRouteConcept() == null || drugExposure.getRouteConcept().getId() == null || drugExposure.getRouteConcept().getId() == 0) {
+						// capture text or display if possible.
+						if (route.getText() != null && !route.getText().isEmpty()) {
+							drugExposure.setRouteSourceValue(route.getText());
+						} else {
+							drugExposure.setRouteSourceValue(route.getCodingFirstRep().getDisplay());
+						}						
+					} 
+				}
+
+				List<DosageDoseAndRateComponent> dosageAndRates = dosageInstruction.getDoseAndRate();
+				for (DosageDoseAndRateComponent dosageAndRate : dosageAndRates) {
+					Type doseType = dosageAndRate.getDose();
+					if (doseType instanceof Quantity) {
+						Quantity qty = (Quantity) doseType;
+						if (qty.isEmpty()) continue;
+						drugExposure.setQuantity(qty.getValue().doubleValue());
+						String doseCode = qty.getCode();
+						String doseSystem = qty.getSystem();
+						if (doseSystem != null && !doseSystem.isBlank() && doseCode != null && !doseCode.isBlank()) {
+							String vocabId = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(doseSystem);
+							Concept unitConcept = 
+								CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, vocabId, doseCode);
+							if (unitConcept != null) {
+								drugExposure.setDoseUnitSourceValue(unitConcept.getConceptCode());
+							}
+						} else {
+							if (qty.getCode() != null && !qty.getCode().isBlank()) {
+								drugExposure.setDoseUnitSourceValue(qty.getCode());
+							} else if (qty.getUnit() != null && !qty.getUnit().isBlank()) {
+								drugExposure.setDoseUnitSourceValue(qty.getUnit());
+							}
+						}
+						break;
+					}
+				}
+			}
+		} else {
+			// dispense request 
+			MedicationRequestDispenseRequestComponent dispenseRequest = fhirResource.getDispenseRequest();
+			if (dispenseRequest != null && !dispenseRequest.isEmpty()) {
+				Integer refills = dispenseRequest.getNumberOfRepeatsAllowed();
+				if (refills != null) {
+					drugExposure.setRefills(refills);
+				}
+
+				Quantity qty = dispenseRequest.getQuantity();
+				if (qty != null) {
+					drugExposure.setQuantity(qty.getValue().doubleValue());
+					String doseCode = qty.getCode();
+					String doseSystem = qty.getSystem();
+					if (doseSystem != null && !doseSystem.isBlank() && doseCode != null && !doseCode.isBlank()) {
+						String vocabId = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(doseSystem);
+						Concept unitConcept = 
+							CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, vocabId, doseCode);
+						if (unitConcept != null) {
+							drugExposure.setDoseUnitSourceValue(unitConcept.getConceptCode());
+						}
+					} else {
+						if (qty.getCode() != null && !qty.getCode().isBlank()) {
+							drugExposure.setDoseUnitSourceValue(qty.getCode());
+						} else if (qty.getUnit() != null && !qty.getUnit().isBlank()) {
+							drugExposure.setDoseUnitSourceValue(qty.getUnit());
+						}
+					}
 				}
 			}
 		}
