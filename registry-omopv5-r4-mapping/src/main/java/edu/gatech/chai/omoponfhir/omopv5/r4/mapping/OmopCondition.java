@@ -494,14 +494,14 @@ public class OmopCondition extends BaseOmopResource<Condition, ConditionOccurren
 		Type onSet = fhirResource.getOnset();
 		if (onSet == null || onSet.isEmpty()) {
 			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-				Date date;
-				try {
-					date = dateFormat.parse("9999-12-31");
-				} catch (ParseException e) {
-					throw new FHIRException("Failed to set invalid date for missing onset Condition");
-				}
-				conditionOccurrence.setConditionStartDate(date);
-				conditionOccurrence.setConditionStartDateTime(date);
+			Date date;
+			try {
+				date = dateFormat.parse("9999-12-31");
+			} catch (ParseException e) {
+				throw new FHIRException("Failed to set invalid date for missing onset Condition");
+			}
+			conditionOccurrence.setConditionStartDate(date);
+			conditionOccurrence.setConditionStartDateTime(date);
 		} else {
 			if (onSet instanceof DateTimeType) {
 				Date start = ((DateTimeType) fhirResource.getOnset()).toCalendar().getTime();

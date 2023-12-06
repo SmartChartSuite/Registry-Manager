@@ -12,6 +12,8 @@ public class SchemaConfig {
 	@Value("${schema.vocabularies}")
 	private String vocabSchema;
 
+    @Value("${rcapi.requesttype}")
+	private String requestType;
 
     public String getDataSchema() {
         return this.dataSchema;
@@ -27,5 +29,13 @@ public class SchemaConfig {
 
     public void setVocabSchema(String vocabSchema) {
         this.vocabSchema = vocabSchema;
+    }
+
+    public String getRequestType() {
+        return this.requestType;
+    }
+
+    public void setRequestType(String requestType) {
+        this.requestType = requestType;
     }
 }

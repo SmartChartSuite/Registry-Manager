@@ -53,6 +53,7 @@ import com.opencsv.CSVParser;
 import edu.gatech.chai.omoponfhir.local.dao.FhirOmopVocabularyMapImpl;
 import edu.gatech.chai.omoponfhir.local.model.FhirOmopVocabularyMapEntry;
 import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopServerOperations;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.SchemaConfig;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
 import edu.gatech.chai.omopv5.dba.service.ConceptRelationshipService;
 import edu.gatech.chai.omopv5.dba.service.ConceptService;
@@ -76,6 +77,7 @@ public class ScheduledTask {
 
 	private String smartPacerBasicAuth = "user:secret";
 	private OmopServerOperations myMapper;
+    private SchemaConfig schemaConfig;
 
 	@Autowired
 	private ConceptService conceptService;
@@ -109,6 +111,9 @@ public class ScheduledTask {
 
 		// We are using the server operations implementation. 
 		WebApplicationContext myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
+
+		schemaConfig = myAppCtx.getBean(SchemaConfig.class);
+
 		myMapper = new OmopServerOperations(myAppCtx);
 
 		// Get PACER query logic variables.
@@ -393,7 +398,7 @@ public class ScheduledTask {
 						)
 						.addParameter(
 							new ParametersParameterComponent(new StringType("jobPackage"))
-								.setValue(new StringType("SyphilisRegistry"))
+								.setValue(new StringType(schemaConfig.getRequestType()))
 					);
 					
 					String parameterJson = parser.encodeResourceToString(parameters);

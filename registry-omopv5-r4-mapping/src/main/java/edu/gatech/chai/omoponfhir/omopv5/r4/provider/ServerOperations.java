@@ -75,7 +75,7 @@ public class ServerOperations {
 
 		rcApiHost = System.getenv("RCAPI_HOST");
 		if (rcApiHost == null || rcApiHost.isEmpty()) {
-			rcApiHost = "https://gt-apps.hdap.gatech.edu/rc-api";
+			rcApiHost = "https://smartchartsuite.dev.icl.gtri.org/rc-api";
 		}
 	}
 	

@@ -12,7 +12,6 @@ public class ConfigValues {
 	@Value("${schema.vocabularies}")
 	private String vocabSchema;
 
-
     public String getDataSchema() {
         return this.dataSchema;
     }
