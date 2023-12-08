@@ -67,7 +67,7 @@ import edu.gatech.chai.omoponfhir.omopv5.r4.provider.ObservationResourceProvider
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PatientResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PractitionerResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.CodeableConceptUtil;
-import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.SchemaConfig;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ConfigValues;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.DateUtil;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ExtensionUtil;
 import edu.gatech.chai.omopv5.dba.service.ConceptService;
@@ -106,7 +106,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	private NoteService noteService;
 	private FactRelationshipService factRelationshipService;
 
-    private SchemaConfig schemaConfig;
+    private ConfigValues schemaConfig;
 
 	public OmopObservation(WebApplicationContext context) {
 		super(context, FObservationView.class, FObservationViewService.class, ObservationResourceProvider.getType());
@@ -129,7 +129,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		visitOccurrenceService = context.getBean(VisitOccurrenceService.class);
 		noteService = context.getBean(NoteService.class);
 		factRelationshipService = context.getBean(FactRelationshipService.class);
-		schemaConfig = context.getBean(SchemaConfig.class);
+		schemaConfig = context.getBean(ConfigValues.class);
 	}
 
 	public Long getDiastolicConcept() {

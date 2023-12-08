@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SchemaConfig {
+public class ConfigValues {
 
 	@Value("${schema.registry}")
     private String dataSchema;
@@ -12,8 +12,8 @@ public class SchemaConfig {
 	@Value("${schema.vocabularies}")
 	private String vocabSchema;
 
-    @Value("${rcapi.requesttype}")
-	private String requestType;
+    @Value("${rcapi.jobpackage}")
+	private String jobPackage;
 
     public String getDataSchema() {
         return this.dataSchema;
@@ -31,11 +31,11 @@ public class SchemaConfig {
         this.vocabSchema = vocabSchema;
     }
 
-    public String getRequestType() {
-        return this.requestType;
+    public String getJobPackage() {
+        return this.jobPackage;
     }
 
-    public void setRequestType(String requestType) {
-        this.requestType = requestType;
+    public void setJobPackage(String jobPackage) {
+        this.jobPackage = jobPackage;
     }
 }

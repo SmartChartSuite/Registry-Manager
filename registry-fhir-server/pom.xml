@@ -32,7 +32,7 @@
 
 	<properties>
 		<hapi_stable_version>6.8.2</hapi_stable_version>
-		<registry_mapping_version>1.5.5</registry_mapping_version>
+		<registry_mapping_version>1.5.6</registry_mapping_version>
 
 		<!-- configure timestamp in MANIFEST.MF for maven-war-provider -->
 		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>

@@ -30,6 +30,7 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DecimalType;
 import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.UriType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,7 +42,7 @@ import ca.uhn.fhir.interceptor.api.Hook;
 import ca.uhn.fhir.interceptor.api.Interceptor;
 import ca.uhn.fhir.interceptor.api.Pointcut;
 import ca.uhn.fhir.util.ExtensionConstants;
-import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.SchemaConfig;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ConfigValues;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ExtensionUtil;
 
 /**
@@ -58,7 +59,7 @@ public class SMARTonFHIRConformanceStatement {
 	String authorizeUrlValue = "http://localhost:8080/authorize";
  	String tokenUrlValue = "http://localhost:8080/token";
 
-	private SchemaConfig configValues;
+	private ConfigValues configValues;
 
 	public SMARTonFHIRConformanceStatement() {
 		String authorizeUrl = System.getenv("SMART_AUTHSERVERURL");
@@ -73,13 +74,22 @@ public class SMARTonFHIRConformanceStatement {
 		}
 
 		WebApplicationContext context = ContextLoaderListener.getCurrentWebApplicationContext();
-		configValues = context.getBean(SchemaConfig.class);
+		configValues = context.getBean(ConfigValues.class);
 	}
 
 	@Hook(Pointcut.SERVER_CAPABILITY_STATEMENT_GENERATED)
 	public void customize(IBaseConformance theCapabilityStatement) {
 		CapabilityStatement cs = (CapabilityStatement) theCapabilityStatement;
 		Map<String, Long> counts = ExtensionUtil.getResourceCounts();
+
+		if (configValues.getJobPackage() != null && !configValues.getJobPackage().isBlank()) {
+			Extension ext = new Extension("urn:omoponfhir:registry:rc-api:jobPackage", new StringType(configValues.getJobPackage()));
+			cs.addExtension(ext);
+			ext = new Extension("urn:omoponfhir:registry:schema:data", new StringType(configValues.getDataSchema()));
+			cs.addExtension(ext);
+			ext = new Extension("urn:omoponfhir:registry:schema:vocabs", new StringType(configValues.getVocabSchema()));
+			cs.addExtension(ext);
+		}
 
 		String title;
 		String name;
