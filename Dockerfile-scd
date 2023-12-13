@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 RUN mvn clean install
 
 #Build the Tomcat container
-FROM tomcat:9.0.84-jre17
+FROM tomcat:9.0.65-jre17
 #RUN apk add openssh \
 #     && echo "root:Docker!" | chpasswd
 #
