@@ -43,7 +43,7 @@ public interface FlagInfoService extends IService<FlagInfo> {
 				} else if (columnInfo.equalsIgnoreCase(alias + "_flag_type")) {
 					flagInfo.setFlagType(rs.getString(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_last_updated")) {
-					flagInfo.setLastUpdated(rs.getDate(columnInfo));
+					flagInfo.setLastUpdated(rs.getTimestamp(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_annotation")) {
 					flagInfo.setAnnotation(rs.getString(columnInfo));
 				}

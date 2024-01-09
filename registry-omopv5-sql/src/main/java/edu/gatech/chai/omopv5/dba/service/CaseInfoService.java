@@ -50,13 +50,13 @@ public interface CaseInfoService extends IService<CaseInfo> {
 				} else if (columnInfo.equalsIgnoreCase(alias + "_patient_identifier")) {
 					caseInfo.setPatientIdentifier(rs.getString(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_trigger_at_datetime")) {
-					caseInfo.setTriggerAtDateTime(rs.getDate(columnInfo));
+					caseInfo.setTriggerAtDateTime(rs.getTimestamp(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_last_updated_datetime")) {
-					caseInfo.setLastUpdatedDateTime(rs.getDate(columnInfo));
+					caseInfo.setLastUpdatedDateTime(rs.getTimestamp(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_activated_datetime")) {
-					caseInfo.setActivatedDateTime(rs.getDate(columnInfo));
+					caseInfo.setActivatedDateTime(rs.getTimestamp(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_created_datetime")) {
-					caseInfo.setCreatedDateTime(rs.getDate(columnInfo));
+					caseInfo.setCreatedDateTime(rs.getTimestamp(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_tries_left")) {
 					caseInfo.setTriesLeft(rs.getInt(columnInfo));
 				}

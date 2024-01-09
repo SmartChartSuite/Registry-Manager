@@ -32,7 +32,7 @@ public interface CaseLogService extends IService<CaseLog> {
 					CaseInfo caseInfo = CaseInfoService._construct(rs, null, "caseInfo");
 					caseLog.setCaseInfo(caseInfo);
 				} else if (columnInfo.equalsIgnoreCase(alias + "_log_datetime")) {
-					caseLog.setLogDateTime(rs.getDate(columnInfo));
+					caseLog.setLogDateTime(rs.getTimestamp(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_text")) {
 					caseLog.setText(rs.getString(columnInfo));
 				}
