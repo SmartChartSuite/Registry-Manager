@@ -15,8 +15,6 @@
  *******************************************************************************/
 package edu.gatech.chai.omoponfhir.omopv5.r4.provider;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -28,7 +26,6 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Patient;
@@ -38,6 +35,7 @@ import org.hl7.fhir.r4.model.MessageHeader.ResponseType;
 import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.WebApplicationContext;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
@@ -48,13 +46,13 @@ import org.hl7.fhir.exceptions.FHIRException;
 
 import ca.uhn.fhir.rest.annotation.Operation;
 import ca.uhn.fhir.rest.annotation.OperationParam;
-import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.api.server.RequestDetails;
 import ca.uhn.fhir.rest.param.NumberParam;
 import ca.uhn.fhir.rest.param.StringParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopServerOperations;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.CodeableConceptUtil;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ConfigValues;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ThrowFHIRExceptions;
 import edu.gatech.chai.omopv5.dba.service.CaseInfoService;
@@ -65,18 +63,25 @@ import edu.gatech.chai.omopv5.model.entity.FPerson;
 public class ServerOperations {
 	private static final Logger logger = LoggerFactory.getLogger(ServerOperations.class);
 	private OmopServerOperations myMapper;
-	private String rcApiHost;
 	private CaseInfoService caseInfoService;
+	private ConfigValues configValues;
+    private String rcApiHost;
+
 
 	public ServerOperations() {
 		WebApplicationContext myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
 		myMapper = new OmopServerOperations(myAppCtx);
 		caseInfoService = myAppCtx.getBean(CaseInfoService.class);
+		configValues = myAppCtx.getBean(ConfigValues.class);
 
-		rcApiHost = System.getenv("RCAPI_HOST");
+		// rcApiHost = System.getenv("RCAPI_HOST");
+		rcApiHost = configValues.getRcApiHostUrl();
 		if (rcApiHost == null || rcApiHost.isEmpty()) {
-			rcApiHost = "https://smartchartsuite.dev.icl.gtri.org/rc-api";
+			logger.error("RC API Host is not set. Please check application.properties.");
+			rcApiHost = "Check Application.Properties. RC API URL is missing";
 		}
+
+		logger.debug("RC API HOST is " + rcApiHost);
 	}
 	
 	@Operation(name="$process-message")

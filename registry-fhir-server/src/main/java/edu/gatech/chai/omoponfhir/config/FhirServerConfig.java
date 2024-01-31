@@ -18,6 +18,7 @@ package edu.gatech.chai.omoponfhir.config;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScans;
@@ -46,6 +47,9 @@ public class FhirServerConfig {
 	@Autowired
 	DataSource dataSource;
 
+	@Value("${server.baseurl}")
+    private String serverBaseUrl;
+
 	@Bean()
 	public DatabaseConfiguration databaseConfiguration() {
 		DatabaseConfigurationImpl databaseConfiguration = new DatabaseConfigurationImpl();
@@ -64,5 +68,9 @@ public class FhirServerConfig {
 		}
 		
 		return databaseConfiguration;
+	}
+
+	public String getServerBaseUrl() {
+		return this.serverBaseUrl;
 	}
 }

@@ -15,6 +15,12 @@ public class ConfigValues {
     @Value("${rcapi.jobpackage}")
 	private String jobPackage;
 
+    @Value("${rcapi.host}")
+    private String rcapiHostUrl;
+
+    @Value("${rcapi.basicauth}")
+    private String rcapiBasicAuth;
+
     public String getDataSchema() {
         return this.dataSchema;
     }
@@ -37,5 +43,21 @@ public class ConfigValues {
 
     public void setJobPackage(String jobPackage) {
         this.jobPackage = jobPackage;
+    }
+
+    public String getRcApiHostUrl() {
+        return this.rcapiHostUrl;
+    }
+
+    public void setRcApiHostUrl(String rcapiHostUrl) {
+        this.rcapiHostUrl = rcapiHostUrl;
+    }
+
+    public String getRcApiBasicAuth() {
+        return this.rcapiBasicAuth;
+    }
+
+    public void setRcApiBasicAuth(String rcapiBasicAuth) {
+        this.rcapiBasicAuth = rcapiBasicAuth;
     }
 }

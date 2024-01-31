@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.codec.binary.Base64;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.OperationOutcome;
@@ -75,7 +77,6 @@ public class ScheduledTask {
 	private static final Logger logger = LoggerFactory.getLogger(ScheduledTask.class);
 	ObjectMapper mapper = new ObjectMapper();
 
-	private String smartPacerBasicAuth = "user:secret";
 	private OmopServerOperations myMapper;
 
 	@Autowired
@@ -108,7 +109,7 @@ public class ScheduledTask {
 	public ScheduledTask() {
 		conceptIdStart = StaticValues.CONCEPT_MY_SPACE;
 		fhirOmopVocabularyMap = new FhirOmopVocabularyMapImpl();
-		setSmartPacerBasicAuth(System.getenv("RCAPI_BASIC_AUTH"));
+		// setSmartPacerBasicAuth(System.getenv("RCAPI_BASIC_AUTH"));
 
 		// We are using the server operations implementation. 
 		WebApplicationContext myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
@@ -135,15 +136,20 @@ public class ScheduledTask {
 		queryPeriod3 *= 1000L;
 	}
 
-	public String getSmartPacerBasicAuth() {
-		return this.smartPacerBasicAuth;
+	@PostConstruct
+	private void debugValueDisplay() {
+		logger.debug("RC API Basic Auth is " + configValues.getRcApiBasicAuth());
 	}
+	
+	// public String getSmartPacerBasicAuth() {
+	// 	return this.smartPacerBasicAuth;
+	// }
 
-	public void setSmartPacerBasicAuth(String smartPacerBasicAuth) {
-		if (smartPacerBasicAuth != null && !smartPacerBasicAuth.isEmpty()) {
-			this.smartPacerBasicAuth = smartPacerBasicAuth;
-		}
-	}
+	// public void setSmartPacerBasicAuth(String smartPacerBasicAuth) {
+	// 	if (smartPacerBasicAuth != null && !smartPacerBasicAuth.isEmpty()) {
+	// 		this.smartPacerBasicAuth = smartPacerBasicAuth;
+	// 	}
+	// }
 
 	protected void writeToLog (CaseInfo caseInfo, String message) {
 		CaseLog caseLog = new CaseLog();
@@ -791,7 +797,7 @@ public class ScheduledTask {
 
 	private HttpHeaders createHeaders() {
 		HttpHeaders httpHeaders = new HttpHeaders();
-		byte[] encodedAuth = Base64.encodeBase64(smartPacerBasicAuth.getBytes());
+		byte[] encodedAuth = Base64.encodeBase64(configValues.getRcApiBasicAuth().getBytes());
 		String authHeader = "Basic " + new String(encodedAuth);
 		httpHeaders.set("Authorization", authHeader);
 		httpHeaders.setAccept(Arrays.asList(new MediaType("application", "fhir+json")));
