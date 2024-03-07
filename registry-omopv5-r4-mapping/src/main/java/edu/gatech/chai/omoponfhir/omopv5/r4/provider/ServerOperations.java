@@ -53,6 +53,7 @@ import ca.uhn.fhir.rest.param.TokenParam;
 import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopServerOperations;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.CodeableConceptUtil;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ConfigValues;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.QueryRequest;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ThrowFHIRExceptions;
 import edu.gatech.chai.omopv5.dba.service.CaseInfoService;
@@ -156,8 +157,6 @@ public class ServerOperations {
 		@OperationParam(name = "set-tries-left") NumberParam theTriesLeft,
 		@OperationParam(name = "lab-results") Bundle theLabResults) {
 
-		Bundle returnBundle = new Bundle();
-
 		Integer triesLeft = StaticValues.MAX_TRY;
 		if (theTriesLeft != null) {
 			triesLeft = theTriesLeft.getValue().intValue();
@@ -190,146 +189,147 @@ public class ServerOperations {
 			patientIdParamList.add(patientIdParameterWrapper);
 		}
 
+		Date currentTime = new Date();
+
 		// get the value of set-status parameter.
-		if (theSetStatus != null) {
-			String newStatus = theSetStatus.getValue();
-			Date currentTime = new Date();
+		if (theSetStatus == null || theSetStatus.isEmpty()) {
+			if (theCaseId != null) {
+				List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, caseIdParamList, "id ASC");
+				for (CaseInfo caseInfo : caseInfos) {
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					caseInfo.setTriggerAtDateTime(currentTime);
+					caseInfo.setLastUpdatedDateTime(currentTime);
+					caseInfo.setTriesLeft(triesLeft);
+					caseInfoService.update(caseInfo);
+				}
+			} else {
+				// This is a new REQUEST. 
+				if (theLabResults == null || theLabResults.isEmpty()) {
+					ThrowFHIRExceptions.unprocessableEntityException("Lab Results with a patient are required to create a new REQUEST");
+				}
 
-			if (StaticValues.REQUEST.equals(newStatus)) {
-				// Set the status to REQUEST.
-				if (theCaseId != null) {
-					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, caseIdParamList, "id ASC");
-					for (CaseInfo caseInfo : caseInfos) {
-						caseInfo.setStatus(StaticValues.REQUEST);
-						caseInfo.setTriggerAtDateTime(currentTime);
-						caseInfo.setTriesLeft(triesLeft);
-						caseInfoService.update(caseInfo);
-					}
-				} else {
-					// This is a new REQUEST. 
-					if (theLabResults == null || theLabResults.isEmpty()) {
-						ThrowFHIRExceptions.unprocessableEntityException("Lab Results with a patient are required to create a new REQUEST");
-					}
+				// Sanity check. The lab results have a patient resource. The patient identifier must match the 
+				// patient identifier in the parameter.
+				boolean patientIdSystemOk = false;
+				boolean patientIdValueOk = false;
+				for ( BundleEntryComponent entry : theLabResults.getEntry()) {
+					Resource resource = entry.getResource();
+					if (resource instanceof Patient) {
+						for (Identifier identifier : ((Patient) resource).getIdentifier()) {
+							String patientIdParamSystem = thePatientIdentifier.getSystem();
+							String patientIdParamValue = thePatientIdentifier.getValue();
 
-					// Sanity check. The lab results have a patient resource. The patient identifier must match the 
-					// patient identifier in the parameter.
-					boolean patientIdSystemOk = false;
-					boolean patientIdValueOk = false;
-					for ( BundleEntryComponent entry : theLabResults.getEntry()) {
-						Resource resource = entry.getResource();
-						if (resource instanceof Patient) {
-							for (Identifier identifier : ((Patient) resource).getIdentifier()) {
-								String patientIdParamSystem = thePatientIdentifier.getSystem();
-								String patientIdParamValue = thePatientIdentifier.getValue();
+							String patientIdSystem = identifier.getSystem();
+							String patientIdValue = identifier.getValue();
 
-								String patientIdSystem = identifier.getSystem();
-								String patientIdValue = identifier.getValue();
+							if (patientIdParamSystem == null || patientIdParamSystem.isBlank() || patientIdParamSystem.equalsIgnoreCase(patientIdSystem)) {
+								patientIdSystemOk = true;
+							}
 
-								if (patientIdParamSystem == null || patientIdParamSystem.isBlank() || patientIdParamSystem.equalsIgnoreCase(patientIdSystem)) {
-									patientIdSystemOk = true;
-								}
-
-								if (patientIdParamValue.equalsIgnoreCase(patientIdValue)) {
-									patientIdValueOk = true;
-								}
-
-								if (patientIdSystemOk && patientIdValueOk) {
-									break;
-								}
+							if (patientIdParamValue.equalsIgnoreCase(patientIdValue)) {
+								patientIdValueOk = true;
 							}
 
 							if (patientIdSystemOk && patientIdValueOk) {
 								break;
 							}
 						}
-					}
 
-					if (!patientIdSystemOk || !patientIdValueOk) {
-						// Error the patient identifier in the parameter is not same as the patient identifier
-						// in the Patient resource. 
-						ThrowFHIRExceptions.unprocessableEntityException("Parameters.patient-identifier must match with Parameters.lab-results.entry.resource.Patient.identifier");
-					}
-
-					// Even if this is a new request, we may already have a case for this patient.
-					// Check if we have a case
-					List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, patientIdParamList, "id ASC");
-					CaseInfo caseInfo = null;
-					if (caseInfos != null && !caseInfos.isEmpty()) {
-						caseInfo = caseInfos.get(0);
-						caseInfo.setStatus(StaticValues.REQUEST);
-						caseInfo.setTriesLeft(triesLeft);
-						caseInfoService.update(caseInfo);
-
-						if (caseInfos.size() > 1) {
-							logger.warn("More than one case_info found. Duplicate cases must be removed");
+						if (patientIdSystemOk && patientIdValueOk) {
+							break;
 						}
 					}
-
-					// We have a lab. Create these results in the
-					// OMOP database.
-					List<BundleEntryComponent> responseEntries = myMapper.createEntries(theLabResults.getEntry(), caseInfo);
-					int errorFlag = 0;
-					String errMessage = "";
-					FPerson fPerson = null;
-					for (BundleEntryComponent responseEntry : responseEntries) {
-						Resource resource = responseEntry.getResource();
-						if (resource instanceof Patient) {
-							fPerson = new FPerson();
-							System.out.println("NEW PATIENT IS:::::" + ((Patient) resource).getIdElement().getIdPartAsLong());
-							fPerson.setId(((Patient) resource).getIdElement().getIdPartAsLong());
-						}
-
-						if (!responseEntry.getResponse().getStatus().startsWith("201") 
-							&& !responseEntry.getResponse().getStatus().startsWith("200")) {
-							String jsonResource = StaticValues.serializeIt(resource);
-							errMessage += "Failed to create/add " + jsonResource;
-							logger.error(errMessage);
-							errorFlag = 1;
-						}
-					}
-
-					if (errorFlag == 1 || fPerson == null) {
-						// Error occurred on one of resources.
-						if (fPerson == null) {
-							errMessage += " Patient resource is REQUIRED";
-						}
-						ThrowFHIRExceptions.unprocessableEntityException("Failed to create entiry resources: " + errMessage);
-					}
-
-					if (caseInfo == null) {
-						caseInfo = new CaseInfo();
-						caseInfo.setPatientIdentifier(patientIdentifier);
-						caseInfo.setFPerson(fPerson);
-						caseInfo.setStatus(StaticValues.REQUEST);
-						caseInfo.setServerHost(this.rcApiHost);
-						caseInfo.setServerUrl("/forms/start?asyncFlag=true");
-						caseInfo.setCreatedDateTime(currentTime);
-						caseInfo.setTriggerAtDateTime(currentTime);
-						caseInfo.setTriesLeft(triesLeft);
-						caseInfoService.create(caseInfo);
-					}	
-				}
-			} else if (StaticValues.REQUEST_IN_ACTIVE.equals(newStatus)) {
-				List<ParameterWrapper> IdParamList = null;
-				if (theCaseId != null) {
-					IdParamList = caseIdParamList;
-				} else if (thePatientIdentifier != null) {
-					IdParamList = patientIdParamList;
-				} else {
-					ThrowFHIRExceptions.unprocessableEntityException("Either case ID or patient identifer must be provided to refresh the case");
 				}
 
-				List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, IdParamList, "id ASC");
-				for (CaseInfo caseInfo : caseInfos) {
-					caseInfo.setStatus(StaticValues.REQUEST_IN_ACTIVE);
-					caseInfo.setTriggerAtDateTime(currentTime);
+				if (!patientIdSystemOk || !patientIdValueOk) {
+					// Error the patient identifier in the parameter is not same as the patient identifier
+					// in the Patient resource. 
+					ThrowFHIRExceptions.unprocessableEntityException("Parameters.patient-identifier must match with Parameters.lab-results.entry.resource.Patient.identifier");
+				}
+
+				// Even if this is a new request, we may already have a case for this patient.
+				// Check if we have a case
+				List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, patientIdParamList, "id ASC");
+				CaseInfo caseInfo = null;
+				if (caseInfos != null && !caseInfos.isEmpty()) {
+					caseInfo = caseInfos.get(0);
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					caseInfo.setLastUpdatedDateTime(currentTime);
+					caseInfo.setActivatedDateTime(currentTime);
 					caseInfo.setTriesLeft(triesLeft);
 					caseInfoService.update(caseInfo);
+
+					if (caseInfos.size() > 1) {
+						logger.warn("More than one case_info found. Duplicate cases must be removed");
+					}
 				}
+
+				// We have a lab. Create these results in the
+				// OMOP database.
+				List<BundleEntryComponent> responseEntries = myMapper.createEntries(theLabResults.getEntry(), caseInfo);
+				int errorFlag = 0;
+				String errMessage = "";
+				FPerson fPerson = null;
+				for (BundleEntryComponent responseEntry : responseEntries) {
+					Resource resource = responseEntry.getResource();
+					if (resource instanceof Patient) {
+						fPerson = new FPerson();
+						System.out.println("NEW PATIENT IS:::::" + ((Patient) resource).getIdElement().getIdPartAsLong());
+						fPerson.setId(((Patient) resource).getIdElement().getIdPartAsLong());
+					}
+
+					if (!responseEntry.getResponse().getStatus().startsWith("201") 
+						&& !responseEntry.getResponse().getStatus().startsWith("200")) {
+						String jsonResource = StaticValues.serializeIt(resource);
+						errMessage += "Failed to create/add " + jsonResource;
+						logger.error(errMessage);
+						errorFlag = 1;
+					}
+				}
+
+				if (errorFlag == 1 || fPerson == null) {
+					// Error occurred on one of resources.
+					if (fPerson == null) {
+						errMessage += " Patient resource is REQUIRED";
+					}
+					ThrowFHIRExceptions.unprocessableEntityException("Failed to create entiry resources: " + errMessage);
+				}
+
+				if (caseInfo == null) {
+					caseInfo = new CaseInfo();
+					caseInfo.setPatientIdentifier(patientIdentifier);
+					caseInfo.setFPerson(fPerson);
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					caseInfo.setServerHost(this.rcApiHost);
+					caseInfo.setServerUrl("/forms/start?asyncFlag=true");
+					caseInfo.setCreatedDateTime(currentTime);
+					caseInfo.setLastUpdatedDateTime(currentTime);
+					caseInfo.setActivatedDateTime(currentTime);
+					caseInfo.setTriggerAtDateTime(currentTime);
+					caseInfo.setTriesLeft(triesLeft);
+					caseInfoService.create(caseInfo);
+				}	
+			}
+		} else {
+			String newStatus = theSetStatus.getValue();
+
+			List<ParameterWrapper> IdParamList = null;
+			if (theCaseId != null) {
+				IdParamList = caseIdParamList;
+			} else if (thePatientIdentifier != null) {
+				IdParamList = patientIdParamList;
+			} else {
+				ThrowFHIRExceptions.unprocessableEntityException("Either case ID or patient identifer must be provided to refresh the case");
+			}
+
+			List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, IdParamList, "id ASC");
+			for (CaseInfo caseInfo : caseInfos) {
+				caseInfo.setStatus(newStatus);
+				caseInfo.setTriggerAtDateTime(currentTime);
+				caseInfo.setTriesLeft(triesLeft);
+				caseInfoService.update(caseInfo);
 			}
 		}
-
-		// return returnBundle;
 	}
 
 	@Operation(name="$registry-test", manualResponse = true)

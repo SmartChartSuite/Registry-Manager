@@ -76,6 +76,12 @@ public class CaseInfo extends BaseEntity {
 	@Column(name="tries_left")
 	private Integer triesLeft;
 	
+	@Column(name="last_successful_datetime")
+	private Date lastSuccessfulDateTime;
+
+	@Column(name="case_started_running_datetime")
+	private Date caseStartedRunningDateTime;
+
 	public CaseInfo() {
 		super();
 	}
@@ -182,6 +188,22 @@ public class CaseInfo extends BaseEntity {
 
 	public void setTriesLeft(Integer triesLeft) {
 		this.triesLeft = triesLeft;
+	}
+
+	public Date getLastSuccessfulDateTime() {
+		return lastSuccessfulDateTime;
+	}
+
+	public void setLastSuccessfulDateTime(Date lastSuccessfulDateTime) {
+		this.lastSuccessfulDateTime = lastSuccessfulDateTime;
+	}
+
+	public Date getCaseStartedRunningDateTime() {
+		return caseStartedRunningDateTime;
+	}
+
+	public void setCaseStartedRunningDateTime(Date caseStartedRunningDateTime) {
+		this.caseStartedRunningDateTime = caseStartedRunningDateTime;
 	}
 
 	@Override

@@ -7,7 +7,7 @@
 	<groupId>edu.gatech.chai</groupId>
 	<artifactId>registry-fhir</artifactId>
 	<packaging>pom</packaging>
-	<version>0.3.13</version>
+	<version>0.4.0</version>
 	<name>Registry-FHIR</name>
 	<url>http://omoponfhir.org</url>
 

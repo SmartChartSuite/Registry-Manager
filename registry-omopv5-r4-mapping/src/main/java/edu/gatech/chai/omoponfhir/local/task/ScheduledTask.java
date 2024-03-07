@@ -35,6 +35,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -56,6 +57,7 @@ import edu.gatech.chai.omoponfhir.local.dao.FhirOmopVocabularyMapImpl;
 import edu.gatech.chai.omoponfhir.local.model.FhirOmopVocabularyMapEntry;
 import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopServerOperations;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ConfigValues;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.QueryRequest;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
 import edu.gatech.chai.omopv5.dba.service.ConceptRelationshipService;
 import edu.gatech.chai.omopv5.dba.service.ConceptService;
@@ -176,336 +178,396 @@ public class ScheduledTask {
 		return endPoint;
 	}
 
-	// @Scheduled(initialDelay = 30000, fixedDelay = 60000000)
-	@Scheduled(initialDelay = 30000, fixedDelay = 60000)
-	public void runPeriodicQuery() {
-		Date currentTime = new Date();
-		Long currentTimeEpoch = currentTime.getTime();
-		List<ParameterWrapper> params = new ArrayList<ParameterWrapper>();
-
-		// Add triggerAt parameter
-		ParameterWrapper param = new ParameterWrapper("Date", Arrays.asList("triggerAtDateTime"), Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
-		params.add(param);
-
-		// Add status != time out
-		param = new ParameterWrapper("String", Arrays.asList("status", "status", "status"), Arrays.asList("!=", "!=", "!="), Arrays.asList(StaticValues.TIMED_OUT, StaticValues.ERROR_IN_CLIENT, StaticValues.INACTIVE), "and");
-		params.add(param);
-
-		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 2, params, "id ASC");
+	protected Bundle retrieveQueryResult(CaseInfo caseInfo) {
 		RestTemplate restTemplate = new RestTemplate();
 		IParser parser = StaticValues.myFhirContext.newJsonParser();
 
-		for (CaseInfo caseInfo : caseInfos) {
-			String serverHost = caseInfo.getServerHost();
+		String serverHost = caseInfo.getServerHost();
+		ResponseEntity<String> response = null;
+		Bundle resultBundle = null;
 
-			if (StaticValues.ACTIVE.equals(caseInfo.getStatus()) ||
-				StaticValues.ERROR_IN_SERVER.equals(caseInfo.getStatus()) ||
-				StaticValues.ERROR_UNKNOWN.equals(caseInfo.getStatus())) {
-				// check if it's time to do the query.
-				// if (currentTime.before(caseInfo.getTriggerAt())) {
-				// 	logger.debug("Case (" + caseInfo.getId() + ") passing. TriggerTime: " + caseInfo.getTriggerAt().toString());
-				// 	continue;
-				// }
+		// call status URL to get FHIR syphilis registry data.
+		String statusUrl = caseInfo.getStatusUrl();
+		HttpEntity<String> reqAuth = new HttpEntity<String>(createHeaders());
 
-				Integer triesLeft = caseInfo.getTriesLeft();
-				if (triesLeft <= 0) {
-					// used up the number of tries
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") Timed Out");
-					caseInfo.setStatus(StaticValues.TIMED_OUT);
+		try {
+			String statusEndPoint;
+			if (statusUrl.startsWith("http")) {
+				statusEndPoint = statusUrl;
+			} else {
+				statusEndPoint = getEndPoint(serverHost, statusUrl);
+			}
+
+			// Get the status
+			response = restTemplate.exchange(statusEndPoint, HttpMethod.GET, reqAuth, String.class);
+		} catch (HttpClientErrorException e) {
+			String rBody = e.getResponseBodyAsString();
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n" + rBody);
+			caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+			caseInfoService.update(caseInfo);
+			return null;
+		} catch (HttpServerErrorException e) {
+			String rBody = e.getResponseBodyAsString();
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") SERVER ERROR: " + e.getStatusCode() + "\n" + rBody);
+			caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
+			retryCountUpdate(caseInfo);
+			caseInfoService.update(caseInfo);
+			return null;
+			// We do not change the status as this is a server error.
+		} catch (UnknownHttpStatusCodeException e) {
+			String rBody = e.getResponseBodyAsString();
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED with Unknown code\n" + rBody);		
+			caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
+			caseInfoService.update(caseInfo);
+			return null;
+		}
+
+		HttpStatusCode statusCode = response.getStatusCode();
+		if (!statusCode.is2xxSuccessful()) {
+			if (statusCode.is4xxClientError()) {
+				caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+			} else if (statusCode.is5xxServerError()) {
+				caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
+				retryCountUpdate(caseInfo);
+			} else {
+				caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
+			}
+			logger.debug("Status Query Failed and Responded with statusCode:" + statusCode.toString());
+			OperationOutcome oo = parser.parseResource(OperationOutcome.class, response.getBody());
+			if (oo != null && !oo.isEmpty()) {
+				String errorBody = "";
+				for (OperationOutcomeIssueComponent issue: oo.getIssue()) {
+					errorBody += issue.getCode() + ", ";
+				}	
+				writeToLog(caseInfo, "Status Query Failed and Responded with issue(s):" + errorBody);
+			} else {
+				writeToLog(caseInfo, "Status Query Failed and Responded with statusCode:" + statusCode.toString());
+			}
+		} else {
+			// Get response body
+			String responseBody = response.getBody();
+
+			if (responseBody != null && !responseBody.isEmpty()) {
+				Parameters parameters = parser.parseResource(Parameters.class, responseBody);
+				// StringType jobStatus = (StringType) parameters.getParameter("jobStatus");
+				ParametersParameterComponent parameter = parameters.getParameter("jobStatus");
+				StringType jobStatus = null;
+				if (parameter == null || parameter.isEmpty()) {
+					caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
+					retryCountUpdate(caseInfo);
 					caseInfoService.update(caseInfo);
-
-					continue;
+					return null;
 				}
 
-				// decrement the counter
-				caseInfo.setTriesLeft(triesLeft-1);
-
-				// call status URL to get FHIR syphilis registry data.
-				String statusUrl = caseInfo.getStatusUrl();
-
-				HttpEntity<String> reqAuth = new HttpEntity<String>(createHeaders());
-				ResponseEntity<String> response = null;
-		
-				try {
-					String statusEndPoint;
-					if (statusUrl.startsWith("http")) {
-						statusEndPoint = statusUrl;
-					} else {
-						statusEndPoint = getEndPoint(serverHost, statusUrl);
-					}
-					response = restTemplate.exchange(statusEndPoint, HttpMethod.GET, reqAuth, String.class);
-				} catch (HttpClientErrorException e) {
-					String rBody = e.getResponseBodyAsString();
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n" + rBody);
-					if (e.getRawStatusCode() == 404) {
-						caseInfo.setStatus(StaticValues.REQUEST_IN_ACTIVE);
-					} else {
-						caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
-					}
+				jobStatus = (StringType) parameter.getValue();
+				if (jobStatus == null || jobStatus.isEmpty()) {
+					logger.debug("RC-API jobStatus is null or empty. Will try again ...");
+					writeToLog(caseInfo, "RC-API jobStatus is null or empty. Will try again ...");
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					retryCountUpdate(caseInfo);
 					caseInfoService.update(caseInfo);
-					continue;
-				} catch (HttpServerErrorException e) {
-					String rBody = e.getResponseBodyAsString();
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") SERVER ERROR: " + e.getStatusCode() + "\n" + rBody);
-					caseInfo.setStatus(StaticValues.ERROR_IN_SERVER);
-					caseInfoService.update(caseInfo);
-					continue;
-					// We do not change the status as this is a server error.
-				} catch (UnknownHttpStatusCodeException e) {
-					String rBody = e.getResponseBodyAsString();
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED with Unknown code\n" + rBody);		
-					caseInfo.setStatus(StaticValues.ERROR_UNKNOWN);
-					caseInfoService.update(caseInfo);
-					continue;
+					return null;
 				}
 
-				HttpStatus statusCode = response.getStatusCode();
-				if (!statusCode.is2xxSuccessful()) {
-					if (statusCode.is4xxClientError()) {
-						caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
-					} else if (statusCode.is5xxServerError()) {
-						caseInfo.setStatus(StaticValues.ERROR_IN_SERVER);
-					} else {
-						caseInfo.setStatus(StaticValues.ERROR_UNKNOWN);
-					}
-					logger.debug("Status Query Failed and Responded with statusCode:" + statusCode.toString());
-					OperationOutcome oo = parser.parseResource(OperationOutcome.class, response.getBody());
-					if (oo != null && !oo.isEmpty()) {
-						String errorBody = "";
-						for (OperationOutcomeIssueComponent issue: oo.getIssue()) {
-							errorBody += issue.getCode() + ", ";
-						}	
-						writeToLog(caseInfo, "Status Query Failed and Responded with issue(s):" + errorBody);
-					} else {
-						writeToLog(caseInfo, "Status Query Failed and Responded with statusCode:" + statusCode.toString());
-					}
-				} else {
-					// Get response body
-					String responseBody = response.getBody();
-
-					if (responseBody != null && !responseBody.isEmpty()) {
-						Parameters parameters = parser.parseResource(Parameters.class, responseBody);
-						// StringType jobStatus = (StringType) parameters.getParameter("jobStatus");
-						ParametersParameterComponent parameter = parameters.getParameter("jobStatus");
-						StringType jobStatus = null;
-						if (parameter == null || parameter.isEmpty()) {
-							continue;
-						}
-
-						jobStatus = (StringType) parameter.getValue();
-						if (jobStatus == null || jobStatus.isEmpty()) {
-							writeToLog(caseInfo, "RC-API jobStatus is null or empty. Waiting ... ");
-							caseInfoService.update(caseInfo);
-							continue;
-						}
-
-						if (jobStatus != null && !jobStatus.isEmpty() && !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
-							logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Waiting ... ");
-							writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Waiting ... ");
-							caseInfoService.update(caseInfo);
-							continue;
-						}
-
-						List<ParametersParameterComponent> parameterComponents = parameters.getParameter();
-						Bundle resultBundle = null;
-						for (ParametersParameterComponent parameterComponent: parameterComponents) {
-							if ("result".equals(parameterComponent.getName())) {
-								resultBundle = (Bundle) parameterComponent.getResource();
-								break;
-							}
-						}
-
-						if (resultBundle != null && !resultBundle.isEmpty()) {
-							List<BundleEntryComponent> entries = resultBundle.getEntry();
-							List<BundleEntryComponent> responseEntries = null;
-							try {
-								responseEntries = myMapper.createEntries(entries, caseInfo);
-							} catch (Exception e) {
-								StringWriter sw = new StringWriter();
-								PrintWriter pw = new PrintWriter(sw);
-								e.printStackTrace(pw);
-
-								logger.error("Error occured while creating resources in the Output FHIR Bundle entries. \n"+sw.toString());
-								writeToLog(caseInfo, "Error occured while creating resources in the Output FHIR Bundle entries.\n"+sw.toString());
-
-								caseInfo.setStatus(StaticValues.ERROR_IN_CLIENT);
-								caseInfoService.update(caseInfo);
-
-								continue;
-							}
-							int errorFlag = 0;
-							String errMessage = "";
-							for (BundleEntryComponent responseEntry : responseEntries) {
-								if (!responseEntry.getResponse().getStatus().startsWith("201") 
-									&& !responseEntry.getResponse().getStatus().startsWith("200")) {
-									String jsonResource = StaticValues.serializeIt(responseEntry.getResource());
-									errMessage += "Failed to create/add " + jsonResource;
-									logger.error(errMessage);
-									errorFlag = 1;
-								}
-							}
-
-							if (errorFlag == 1) {
-								// Error occurred on one of resources.
-								writeToLog(caseInfo, errMessage);
-								caseInfo.setStatus(StaticValues.ERROR_UNKNOWN);
-							} else {
-								// case query was successful. Reset the counter.
-								caseInfo.setTriesLeft(StaticValues.MAX_TRY);
-								caseInfo.setLastUpdatedDateTime(currentTime);
-
-								logger.debug("TRIGGER: current_time=" + currentTime.getTime() + ", activated_time = " + caseInfo.getActivatedDateTime().getTime() + ", thresholdDuration1 = " + thresholdDuration1 + ", threshold_at = " + (new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1)).getTime() + ", trigger_at=" + (new Date(currentTime.getTime()+queryPeriod1).getTime()));
-								if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1))) {
-									caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod1));
-								} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration2))) {
-									caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod2));
-								} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration3))) {
-									caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod3));
-								} else {
-									caseInfo.setStatus(StaticValues.INACTIVE);
-									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") changed status to " + caseInfo.getStatus());
-								}
-
-								if (StaticValues.INACTIVE.equals(caseInfo.getStatus())) {
-									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. And case becomes " + StaticValues.INACTIVE);
-								} else {
-									writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. Next trigger at " + caseInfo.getTriggerAtDateTime().toString());
-								}
-							}
-						} else {
-							writeToLog(caseInfo, "The response for PACER query has no results");
-						}
-					}
-				}
-			} else if (StaticValues.REQUEST.equals(caseInfo.getStatus()) 
-				|| StaticValues.REQUEST_IN_ACTIVE.equals(caseInfo.getStatus())) {
-
-				logger.debug("Case (" + caseInfo.getId() + ") requesting to RC-API");
-
-				Integer triesLeft = caseInfo.getTriesLeft();
-				if (triesLeft <= 0) {
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") Request Timed Out");
-					caseInfo.setStatus(StaticValues.TIMED_OUT);
+				if (jobStatus != null && !jobStatus.isEmpty() && "in-progress".equalsIgnoreCase(jobStatus.asStringValue())) {
+					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
+					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
+					caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
 					caseInfoService.update(caseInfo);
-
-					continue;
+					return null;
 				}
 
-				// decrement the counter
-				caseInfo.setTriesLeft(triesLeft-1);
+				if (jobStatus != null && !jobStatus.isEmpty() 
+					&& !"in-progress".equalsIgnoreCase(jobStatus.asStringValue())
+					&& !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
+					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Will try new request ... ");
+					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Will try new request ... ");
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					retryCountUpdate(caseInfo);
+					caseInfoService.update(caseInfo);
+					return null;
+				}
 
-				// Send a request. This is triggered by a new ELR or NoSuchRequest from PACER server
-				String patientIdentifier = caseInfo.getPatientIdentifier();
-				if (patientIdentifier != null) {
-					// Create Parameters for the REQUEST.
-					Parameters parameters = new Parameters()
-						.addParameter(
-							new ParametersParameterComponent(new StringType("patientIdentifier"))
-								.setValue(new StringType(patientIdentifier))
-						)
-						.addParameter(
-							new ParametersParameterComponent(new StringType("jobPackage"))
-								.setValue(new StringType(configValues.getJobPackage()))
-					);
-					
-					String parameterJson = parser.encodeResourceToString(parameters);
-					
-					JsonNode requestJson = null;
-					ResponseEntity<String> response = null;
-					try {
-						requestJson = mapper.readTree(parameterJson);
-						HttpHeaders headers = createHeaders();
-						headers.setContentType(MediaType.APPLICATION_JSON);
-						HttpEntity<JsonNode> entity = new HttpEntity<JsonNode>(requestJson, headers);
-	
-						String serverUrl = caseInfo.getServerUrl();
-						String serverEndPoint;
-						if (serverUrl.startsWith("http")) {
-							serverEndPoint = serverUrl;
-						} else {
-							if (serverHost == null || serverHost.isEmpty()) {
-								writeToLog(caseInfo, "server endpoint error: " + serverHost + serverUrl);
-								logger.error("server endpoint error: " + serverHost + serverUrl);
-								caseInfoService.update(caseInfo);
-								continue;
-							} 
-
-							serverEndPoint = getEndPoint(serverHost, serverUrl);
-						}
-						response = restTemplate.postForEntity(serverEndPoint, entity, String.class);
-
-					} catch (Exception e) {
-						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") REQUEST FAILED: " + e.getMessage());
-						e.printStackTrace();
-						caseInfoService.update(caseInfo);
-						continue;
+				List<ParametersParameterComponent> parameterComponents = parameters.getParameter();
+				for (ParametersParameterComponent parameterComponent: parameterComponents) {
+					if ("result".equals(parameterComponent.getName())) {
+						resultBundle = (Bundle) parameterComponent.getResource();
+						break;
 					}
+				}
+			}
+		}
+
+		return resultBundle;
+	}
+
+	protected void createEntries(Bundle resultBundle, CaseInfo caseInfo) {
+		Date currentTime = new Date();
+
+		List<BundleEntryComponent> entries = resultBundle.getEntry();
+		List<BundleEntryComponent> responseEntries = null;
+		try {
+			responseEntries = myMapper.createEntries(entries, caseInfo);
+		} catch (Exception e) {
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+
+			logger.error("Error occured while creating resources in the Output FHIR Bundle entries. \n"+sw.toString());
+			writeToLog(caseInfo, "Error occured while creating resources in the Output FHIR Bundle entries.\n"+sw.toString());
+
+			caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+			caseInfoService.update(caseInfo);
+
+			return;
+		}
+		int errorFlag = 0;
+		String errMessage = "";
+		for (BundleEntryComponent responseEntry : responseEntries) {
+			if (!responseEntry.getResponse().getStatus().startsWith("201") 
+				&& !responseEntry.getResponse().getStatus().startsWith("200")) {
+				String jsonResource = StaticValues.serializeIt(responseEntry.getResource());
+				errMessage += "Failed to create/add " + jsonResource;
+				errorFlag = 1;
+			}
+		}
+
+		if (errorFlag == 1) {
+			// Error occurred on one of resources.
+			logger.error(errMessage);
+			writeToLog(caseInfo, errMessage);
+			caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
+		} else {
+			// case query was successful. Reset the counter.
+			caseInfo.setTriesLeft(StaticValues.MAX_TRY);
+			caseInfo.setLastSuccessfulDateTime(currentTime);
+			caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
+
+			logger.debug("TRIGGER: current_time=" + currentTime.getTime() + ", activated_time = " + caseInfo.getActivatedDateTime().getTime() + ", thresholdDuration1 = " + thresholdDuration1 + ", threshold_at = " + (new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1)).getTime() + ", trigger_at=" + (new Date(currentTime.getTime()+queryPeriod1).getTime()));
+			if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1))) {
+				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod1));
+			} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration2))) {
+				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod2));
+			} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration3))) {
+				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod3));
+			} else {
+				caseInfo.setStatus(QueryRequest.END.getCodeString());
+				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") changed status to " + caseInfo.getStatus());
+			}
+
+			if (QueryRequest.END.getCodeString().equals(caseInfo.getStatus())) {
+				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. And case becomes " + QueryRequest.END.getCodeString());
+			} else {
+				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. Next trigger at " + caseInfo.getTriggerAtDateTime().toString());
+			}
+		}
+
+		caseInfoService.update(caseInfo);
+	}
+
+	/**
+	 * 
+	 * @param caseInfo
+	 * - call this function at the end of process and be careful not to override other conditions that will
+	 *   change the state status.
+	 * @return
+	 */
+	protected Integer retryCountUpdate(CaseInfo caseInfo) {
+		Integer retrytLeft = caseInfo.getTriesLeft();
+
+		// decrement the counter
+		int next_retryLeft = retrytLeft-1;
+		caseInfo.setTriesLeft(next_retryLeft);
+
+		if (retrytLeft <= 1) {
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") Request Timed Out");
+			caseInfo.setStatus(QueryRequest.TIMED_OUT.getCodeString());
+		}
+
+		return next_retryLeft;
+	}
+
+	protected void requestForQuery(CaseInfo caseInfo) {
+		Date currentTime = new Date();
+
+		RestTemplate restTemplate = new RestTemplate();
+		IParser parser = StaticValues.myFhirContext.newJsonParser();
+
+		String serverHost = caseInfo.getServerHost();
+		ResponseEntity<String> response = null;
+
+		// Send a request. This is triggered by a new ELR or NoSuchRequest from PACER server
+		String patientIdentifier = caseInfo.getPatientIdentifier();
+		if (patientIdentifier != null) {
+			// Create Parameters for the REQUEST.
+			Parameters parameters = new Parameters()
+				.addParameter(
+					new ParametersParameterComponent(new StringType("patientIdentifier"))
+						.setValue(new StringType(patientIdentifier))
+				)
+				.addParameter(
+					new ParametersParameterComponent(new StringType("jobPackage"))
+						.setValue(new StringType(configValues.getJobPackage()))
+			);
 			
-					if (response.getStatusCode().equals(HttpStatus.CREATED) || response.getStatusCode().equals(HttpStatus.OK)) {
-						// Get Location
-						StringType jobId = null;
-						HttpHeaders responseHeaders = response.getHeaders();
-						URI statusUri = responseHeaders.getLocation();
-						String responseBody = response.getBody();
+			String parameterJson = parser.encodeResourceToString(parameters);
+			
+			JsonNode requestJson = null;
+			response = null;
+			try {
+				requestJson = mapper.readTree(parameterJson);
+				HttpHeaders headers = createHeaders();
+				headers.setContentType(MediaType.APPLICATION_JSON);
+				HttpEntity<JsonNode> entity = new HttpEntity<JsonNode>(requestJson, headers);
 
-						if (responseBody != null && !responseBody.isEmpty()) {
-							logger.debug("response body for REQUEST status: " + responseBody);
-							Parameters returnedParameters = parser.parseResource(Parameters.class, responseBody);
-							// jobId = (StringType) returnedParameters.getParameter("jobId");
-							ParametersParameterComponent parameter = returnedParameters.getParameter("jobId");
-							if (parameter == null || parameter.isEmpty())
-								continue;
-								
-							jobId = (StringType) parameter.getValue();
-						}
-
-						if (jobId == null || jobId.isEmpty()) {
-							// We failed to get a JobID.
-							writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get jobId");
-						} else {
-							if (statusUri != null) {
-								// Done. set it to ACTIVE
-								caseInfo.setStatusUrl(statusUri.toString());
-								caseInfo.setJobId(jobId.asStringValue());
-								if (StaticValues.REQUEST.equals(caseInfo.getStatus())) {
-									caseInfo.setActivatedDateTime(currentTime);
-									caseInfo.setTriesLeft(StaticValues.MAX_TRY);
-								}
-								caseInfo.setStatus(StaticValues.ACTIVE);
-
-								// set the triggered_at. Since this is a REQUEST, we set it to now.
-								Long triggeredAt = currentTime.getTime();
-								caseInfo.setTriggerAtDateTime(new Date(triggeredAt));
-
-								// log this session
-								writeToLog(caseInfo, "caes info (" + caseInfo.getId() + ") is updated to " + StaticValues.ACTIVE);
-							} else {
-								writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") gets no location info in the response header");
-							}
-						}
-					} else {
-						// non 2xx received. Check the OperationOutcome.
-						String errorBody = response.getBody();
-						if (errorBody != null && !errorBody.isEmpty()) {
-							OperationOutcome oo = parser.parseResource(OperationOutcome.class, errorBody);
-							String issueDesc = "";
-							for (OperationOutcomeIssueComponent issue: oo.getIssue()) {
-								issueDesc += issue.getCode().toString() + ", ";
-							}
-							writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") error response (" + issueDesc + ")");
-						} else {
-							writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") error response (" + response.getStatusCode().toString() + ")");
-						}
-					}					
+				String serverUrl = caseInfo.getServerUrl();
+				String serverEndPoint;
+				if (serverUrl.startsWith("http")) {
+					serverEndPoint = serverUrl;
 				} else {
-					// This cannot happen as patient identifier is a required field.
-					// BUt, if this ever happens, we write this in session log and return.
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") without patient identifier");
-					continue;
+					if (serverHost == null || serverHost.isEmpty()) {
+						writeToLog(caseInfo, "server endpoint error: " + serverHost + serverUrl);
+						logger.error("server endpoint error: " + serverHost + serverUrl);
+						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+						retryCountUpdate(caseInfo);
+						caseInfoService.update(caseInfo);
+						return;
+					} 
+
+					serverEndPoint = getEndPoint(serverHost, serverUrl);
+				}
+				response = restTemplate.postForEntity(serverEndPoint, entity, String.class);
+
+			} catch (Exception e) {
+				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") REQUEST FAILED: " + e.getMessage());
+				e.printStackTrace();
+				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+				retryCountUpdate(caseInfo);
+				caseInfoService.update(caseInfo);
+				return;
+			}
+
+			if (response.getStatusCode().equals(HttpStatus.CREATED) || response.getStatusCode().equals(HttpStatus.OK)) {
+				// Get Location
+				StringType jobId = null;
+				HttpHeaders responseHeaders = response.getHeaders();
+				URI statusUri = responseHeaders.getLocation();
+				String responseBody = response.getBody();
+
+				if (responseBody != null && !responseBody.isEmpty()) {
+					logger.debug("response body for REQUEST status: " + responseBody);
+					Parameters returnedParameters = parser.parseResource(Parameters.class, responseBody);
+					// jobId = (StringType) returnedParameters.getParameter("jobId");
+					ParametersParameterComponent parameter = returnedParameters.getParameter("jobId");
+					if (parameter == null || parameter.isEmpty()) {
+						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get jobId. jobId parameter is null.");
+						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+						retryCountUpdate(caseInfo);
+						caseInfoService.update(caseInfo);
+						return;
+					}
+						
+					jobId = (StringType) parameter.getValue();
+				}
+
+				if (jobId == null || jobId.isEmpty()) {
+					// We failed to get a JobID.
+					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get jobId (null).");
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					retryCountUpdate(caseInfo);
+				} else {
+					if (statusUri != null) {
+						/////////////////////////////////////////////////////
+						// Done. We got all we need. Now we are running this case. Set it to RUNNING
+						//
+						caseInfo.setStatusUrl(statusUri.toString());
+						caseInfo.setJobId(jobId.asStringValue());
+						caseInfo.setCaseStartedRunningDateTime(currentTime);
+						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
+						caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
+
+						// set the triggered_at. Since this is a REQUEST, we set it to now.
+						caseInfo.setTriggerAtDateTime(currentTime);
+
+						// log this session
+						writeToLog(caseInfo, "caes info (" + caseInfo.getId() + ") is updated to " + QueryRequest.RUNNING.getCodeString());
+					} else {
+						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get status URL.");
+						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+						retryCountUpdate(caseInfo);
+					}
 				}
 			} else {
-				// status that we do not need to do anything
-				continue;
+				// non 2xx received. Check the OperationOutcome.
+				String errorBody = response.getBody();
+				if (errorBody != null && !errorBody.isEmpty()) {
+					OperationOutcome oo = parser.parseResource(OperationOutcome.class, errorBody);
+					String issueDesc = "";
+					for (OperationOutcomeIssueComponent issue: oo.getIssue()) {
+						issueDesc += issue.getCode().toString() + ", ";
+					}
+					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") error response (" + issueDesc + ")");
+				} else {
+					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") error response (" + response.getStatusCode().toString() + ")");
+				}
+
+				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+				retryCountUpdate(caseInfo);
+			}					
+		} else {
+			// This cannot happen as patient identifier is a required field.
+			// BUt, if this ever happens, we write this in session log and return.
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") without patient identifier");
+			caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+			retryCountUpdate(caseInfo);
+		}
+
+		caseInfoService.update(caseInfo);
+	}
+
+	/**
+	 * Query State Machine that maintains a session for each case.
+	 */
+	@Scheduled(initialDelay = 30000, fixedDelay = 60000)
+	public void runPeriodicQuery() {
+		Date currentTime = new Date();
+
+		Long currentTimeEpoch = currentTime.getTime();
+		List<ParameterWrapper> params = new ArrayList<ParameterWrapper>();
+
+		// Add "triggerAt parameter"
+		ParameterWrapper param = new ParameterWrapper("Date", Arrays.asList("triggerAtDateTime"), 
+			Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
+		params.add(param);
+
+		// Add "status != time out and != error in client and != END"
+		param = new ParameterWrapper("String", Arrays.asList("status", "status", "status"), 
+			Arrays.asList("!=", "!=", "!="), Arrays.asList(QueryRequest.TIMED_OUT.getCodeString(), 
+			QueryRequest.ERROR_IN_CLIENT.getCodeString(), QueryRequest.END.getCodeString()), "and");
+		params.add(param);
+
+		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 2, params, "id ASC");
+		for (CaseInfo caseInfo : caseInfos) {
+			switch (QueryRequest.codeEnumOf(caseInfo.getStatus())) {
+				case RUNNING:  // case is awating for next scheduled time. 
+				case ERROR_IN_SERVER:
+					logger.debug("Case (" + caseInfo.getId() + ") retrieving to RC-API");
+					Bundle queryResult = retrieveQueryResult(caseInfo);
+					if (queryResult != null && !queryResult.isEmpty()) {
+						createEntries(queryResult, caseInfo);
+					}
+					
+					break;
+
+				case REQUEST_PENDING:
+					logger.debug("Case (" + caseInfo.getId() + ") requesting to RC-API");					
+					requestForQuery(caseInfo);
+					break;
+
+				case ERROR_UNKNOWN:
+				default:
+					// state that we do not need to do anything.
+					break;
 			}
 
 			caseInfoService.update(caseInfo);

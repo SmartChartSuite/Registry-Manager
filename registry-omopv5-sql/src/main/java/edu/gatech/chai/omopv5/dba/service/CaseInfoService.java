@@ -59,6 +59,10 @@ public interface CaseInfoService extends IService<CaseInfo> {
 					caseInfo.setCreatedDateTime(rs.getTimestamp(columnInfo));
 				} else if (columnInfo.equalsIgnoreCase(alias + "_tries_left")) {
 					caseInfo.setTriesLeft(rs.getInt(columnInfo));
+				} else if (columnInfo.equalsIgnoreCase(alias + "_last_successful_datetime")) {
+					caseInfo.setLastSuccessfulDateTime(rs.getTimestamp(columnInfo));
+				} else if (columnInfo.equalsIgnoreCase(alias + "_case_started_running_datetime")) {
+					caseInfo.setCaseStartedRunningDateTime(rs.getTimestamp(columnInfo));
 				}
 			}
 		} catch (SQLException e) {
@@ -121,6 +125,16 @@ public interface CaseInfoService extends IService<CaseInfo> {
 				}
 			} else if (columnInfo.equalsIgnoreCase(alias + "_tries_left")) {
 				caseInfo.setTriesLeft(Integer.parseInt(rowResult.get(columnInfo).getStringValue()));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_last_successful_datetime")) {
+				Date date = SqlUtil.string2DateTime(rowResult.get(columnInfo).getStringValue());
+				if (date != null) {
+					caseInfo.setLastSuccessfulDateTime(date);
+				}
+			} else if (columnInfo.equalsIgnoreCase(alias + "_case_started_running_datetime")) {
+				Date date = SqlUtil.string2DateTime(rowResult.get(columnInfo).getStringValue());
+				if (date != null) {
+					caseInfo.setCaseStartedRunningDateTime(date);
+				}
 			}
 		}
 
