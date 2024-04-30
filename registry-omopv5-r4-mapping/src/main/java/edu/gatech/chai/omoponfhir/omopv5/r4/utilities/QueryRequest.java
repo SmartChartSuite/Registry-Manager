@@ -1,9 +1,9 @@
 package edu.gatech.chai.omoponfhir.omopv5.r4.utilities;
 
 public enum QueryRequest {
-    RUNNING(0x0001, "RUNNING", "Case is running for monitoring the case."),
+    RUNNING(0x0001, "RUNNING", "Case is running for case monitoring."),
     END(0x0002, "END", "Case is at the end of active monitoring period."),
-    REQUEST_PENDING(0x0004, "REQUEST_PENDING", "Request to Query for case is queue but not in running queue."), 
+    REQUEST_PENDING(0x0004, "REQUEST_PENDING", "Request to Query for case is queued but not yet in running queue."), 
     TIMED_OUT(0x0008, "TIMED_OUT", "Retry count reached the maximum allowed count. Giving up."), 
     ERROR_IN_CLIENT(0x0100, "ERROR_IN_CLIENT", "Error occurred on client side during Request. Request is paused."), 
     ERROR_IN_SERVER(0x0200, "ERROR_IN_SERVER", "Error occurred on server side during Request. Request will be made again until it reaches the maximum retry-count."), 

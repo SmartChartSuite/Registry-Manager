@@ -19,15 +19,12 @@ import java.util.*;
 
 import edu.gatech.chai.omoponfhir.security.OIDCInterceptor;
 import edu.gatech.chai.omoponfhir.config.FhirServerConfig;
-import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopDeviceUseStatement;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.*;
-import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ConfigValues;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
 import edu.gatech.chai.omoponfhir.r4.security.SMARTonFHIRConformanceStatement;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.cors.CorsConfiguration;

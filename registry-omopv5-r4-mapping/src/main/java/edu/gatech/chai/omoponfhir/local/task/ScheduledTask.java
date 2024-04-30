@@ -261,15 +261,16 @@ public class ScheduledTask {
 
 				jobStatus = (StringType) parameter.getValue();
 				if (jobStatus == null || jobStatus.isEmpty()) {
-					logger.debug("RC-API jobStatus is null or empty. Will try again ...");
-					writeToLog(caseInfo, "RC-API jobStatus is null or empty. Will try again ...");
-					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					logger.debug("RC-API jobStatus is null or empty ...");
+					writeToLog(caseInfo, "RC-API jobStatus is null or empty ...");
+					caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
 					retryCountUpdate(caseInfo);
 					caseInfoService.update(caseInfo);
 					return null;
 				}
 
-				if (jobStatus != null && !jobStatus.isEmpty() && "in-progress".equalsIgnoreCase(jobStatus.asStringValue())) {
+				if (jobStatus != null && !jobStatus.isEmpty() 
+					&& "in-progress".equalsIgnoreCase(jobStatus.asStringValue())) {
 					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
 					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
 					caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
@@ -280,9 +281,9 @@ public class ScheduledTask {
 				if (jobStatus != null && !jobStatus.isEmpty() 
 					&& !"in-progress".equalsIgnoreCase(jobStatus.asStringValue())
 					&& !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
-					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Will try new request ... ");
-					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Will try new request ... ");
-					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " is not recognized ... ");
+					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " is not recognized ... ");
+					caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
 					retryCountUpdate(caseInfo);
 					caseInfoService.update(caseInfo);
 					return null;
@@ -338,10 +339,11 @@ public class ScheduledTask {
 			writeToLog(caseInfo, errMessage);
 			caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
 		} else {
-			// case query was successful. Reset the counter.
-			caseInfo.setTriesLeft(StaticValues.MAX_TRY);
+			// case query was successful.
 			caseInfo.setLastSuccessfulDateTime(currentTime);
-			caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
+
+			// We will request for query again if trigger algorithm allows
+			caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 
 			logger.debug("TRIGGER: current_time=" + currentTime.getTime() + ", activated_time = " + caseInfo.getActivatedDateTime().getTime() + ", thresholdDuration1 = " + thresholdDuration1 + ", threshold_at = " + (new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1)).getTime() + ", trigger_at=" + (new Date(currentTime.getTime()+queryPeriod1).getTime()));
 			if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1))) {
@@ -542,8 +544,9 @@ public class ScheduledTask {
 
 		// Add "status != time out and != error in client and != END"
 		param = new ParameterWrapper("String", Arrays.asList("status", "status", "status"), 
-			Arrays.asList("!=", "!=", "!="), Arrays.asList(QueryRequest.TIMED_OUT.getCodeString(), 
-			QueryRequest.ERROR_IN_CLIENT.getCodeString(), QueryRequest.END.getCodeString()), "and");
+			Arrays.asList("!=", "!=", "!=", "!="), Arrays.asList(QueryRequest.TIMED_OUT.getCodeString(), 
+			QueryRequest.ERROR_IN_CLIENT.getCodeString(), QueryRequest.END.getCodeString(), 
+			QueryRequest.ERROR_UNKNOWN.getCodeString()), "and");
 		params.add(param);
 
 		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 2, params, "id ASC");
@@ -564,7 +567,6 @@ public class ScheduledTask {
 					requestForQuery(caseInfo);
 					break;
 
-				case ERROR_UNKNOWN:
 				default:
 					// state that we do not need to do anything.
 					break;
