@@ -270,7 +270,7 @@ public class ScheduledTask {
 				}
 
 				if (jobStatus != null && !jobStatus.isEmpty() 
-					&& "in-progress".equalsIgnoreCase(jobStatus.asStringValue())) {
+					&& "inProgress".equalsIgnoreCase(jobStatus.asStringValue())) {
 					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
 					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
 					caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
@@ -279,7 +279,7 @@ public class ScheduledTask {
 				}
 
 				if (jobStatus != null && !jobStatus.isEmpty() 
-					&& !"in-progress".equalsIgnoreCase(jobStatus.asStringValue())
+					&& !"inProgress".equalsIgnoreCase(jobStatus.asStringValue())
 					&& !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
 					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " is not recognized ... ");
 					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " is not recognized ... ");
