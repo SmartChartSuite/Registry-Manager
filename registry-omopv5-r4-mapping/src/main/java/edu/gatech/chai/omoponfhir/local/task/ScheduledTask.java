@@ -203,7 +203,12 @@ public class ScheduledTask {
 		} catch (HttpClientErrorException e) {
 			String rBody = e.getResponseBodyAsString();
 			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n" + rBody);
-			caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+			if (404 == e.getStatusCode().value()) {
+				// job ID may be timed out. Make a new request.
+				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());	
+			} else {
+				caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+			}
 			caseInfoService.update(caseInfo);
 			return null;
 		} catch (HttpServerErrorException e) {
@@ -225,7 +230,12 @@ public class ScheduledTask {
 		HttpStatusCode statusCode = response.getStatusCode();
 		if (!statusCode.is2xxSuccessful()) {
 			if (statusCode.is4xxClientError()) {
-				caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+				if (404 == statusCode.value()) {
+					// job ID may be timed out. Make a new request.
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());	
+				} else {
+					caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+				}
 			} else if (statusCode.is5xxServerError()) {
 				caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
 				retryCountUpdate(caseInfo);
