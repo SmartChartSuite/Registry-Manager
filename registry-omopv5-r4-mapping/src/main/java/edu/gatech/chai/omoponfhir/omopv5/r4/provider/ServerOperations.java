@@ -324,6 +324,12 @@ public class ServerOperations {
 
 			List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, IdParamList, "id ASC");
 			for (CaseInfo caseInfo : caseInfos) {
+				if ("RESET_TO_RESTART".equals(newStatus)) {
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					caseInfo.setCreatedDateTime(currentTime);
+					caseInfo.setLastUpdatedDateTime(currentTime);
+					caseInfo.setActivatedDateTime(currentTime);
+				}
 				caseInfo.setStatus(newStatus);
 				caseInfo.setTriggerAtDateTime(currentTime);
 				caseInfo.setTriesLeft(triesLeft);
