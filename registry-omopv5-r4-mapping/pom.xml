@@ -24,7 +24,7 @@
 	<properties>
 		<hapi_stable_version>7.0.0</hapi_stable_version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spring_version>6.1.4</spring_version>
+		<spring_version>6.1.7</spring_version>
 		<registry_omopv5_version>1.6.4</registry_omopv5_version>
 	</properties>
 	
