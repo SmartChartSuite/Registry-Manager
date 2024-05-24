@@ -337,8 +337,6 @@ public class ServerOperations {
 			for (CaseInfo caseInfo : caseInfos) {
 				if ("RESET_TO_RESTART".equals(newStatus)) {
 					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
-					caseInfo.setCreatedDateTime(currentTime);
-					caseInfo.setLastUpdatedDateTime(currentTime);
 					caseInfo.setActivatedDateTime(currentTime);
 				} else {
 					caseInfo.setStatus(newStatus);
