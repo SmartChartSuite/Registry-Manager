@@ -66,8 +66,7 @@ public class ServerOperations {
 	private OmopServerOperations myMapper;
 	private CaseInfoService caseInfoService;
 	private ConfigValues configValues;
-    private String rcApiHost;
-
+	private String rcApiHost;
 
 	public ServerOperations() {
 		WebApplicationContext myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
@@ -84,31 +83,33 @@ public class ServerOperations {
 
 		logger.debug("RC API HOST is " + rcApiHost);
 	}
-	
-	@Operation(name="$process-message")
+
+	@Operation(name = "$process-message")
 	public Bundle processMessageOperation(
-			@OperationParam(name="content") Bundle theContent,
-			@OperationParam(name="async") BooleanType theAsync,
-			@OperationParam(name="response-url") UriType theUri			
-			) {
+			@OperationParam(name = "content") Bundle theContent,
+			@OperationParam(name = "async") BooleanType theAsync,
+			@OperationParam(name = "response-url") UriType theUri) {
 		Bundle retVal = new Bundle();
 		MessageHeader messageHeader = null;
-//		List<BundleEntryComponent> resources = new ArrayList<BundleEntryComponent>();
+		// List<BundleEntryComponent> resources = new ArrayList<BundleEntryComponent>();
 		List<BundleEntryComponent> entries = theContent.getEntry();
-		
+
 		if (theContent.getType() == BundleType.MESSAGE) {
 			// Evaluate the first entry, which must be MessageHeader
-//			BundleEntryComponent entry1 = theContent.getEntryFirstRep();
-//			Resource resource = entry1.getResource();
-			if (entries != null && !entries.isEmpty() && 
+			// BundleEntryComponent entry1 = theContent.getEntryFirstRep();
+			// Resource resource = entry1.getResource();
+			if (entries != null && !entries.isEmpty() &&
 					entries.get(0).getResource() != null &&
 					entries.get(0).getResource().getResourceType() == ResourceType.MessageHeader) {
 				messageHeader = (MessageHeader) entries.get(0).getResource();
 				// We handle observation-type.
 				// TODO: Add other types later.
 				Coding event = messageHeader.getEventCoding();
-//				Coding obsprovided = new Coding("http://hl7.org/fhir/message-events", "observation-provide", "Provide a simple observation or update a previously provided simple observation.");
-				Coding obsprovided = new Coding("http://terminology.hl7.org/CodeSystem/observation-category", "laboratory", "Laboratory");
+				// Coding obsprovided = new Coding("http://hl7.org/fhir/message-events",
+				// "observation-provide", "Provide a simple observation or update a previously
+				// provided simple observation.");
+				Coding obsprovided = new Coding("http://terminology.hl7.org/CodeSystem/observation-category",
+						"laboratory", "Laboratory");
 				if (CodeableConceptUtil.compareCodings(event, obsprovided) != 0) {
 					ThrowFHIRExceptions.unprocessableEntityException(
 							"We currently support only observation-provided Message event");
@@ -134,28 +135,29 @@ public class ServerOperations {
 			outcome.addIssue().setSeverity(IssueSeverity.ERROR).setDetails(detailCode);
 			messageHeaderResponse.setDetailsTarget(outcome);
 		}
-		
+
 		messageHeader.setResponse(messageHeaderResponse);
 		BundleEntryComponent responseMessageEntry = new BundleEntryComponent();
 		UUID uuid = UUID.randomUUID();
-		responseMessageEntry.setFullUrl("urn:uuid:"+uuid.toString());
+		responseMessageEntry.setFullUrl("urn:uuid:" + uuid.toString());
 		responseMessageEntry.setResource(messageHeader);
-		
-		if (resultEntries == null) resultEntries = new ArrayList<BundleEntryComponent>();
-		
+
+		if (resultEntries == null)
+			resultEntries = new ArrayList<BundleEntryComponent>();
+
 		resultEntries.add(0, responseMessageEntry);
 		retVal.setEntry(resultEntries);
-		
+
 		return retVal;
 	}
 
-	@Operation(name="$registry-control", manualResponse = true)
+	@Operation(name = "$registry-control", manualResponse = true)
 	public void registryControlOperation(RequestDetails theRequestDetails,
-		@OperationParam(name = "case-id") StringParam theCaseId,
-		@OperationParam(name = "patient-identifier") TokenParam thePatientIdentifier,
-		@OperationParam(name = "set-status") StringParam theSetStatus,
-		@OperationParam(name = "set-tries-left") NumberParam theTriesLeft,
-		@OperationParam(name = "lab-results") Bundle theLabResults) {
+			@OperationParam(name = "case-id") StringParam theCaseId,
+			@OperationParam(name = "patient-identifier") TokenParam thePatientIdentifier,
+			@OperationParam(name = "set-status") StringParam theSetStatus,
+			@OperationParam(name = "set-tries-left") NumberParam theTriesLeft,
+			@OperationParam(name = "lab-results") Bundle theLabResults) {
 
 		Integer triesLeft = StaticValues.MAX_TRY;
 		if (theTriesLeft != null) {
@@ -178,8 +180,9 @@ public class ServerOperations {
 		ParameterWrapper patientIdParameterWrapper = new ParameterWrapper();
 		String patientIdentifier = "";
 		if ((thePatientIdentifier == null || thePatientIdentifier.isEmpty()) && theCaseId == null) {
-			ThrowFHIRExceptions.unprocessableEntityException("Either Patient Identifier or case Id is required to trigger the query");
-		} else if (thePatientIdentifier != null && !thePatientIdentifier.isEmpty()){
+			ThrowFHIRExceptions.unprocessableEntityException(
+					"Either Patient Identifier or case Id is required to trigger the query");
+		} else if (thePatientIdentifier != null && !thePatientIdentifier.isEmpty()) {
 			patientIdentifier = thePatientIdentifier.getValue();
 			patientIdParameterWrapper.setParameterType("String");
 			patientIdParameterWrapper.setParameters(Arrays.asList("patientIdentifier"));
@@ -203,16 +206,18 @@ public class ServerOperations {
 					caseInfoService.update(caseInfo);
 				}
 			} else {
-				// This is a new REQUEST. 
+				// This is a new REQUEST.
 				if (theLabResults == null || theLabResults.isEmpty()) {
-					ThrowFHIRExceptions.unprocessableEntityException("Lab Results with a patient are required to create a new REQUEST");
+					ThrowFHIRExceptions.unprocessableEntityException(
+							"Lab Results with a patient are required to create a new REQUEST");
 				}
 
-				// Sanity check. The lab results have a patient resource. The patient identifier must match the 
+				// Sanity check. The lab results have a patient resource. The patient identifier
+				// must match the
 				// patient identifier in the parameter.
 				boolean patientIdSystemOk = false;
 				boolean patientIdValueOk = false;
-				for ( BundleEntryComponent entry : theLabResults.getEntry()) {
+				for (BundleEntryComponent entry : theLabResults.getEntry()) {
 					Resource resource = entry.getResource();
 					if (resource instanceof Patient) {
 						for (Identifier identifier : ((Patient) resource).getIdentifier()) {
@@ -222,7 +227,8 @@ public class ServerOperations {
 							String patientIdSystem = identifier.getSystem();
 							String patientIdValue = identifier.getValue();
 
-							if (patientIdParamSystem == null || patientIdParamSystem.isBlank() || patientIdParamSystem.equalsIgnoreCase(patientIdSystem)) {
+							if (patientIdParamSystem == null || patientIdParamSystem.isBlank()
+									|| patientIdParamSystem.equalsIgnoreCase(patientIdSystem)) {
 								patientIdSystemOk = true;
 							}
 
@@ -242,9 +248,11 @@ public class ServerOperations {
 				}
 
 				if (!patientIdSystemOk || !patientIdValueOk) {
-					// Error the patient identifier in the parameter is not same as the patient identifier
-					// in the Patient resource. 
-					ThrowFHIRExceptions.unprocessableEntityException("Parameters.patient-identifier must match with Parameters.lab-results.entry.resource.Patient.identifier");
+					// Error the patient identifier in the parameter is not same as the patient
+					// identifier
+					// in the Patient resource.
+					ThrowFHIRExceptions.unprocessableEntityException(
+							"Parameters.patient-identifier must match with Parameters.lab-results.entry.resource.Patient.identifier");
 				}
 
 				// Even if this is a new request, we may already have a case for this patient.
@@ -274,12 +282,13 @@ public class ServerOperations {
 					Resource resource = responseEntry.getResource();
 					if (resource instanceof Patient) {
 						fPerson = new FPerson();
-						System.out.println("NEW PATIENT IS:::::" + ((Patient) resource).getIdElement().getIdPartAsLong());
+						System.out
+								.println("NEW PATIENT IS:::::" + ((Patient) resource).getIdElement().getIdPartAsLong());
 						fPerson.setId(((Patient) resource).getIdElement().getIdPartAsLong());
 					}
 
-					if (!responseEntry.getResponse().getStatus().startsWith("201") 
-						&& !responseEntry.getResponse().getStatus().startsWith("200")) {
+					if (!responseEntry.getResponse().getStatus().startsWith("201")
+							&& !responseEntry.getResponse().getStatus().startsWith("200")) {
 						String jsonResource = StaticValues.serializeIt(resource);
 						errMessage += "Failed to create/add " + jsonResource;
 						logger.error(errMessage);
@@ -292,7 +301,8 @@ public class ServerOperations {
 					if (fPerson == null) {
 						errMessage += " Patient resource is REQUIRED";
 					}
-					ThrowFHIRExceptions.unprocessableEntityException("Failed to create entiry resources: " + errMessage);
+					ThrowFHIRExceptions
+							.unprocessableEntityException("Failed to create entiry resources: " + errMessage);
 				}
 
 				if (caseInfo == null) {
@@ -308,7 +318,7 @@ public class ServerOperations {
 					caseInfo.setTriggerAtDateTime(currentTime);
 					caseInfo.setTriesLeft(triesLeft);
 					caseInfoService.create(caseInfo);
-				}	
+				}
 			}
 		} else {
 			String newStatus = theSetStatus.getValue();
@@ -319,7 +329,8 @@ public class ServerOperations {
 			} else if (thePatientIdentifier != null) {
 				IdParamList = patientIdParamList;
 			} else {
-				ThrowFHIRExceptions.unprocessableEntityException("Either case ID or patient identifer must be provided to refresh the case");
+				ThrowFHIRExceptions.unprocessableEntityException(
+						"Either case ID or patient identifer must be provided to refresh the case");
 			}
 
 			List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 0, IdParamList, "id ASC");
@@ -329,8 +340,9 @@ public class ServerOperations {
 					caseInfo.setCreatedDateTime(currentTime);
 					caseInfo.setLastUpdatedDateTime(currentTime);
 					caseInfo.setActivatedDateTime(currentTime);
+				} else {
+					caseInfo.setStatus(newStatus);
 				}
-				caseInfo.setStatus(newStatus);
 				caseInfo.setTriggerAtDateTime(currentTime);
 				caseInfo.setTriesLeft(triesLeft);
 				caseInfoService.update(caseInfo);
@@ -338,12 +350,12 @@ public class ServerOperations {
 		}
 	}
 
-	@Operation(name="$registry-test", manualResponse = true)
+	@Operation(name = "$registry-test", manualResponse = true)
 	public Bundle rcApiResponseTest(RequestDetails theRequestDetails,
-		@OperationParam(name = "name") StringParam theName,
-		@OperationParam(name = "caseId") NumberParam theCaseId,
-		@OperationParam(name = "resource") Bundle theResource) {
-		
+			@OperationParam(name = "name") StringParam theName,
+			@OperationParam(name = "caseId") NumberParam theCaseId,
+			@OperationParam(name = "resource") Bundle theResource) {
+
 		CaseInfo myCase = caseInfoService.findById(theCaseId.getValue().longValue());
 		if (myCase == null) {
 			throw new FHIRException("case, " + theCaseId.getValue().longValue() + ", not found");
