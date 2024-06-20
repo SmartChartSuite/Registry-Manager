@@ -453,10 +453,10 @@ public class ScheduledTask {
 				response = restTemplate.postForEntity(serverEndPoint, entity, String.class);
 
 			} catch (Exception e) {
-				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") REQUEST FAILED: " + e.getMessage());
 				e.printStackTrace();
 				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 				retryCountUpdate(caseInfo);
+				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") REQUEST FAILED: " + e.getMessage() + "\n Next State(" + caseInfo.getStatus() + ")");
 				caseInfoService.update(caseInfo);
 				return;
 			}
@@ -474,9 +474,9 @@ public class ScheduledTask {
 					// jobId = (StringType) returnedParameters.getParameter("jobId");
 					ParametersParameterComponent parameter = returnedParameters.getParameter("jobId");
 					if (parameter == null || parameter.isEmpty()) {
-						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get jobId. jobId parameter is null.");
 						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 						retryCountUpdate(caseInfo);
+						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get jobId. jobId parameter is null. \n Next State (" + caseInfo.getStatus() + ")");
 						caseInfoService.update(caseInfo);
 						return;
 					}
@@ -486,8 +486,8 @@ public class ScheduledTask {
 
 				if (jobId == null || jobId.isEmpty()) {
 					// We failed to get a JobID.
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get jobId (null).");
 					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get jobId (null). \n Next State (" + caseInfo.getStatus() + ")");
 					retryCountUpdate(caseInfo);
 				} else {
 					if (statusUri != null) {
@@ -506,8 +506,8 @@ public class ScheduledTask {
 						// log this session
 						writeToLog(caseInfo, "caes info (" + caseInfo.getId() + ") is updated to " + QueryRequest.RUNNING.getCodeString());
 					} else {
-						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get status URL.");
 						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get status URL.");
 						retryCountUpdate(caseInfo);
 					}
 				}
@@ -532,8 +532,8 @@ public class ScheduledTask {
 			// This cannot happen as patient identifier is a required field.
 			// BUt, if this ever happens, we write this in session log and return to error in client, which will
 			// stop querying.
-			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") without patient identifier");
 			caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") without patient identifier. \n Next State (" + caseInfo.getStatus() + ")");
 			retryCountUpdate(caseInfo);
 		}
 
