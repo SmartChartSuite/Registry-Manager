@@ -202,27 +202,29 @@ public class ScheduledTask {
 			response = restTemplate.exchange(statusEndPoint, HttpMethod.GET, reqAuth, String.class);
 		} catch (HttpClientErrorException e) {
 			String rBody = e.getResponseBodyAsString();
-			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n" + rBody);
-			if (404 == e.getStatusCode().value()) {
+			if (404 == e.getStatusCode().value() && rBody.contains("jobPackage again with a new job id")) {
 				// job ID may be timed out. Make a new request.
 				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());	
 			} else {
 				caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
 			}
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n" + rBody + "\n Next State (" + caseInfo.getStatus() + ")");
+
+			retryCountUpdate(caseInfo);
 			caseInfoService.update(caseInfo);
 			return null;
 		} catch (HttpServerErrorException e) {
 			String rBody = e.getResponseBodyAsString();
-			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") SERVER ERROR: " + e.getStatusCode() + "\n" + rBody);
 			caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") SERVER ERROR: " + e.getStatusCode() + "\n" + rBody + "\n Next State (" + caseInfo.getStatus() + ")");
 			retryCountUpdate(caseInfo);
 			caseInfoService.update(caseInfo);
 			return null;
 			// We do not change the status as this is a server error.
 		} catch (UnknownHttpStatusCodeException e) {
 			String rBody = e.getResponseBodyAsString();
-			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED with Unknown code\n" + rBody);		
 			caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED with Unknown code\n" + rBody + "\n Next State (" + caseInfo.getStatus() + ")");		
 			caseInfoService.update(caseInfo);
 			return null;
 		}
@@ -249,9 +251,9 @@ public class ScheduledTask {
 				for (OperationOutcomeIssueComponent issue: oo.getIssue()) {
 					errorBody += issue.getCode() + ", ";
 				}	
-				writeToLog(caseInfo, "Status Query Failed and Responded with issue(s):" + errorBody);
+				writeToLog(caseInfo, "Status Query Failed and Responded with issue(s):" + errorBody + "\n Next State (" + caseInfo.getStatus() + ")");
 			} else {
-				writeToLog(caseInfo, "Status Query Failed and Responded with statusCode:" + statusCode.toString());
+				writeToLog(caseInfo, "Status Query Failed and Responded with statusCode:" + statusCode.toString() + "\n Next State (" + caseInfo.getStatus() + ")");
 			}
 		} else {
 			// Get response body
@@ -528,9 +530,10 @@ public class ScheduledTask {
 			}					
 		} else {
 			// This cannot happen as patient identifier is a required field.
-			// BUt, if this ever happens, we write this in session log and return.
+			// BUt, if this ever happens, we write this in session log and return to error in client, which will
+			// stop querying.
 			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") without patient identifier");
-			caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+			caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
 			retryCountUpdate(caseInfo);
 		}
 
@@ -564,7 +567,7 @@ public class ScheduledTask {
 			switch (QueryRequest.codeEnumOf(caseInfo.getStatus())) {
 				case RUNNING:  // case is awating for next scheduled time. 
 				case ERROR_IN_SERVER:
-					logger.debug("Case (" + caseInfo.getId() + ") retrieving to RC-API");
+					logger.debug("Case (" + caseInfo.getId() + ") retrieving from RC-API");
 					Bundle queryResult = retrieveQueryResult(caseInfo);
 					if (queryResult != null && !queryResult.isEmpty()) {
 						createEntries(queryResult, caseInfo);
