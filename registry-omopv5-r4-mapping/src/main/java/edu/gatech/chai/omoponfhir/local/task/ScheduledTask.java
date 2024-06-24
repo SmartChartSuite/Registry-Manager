@@ -374,6 +374,8 @@ public class ScheduledTask {
 			} else {
 				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. Next trigger at " + caseInfo.getTriggerAtDateTime().toString());
 			}
+
+			caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 		}
 
 		caseInfoService.update(caseInfo);
@@ -497,7 +499,6 @@ public class ScheduledTask {
 						caseInfo.setStatusUrl(statusUri.toString());
 						caseInfo.setJobId(jobId.asStringValue());
 						caseInfo.setCaseStartedRunningDateTime(currentTime);
-						caseInfo.setTriesLeft(StaticValues.MAX_TRY);
 						caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
 
 						// set the triggered_at. Since this is a REQUEST, we set it to now.
