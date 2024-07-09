@@ -26,6 +26,8 @@ import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Parameters;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
+import org.hl7.fhir.r4.model.OperationOutcome.IssueType;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 import org.hl7.fhir.r4.model.Parameters.ParametersParameterComponent;
 import org.slf4j.Logger;
@@ -82,7 +84,7 @@ public class ScheduledTask {
 	private OmopServerOperations myMapper;
 
 	@Autowired
-    private ConfigValues configValues;
+	private ConfigValues configValues;
 	@Autowired
 	private ConceptService conceptService;
 	@Autowired
@@ -97,7 +99,7 @@ public class ScheduledTask {
 	private VocabularyService vocabularyService;
 
 	private Long conceptIdStart;
-	
+
 	private Long thresholdDuration1;
 	private Long thresholdDuration2;
 	private Long thresholdDuration3;
@@ -113,7 +115,7 @@ public class ScheduledTask {
 		fhirOmopVocabularyMap = new FhirOmopVocabularyMapImpl();
 		// setSmartPacerBasicAuth(System.getenv("RCAPI_BASIC_AUTH"));
 
-		// We are using the server operations implementation. 
+		// We are using the server operations implementation.
 		WebApplicationContext myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
 
 		// configValues = myAppCtx.getBean(ConfigValues.class);
@@ -121,17 +123,23 @@ public class ScheduledTask {
 		myMapper = new OmopServerOperations(myAppCtx);
 
 		// Get PACER query logic variables.
-		thresholdDuration1 = System.getenv("thresholdDuration1") == null ? StaticValues.TWO_WEEKS_IN_SEC : Long.getLong(System.getenv("thresholdDuration1"));
-		thresholdDuration2 = System.getenv("thresholdDuration2") == null ? StaticValues.FOUR_WEEKS_IN_SEC : Long.getLong(System.getenv("thresholdDuration2"));
-		thresholdDuration3 = System.getenv("thresholdDuration3") == null ? StaticValues.EIGHT_WEEKS_IN_SEC : Long.getLong(System.getenv("thresholdDuration3"));
+		thresholdDuration1 = System.getenv("thresholdDuration1") == null ? StaticValues.TWO_WEEKS_IN_SEC
+				: Long.getLong(System.getenv("thresholdDuration1"));
+		thresholdDuration2 = System.getenv("thresholdDuration2") == null ? StaticValues.FOUR_WEEKS_IN_SEC
+				: Long.getLong(System.getenv("thresholdDuration2"));
+		thresholdDuration3 = System.getenv("thresholdDuration3") == null ? StaticValues.EIGHT_WEEKS_IN_SEC
+				: Long.getLong(System.getenv("thresholdDuration3"));
 
 		thresholdDuration1 *= 1000L;
 		thresholdDuration2 *= 1000L;
 		thresholdDuration3 *= 1000L;
 
-		queryPeriod1 = System.getenv("queryPeriod1") == null ? StaticValues.ONE_DAY_IN_SEC : Long.getLong(System.getenv("queryPeriod1"));
-		queryPeriod2 = System.getenv("queryPeriod2") == null ? StaticValues.SEVEN_DAYS_IN_SEC : Long.getLong(System.getenv("queryPeriod2"));
-		queryPeriod3 = System.getenv("queryPeriod3") == null ? StaticValues.FOURTEEN_DAYS_IN_SEC : Long.getLong(System.getenv("queryPeriod3"));
+		queryPeriod1 = System.getenv("queryPeriod1") == null ? StaticValues.ONE_DAY_IN_SEC
+				: Long.getLong(System.getenv("queryPeriod1"));
+		queryPeriod2 = System.getenv("queryPeriod2") == null ? StaticValues.SEVEN_DAYS_IN_SEC
+				: Long.getLong(System.getenv("queryPeriod2"));
+		queryPeriod3 = System.getenv("queryPeriod3") == null ? StaticValues.FOURTEEN_DAYS_IN_SEC
+				: Long.getLong(System.getenv("queryPeriod3"));
 
 		queryPeriod1 *= 1000L;
 		queryPeriod2 *= 1000L;
@@ -142,35 +150,35 @@ public class ScheduledTask {
 	private void debugValueDisplay() {
 		logger.debug("RC API Basic Auth is " + configValues.getRcApiBasicAuth());
 	}
-	
+
 	// public String getSmartPacerBasicAuth() {
-	// 	return this.smartPacerBasicAuth;
+	// return this.smartPacerBasicAuth;
 	// }
 
 	// public void setSmartPacerBasicAuth(String smartPacerBasicAuth) {
-	// 	if (smartPacerBasicAuth != null && !smartPacerBasicAuth.isEmpty()) {
-	// 		this.smartPacerBasicAuth = smartPacerBasicAuth;
-	// 	}
+	// if (smartPacerBasicAuth != null && !smartPacerBasicAuth.isEmpty()) {
+	// this.smartPacerBasicAuth = smartPacerBasicAuth;
+	// }
 	// }
 
-	protected void writeToLog (CaseInfo caseInfo, String message) {
+	protected void writeToLog(CaseInfo caseInfo, String message) {
 		CaseLog caseLog = new CaseLog();
 
 		caseLog.setCaseInfo(caseInfo);
 		caseLog.setText(message);
 		caseLog.setLogDateTime(new Date());
-		caseLogService.create(caseLog);	
+		caseLogService.create(caseLog);
 	}
 
-	protected String getEndPoint (String serverHost, String apiPoint) {
+	protected String getEndPoint(String serverHost, String apiPoint) {
 		String endPoint;
 
 		if ((serverHost.endsWith("/") && apiPoint.startsWith("/"))
-			|| (!serverHost.endsWith("/") && !apiPoint.startsWith("/"))) {
-				endPoint = serverHost + "/" + apiPoint.substring(1);
+				|| (!serverHost.endsWith("/") && !apiPoint.startsWith("/"))) {
+			endPoint = serverHost + "/" + apiPoint.substring(1);
 		} else if ((serverHost.endsWith("/") && !apiPoint.startsWith("/"))
-			|| (!serverHost.endsWith("/") && apiPoint.startsWith("/"))) {
-				endPoint = serverHost + apiPoint;
+				|| (!serverHost.endsWith("/") && apiPoint.startsWith("/"))) {
+			endPoint = serverHost + apiPoint;
 		} else {
 			endPoint = serverHost + apiPoint;
 		}
@@ -202,13 +210,29 @@ public class ScheduledTask {
 			response = restTemplate.exchange(statusEndPoint, HttpMethod.GET, reqAuth, String.class);
 		} catch (HttpClientErrorException e) {
 			String rBody = e.getResponseBodyAsString();
-			if (404 == e.getStatusCode().value() && rBody.contains("jobPackage again with a new job id")) {
+			OperationOutcome oo = parser.parseResource(OperationOutcome.class, rBody);
+
+			Boolean isJobIdValid = true;
+			if (oo != null && !oo.isEmpty()) {
+				for (OperationOutcomeIssueComponent issue : oo.getIssue()) {
+					IssueSeverity severity = issue.getSeverity();
+					IssueType issueCode = issue.getCode();
+					if (IssueSeverity.ERROR == severity && IssueType.CODEINVALID == issueCode) {
+						isJobIdValid = false;
+						break;
+					}
+				}
+			}
+
+			if ((404 == e.getStatusCode().value() && !isJobIdValid)
+					|| rBody.contains("jobPackage again with a new job id")) {
 				// job ID may be timed out. Make a new request.
-				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());	
+				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 			} else {
 				caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
 			}
-			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n" + rBody + "\n Next State (" + caseInfo.getStatus() + ")");
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED: " + e.getStatusCode() + "\n"
+					+ rBody + "\n Next State (" + caseInfo.getStatus() + ")");
 
 			retryCountUpdate(caseInfo);
 			caseInfoService.update(caseInfo);
@@ -216,7 +240,8 @@ public class ScheduledTask {
 		} catch (HttpServerErrorException e) {
 			String rBody = e.getResponseBodyAsString();
 			caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
-			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") SERVER ERROR: " + e.getStatusCode() + "\n" + rBody + "\n Next State (" + caseInfo.getStatus() + ")");
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") SERVER ERROR: " + e.getStatusCode() + "\n"
+					+ rBody + "\n Next State (" + caseInfo.getStatus() + ")");
 			retryCountUpdate(caseInfo);
 			caseInfoService.update(caseInfo);
 			return null;
@@ -224,7 +249,8 @@ public class ScheduledTask {
 		} catch (UnknownHttpStatusCodeException e) {
 			String rBody = e.getResponseBodyAsString();
 			caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
-			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED with Unknown code\n" + rBody + "\n Next State (" + caseInfo.getStatus() + ")");		
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") STATUS GET FAILED with Unknown code\n" + rBody
+					+ "\n Next State (" + caseInfo.getStatus() + ")");
 			caseInfoService.update(caseInfo);
 			return null;
 		}
@@ -234,7 +260,7 @@ public class ScheduledTask {
 			if (statusCode.is4xxClientError()) {
 				if (404 == statusCode.value()) {
 					// job ID may be timed out. Make a new request.
-					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());	
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 				} else {
 					caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
 				}
@@ -248,12 +274,14 @@ public class ScheduledTask {
 			OperationOutcome oo = parser.parseResource(OperationOutcome.class, response.getBody());
 			if (oo != null && !oo.isEmpty()) {
 				String errorBody = "";
-				for (OperationOutcomeIssueComponent issue: oo.getIssue()) {
+				for (OperationOutcomeIssueComponent issue : oo.getIssue()) {
 					errorBody += issue.getCode() + ", ";
-				}	
-				writeToLog(caseInfo, "Status Query Failed and Responded with issue(s):" + errorBody + "\n Next State (" + caseInfo.getStatus() + ")");
+				}
+				writeToLog(caseInfo, "Status Query Failed and Responded with issue(s):" + errorBody + "\n Next State ("
+						+ caseInfo.getStatus() + ")");
 			} else {
-				writeToLog(caseInfo, "Status Query Failed and Responded with statusCode:" + statusCode.toString() + "\n Next State (" + caseInfo.getStatus() + ")");
+				writeToLog(caseInfo, "Status Query Failed and Responded with statusCode:" + statusCode.toString()
+						+ "\n Next State (" + caseInfo.getStatus() + ")");
 			}
 		} else {
 			// Get response body
@@ -281,8 +309,8 @@ public class ScheduledTask {
 					return null;
 				}
 
-				if (jobStatus != null && !jobStatus.isEmpty() 
-					&& "inProgress".equalsIgnoreCase(jobStatus.asStringValue())) {
+				if (jobStatus != null && !jobStatus.isEmpty()
+						&& "inProgress".equalsIgnoreCase(jobStatus.asStringValue())) {
 					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
 					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
 					caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
@@ -290,9 +318,9 @@ public class ScheduledTask {
 					return null;
 				}
 
-				if (jobStatus != null && !jobStatus.isEmpty() 
-					&& !"inProgress".equalsIgnoreCase(jobStatus.asStringValue())
-					&& !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
+				if (jobStatus != null && !jobStatus.isEmpty()
+						&& !"inProgress".equalsIgnoreCase(jobStatus.asStringValue())
+						&& !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
 					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " is not recognized ... ");
 					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " is not recognized ... ");
 					caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
@@ -302,7 +330,7 @@ public class ScheduledTask {
 				}
 
 				List<ParametersParameterComponent> parameterComponents = parameters.getParameter();
-				for (ParametersParameterComponent parameterComponent: parameterComponents) {
+				for (ParametersParameterComponent parameterComponent : parameterComponents) {
 					if ("result".equals(parameterComponent.getName())) {
 						resultBundle = (Bundle) parameterComponent.getResource();
 						break;
@@ -326,8 +354,10 @@ public class ScheduledTask {
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
 
-			logger.error("Error occured while creating resources in the Output FHIR Bundle entries. \n"+sw.toString());
-			writeToLog(caseInfo, "Error occured while creating resources in the Output FHIR Bundle entries.\n"+sw.toString());
+			logger.error(
+					"Error occured while creating resources in the Output FHIR Bundle entries. \n" + sw.toString());
+			writeToLog(caseInfo,
+					"Error occured while creating resources in the Output FHIR Bundle entries.\n" + sw.toString());
 
 			caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
 			caseInfoService.update(caseInfo);
@@ -337,8 +367,8 @@ public class ScheduledTask {
 		int errorFlag = 0;
 		String errMessage = "";
 		for (BundleEntryComponent responseEntry : responseEntries) {
-			if (!responseEntry.getResponse().getStatus().startsWith("201") 
-				&& !responseEntry.getResponse().getStatus().startsWith("200")) {
+			if (!responseEntry.getResponse().getStatus().startsWith("201")
+					&& !responseEntry.getResponse().getStatus().startsWith("200")) {
 				String jsonResource = StaticValues.serializeIt(responseEntry.getResource());
 				errMessage += "Failed to create/add " + jsonResource;
 				errorFlag = 1;
@@ -357,22 +387,28 @@ public class ScheduledTask {
 			// We will request for query again if trigger algorithm allows
 			caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 
-			logger.debug("TRIGGER: current_time=" + currentTime.getTime() + ", activated_time = " + caseInfo.getActivatedDateTime().getTime() + ", thresholdDuration1 = " + thresholdDuration1 + ", threshold_at = " + (new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1)).getTime() + ", trigger_at=" + (new Date(currentTime.getTime()+queryPeriod1).getTime()));
-			if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration1))) {
-				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod1));
-			} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration2))) {
-				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod2));
-			} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime()+thresholdDuration3))) {
-				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+queryPeriod3));
+			logger.debug("TRIGGER: current_time=" + currentTime.getTime() + ", activated_time = "
+					+ caseInfo.getActivatedDateTime().getTime() + ", thresholdDuration1 = " + thresholdDuration1
+					+ ", threshold_at = "
+					+ (new Date(caseInfo.getActivatedDateTime().getTime() + thresholdDuration1)).getTime()
+					+ ", trigger_at=" + (new Date(currentTime.getTime() + queryPeriod1).getTime()));
+			if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime() + thresholdDuration1))) {
+				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime() + queryPeriod1));
+			} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime() + thresholdDuration2))) {
+				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime() + queryPeriod2));
+			} else if (currentTime.before(new Date(caseInfo.getActivatedDateTime().getTime() + thresholdDuration3))) {
+				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime() + queryPeriod3));
 			} else {
 				caseInfo.setStatus(QueryRequest.END.getCodeString());
 				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") changed status to " + caseInfo.getStatus());
 			}
 
 			if (QueryRequest.END.getCodeString().equals(caseInfo.getStatus())) {
-				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. And case becomes " + QueryRequest.END.getCodeString());
+				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. And case becomes "
+						+ QueryRequest.END.getCodeString());
 			} else {
-				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. Next trigger at " + caseInfo.getTriggerAtDateTime().toString());
+				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") query successful. Next trigger at "
+						+ caseInfo.getTriggerAtDateTime().toString());
 			}
 
 			caseInfo.setTriesLeft(StaticValues.MAX_TRY);
@@ -384,15 +420,16 @@ public class ScheduledTask {
 	/**
 	 * 
 	 * @param caseInfo
-	 * - call this function at the end of process and be careful not to override other conditions that will
-	 *   change the state status.
+	 *                 - call this function at the end of process and be careful not
+	 *                 to override other conditions that will
+	 *                 change the state status.
 	 * @return
 	 */
 	protected Integer retryCountUpdate(CaseInfo caseInfo) {
 		Integer retrytLeft = caseInfo.getTriesLeft();
 
 		// decrement the counter
-		int next_retryLeft = retrytLeft-1;
+		int next_retryLeft = retrytLeft - 1;
 		caseInfo.setTriesLeft(next_retryLeft);
 
 		if (retrytLeft <= 1) {
@@ -412,22 +449,21 @@ public class ScheduledTask {
 		String serverHost = caseInfo.getServerHost();
 		ResponseEntity<String> response = null;
 
-		// Send a request. This is triggered by a new ELR or NoSuchRequest from PACER server
+		// Send a request. This is triggered by a new ELR or NoSuchRequest from PACER
+		// server
 		String patientIdentifier = caseInfo.getPatientIdentifier();
 		if (patientIdentifier != null) {
 			// Create Parameters for the REQUEST.
 			Parameters parameters = new Parameters()
-				.addParameter(
-					new ParametersParameterComponent(new StringType("patientIdentifier"))
-						.setValue(new StringType(patientIdentifier))
-				)
-				.addParameter(
-					new ParametersParameterComponent(new StringType("jobPackage"))
-						.setValue(new StringType(configValues.getJobPackage()))
-			);
-			
+					.addParameter(
+							new ParametersParameterComponent(new StringType("patientIdentifier"))
+									.setValue(new StringType(patientIdentifier)))
+					.addParameter(
+							new ParametersParameterComponent(new StringType("jobPackage"))
+									.setValue(new StringType(configValues.getJobPackage())));
+
 			String parameterJson = parser.encodeResourceToString(parameters);
-			
+
 			JsonNode requestJson = null;
 			response = null;
 			try {
@@ -448,7 +484,7 @@ public class ScheduledTask {
 						retryCountUpdate(caseInfo);
 						caseInfoService.update(caseInfo);
 						return;
-					} 
+					}
 
 					serverEndPoint = getEndPoint(serverHost, serverUrl);
 				}
@@ -458,7 +494,8 @@ public class ScheduledTask {
 				e.printStackTrace();
 				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 				retryCountUpdate(caseInfo);
-				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") REQUEST FAILED: " + e.getMessage() + "\n Next State(" + caseInfo.getStatus() + ")");
+				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") REQUEST FAILED: " + e.getMessage()
+						+ "\n Next State(" + caseInfo.getStatus() + ")");
 				caseInfoService.update(caseInfo);
 				return;
 			}
@@ -478,18 +515,22 @@ public class ScheduledTask {
 					if (parameter == null || parameter.isEmpty()) {
 						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 						retryCountUpdate(caseInfo);
-						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get jobId. jobId parameter is null. \n Next State (" + caseInfo.getStatus() + ")");
+						writeToLog(caseInfo,
+								"case info (" + caseInfo.getId()
+										+ ") failed to get jobId. jobId parameter is null. \n Next State ("
+										+ caseInfo.getStatus() + ")");
 						caseInfoService.update(caseInfo);
 						return;
 					}
-						
+
 					jobId = (StringType) parameter.getValue();
 				}
 
 				if (jobId == null || jobId.isEmpty()) {
 					// We failed to get a JobID.
 					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get jobId (null). \n Next State (" + caseInfo.getStatus() + ")");
+					writeToLog(caseInfo, "case info (" + caseInfo.getId()
+							+ ") failed to get jobId (null). \n Next State (" + caseInfo.getStatus() + ")");
 					retryCountUpdate(caseInfo);
 				} else {
 					if (statusUri != null) {
@@ -505,7 +546,8 @@ public class ScheduledTask {
 						caseInfo.setTriggerAtDateTime(currentTime);
 
 						// log this session
-						writeToLog(caseInfo, "caes info (" + caseInfo.getId() + ") is updated to " + QueryRequest.RUNNING.getCodeString());
+						writeToLog(caseInfo, "caes info (" + caseInfo.getId() + ") is updated to "
+								+ QueryRequest.RUNNING.getCodeString());
 					} else {
 						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get status URL.");
@@ -518,23 +560,26 @@ public class ScheduledTask {
 				if (errorBody != null && !errorBody.isEmpty()) {
 					OperationOutcome oo = parser.parseResource(OperationOutcome.class, errorBody);
 					String issueDesc = "";
-					for (OperationOutcomeIssueComponent issue: oo.getIssue()) {
+					for (OperationOutcomeIssueComponent issue : oo.getIssue()) {
 						issueDesc += issue.getCode().toString() + ", ";
 					}
 					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") error response (" + issueDesc + ")");
 				} else {
-					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") error response (" + response.getStatusCode().toString() + ")");
+					writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") error response ("
+							+ response.getStatusCode().toString() + ")");
 				}
 
 				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
 				retryCountUpdate(caseInfo);
-			}					
+			}
 		} else {
 			// This cannot happen as patient identifier is a required field.
-			// BUt, if this ever happens, we write this in session log and return to error in client, which will
+			// BUt, if this ever happens, we write this in session log and return to error
+			// in client, which will
 			// stop querying.
 			caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
-			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") without patient identifier. \n Next State (" + caseInfo.getStatus() + ")");
+			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") without patient identifier. \n Next State ("
+					+ caseInfo.getStatus() + ")");
 			retryCountUpdate(caseInfo);
 		}
 
@@ -552,32 +597,33 @@ public class ScheduledTask {
 		List<ParameterWrapper> params = new ArrayList<ParameterWrapper>();
 
 		// Add "triggerAt parameter"
-		ParameterWrapper param = new ParameterWrapper("Date", Arrays.asList("triggerAtDateTime"), 
-			Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
+		ParameterWrapper param = new ParameterWrapper("Date", Arrays.asList("triggerAtDateTime"),
+				Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
 		params.add(param);
 
 		// Add "status != time out and != error in client and != END"
-		param = new ParameterWrapper("String", Arrays.asList("status", "status", "status"), 
-			Arrays.asList("!=", "!=", "!=", "!="), Arrays.asList(QueryRequest.TIMED_OUT.getCodeString(), 
-			QueryRequest.ERROR_IN_CLIENT.getCodeString(), QueryRequest.END.getCodeString(), 
-			QueryRequest.ERROR_UNKNOWN.getCodeString()), "and");
+		param = new ParameterWrapper("String", Arrays.asList("status", "status", "status"),
+				Arrays.asList("!=", "!=", "!=", "!="), Arrays.asList(QueryRequest.TIMED_OUT.getCodeString(),
+						QueryRequest.ERROR_IN_CLIENT.getCodeString(), QueryRequest.END.getCodeString(),
+						QueryRequest.ERROR_UNKNOWN.getCodeString()),
+				"and");
 		params.add(param);
 
 		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 2, params, "id ASC");
 		for (CaseInfo caseInfo : caseInfos) {
 			switch (QueryRequest.codeEnumOf(caseInfo.getStatus())) {
-				case RUNNING:  // case is awating for next scheduled time. 
+				case RUNNING: // case is awating for next scheduled time.
 				case ERROR_IN_SERVER:
 					logger.debug("Case (" + caseInfo.getId() + ") retrieving from RC-API");
 					Bundle queryResult = retrieveQueryResult(caseInfo);
 					if (queryResult != null && !queryResult.isEmpty()) {
 						createEntries(queryResult, caseInfo);
 					}
-					
+
 					break;
 
 				case REQUEST_PENDING:
-					logger.debug("Case (" + caseInfo.getId() + ") requesting to RC-API");					
+					logger.debug("Case (" + caseInfo.getId() + ") requesting to RC-API");
 					requestForQuery(caseInfo);
 					break;
 
@@ -605,14 +651,14 @@ public class ScheduledTask {
 			// create if folder does not exist.
 			Path path = Paths.get(localMappingFilePath);
 
-	        if (!Files.exists(path)) {
-	        	try {
+			if (!Files.exists(path)) {
+				try {
 					Files.createDirectory(path);
 				} catch (IOException e) {
 					e.printStackTrace();
 					return;
 				}
-	        }
+			}
 
 			// get the list of files in this path.
 			BufferedReader reader = null;
@@ -732,7 +778,7 @@ public class ScheduledTask {
 
 						// Now, we are at the actual code translation rows.
 						String[] omopSrc = omopSourceVocab.split("\\^");
-						logger.debug(omopSrc[0]+"\n"+omopSrc[1]+"\n\n\n\n\n\n\n\n\n\n\n");
+						logger.debug(omopSrc[0] + "\n" + omopSrc[1] + "\n\n\n\n\n\n\n\n\n\n\n");
 						Vocabulary myVocab = vocabularyService.findById(omopSrc[0]);
 						if (myVocab == null) {
 							// We need to add this to our local code mapping database.
@@ -920,13 +966,13 @@ public class ScheduledTask {
 			vocName = values[1];
 			newVocab.setVocabularyName(values[1]);
 		}
-		
+
 		if (values.length > 2) {
 			newVocab.setVocabularyReference(values[2]);
 		} else {
 			newVocab.setVocabularyReference("OMOPonFHIR generated");
 		}
-		
+
 		if (values.length > 3) {
 			newVocab.setVocabularyVersion(values[3]);
 		}
@@ -951,17 +997,17 @@ public class ScheduledTask {
 		param.setRelationship("and");
 		paramList = Arrays.asList(param);
 		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
-		
+
 		Concept vocConcept;
 		if (!concepts.isEmpty()) {
 			vocConcept = concepts.get(0);
 		} else {
 			vocConcept = createVocabularyConcept(name, "Vocabulary");
 		}
-		
+
 		if (vocConcept == null)
 			return null;
-		
+
 		newVocab.setVocabularyConcept(vocConcept);
 
 		// create vocabulary
@@ -986,7 +1032,7 @@ public class ScheduledTask {
 		param.setRelationship("and");
 		paramList = Arrays.asList(param);
 		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
-		
+
 		Concept relationshipConcept;
 		if (!concepts.isEmpty()) {
 			relationshipConcept = concepts.get(0);
@@ -1007,7 +1053,7 @@ public class ScheduledTask {
 		conceptVoc.setId(getTheLargestConceptId());
 		conceptVoc.setConceptName(name);
 		conceptVoc.setDomainId("Metadata");
-		
+
 		conceptVoc.setVocabularyId(vocabId);
 		conceptVoc.setConceptClassId(vocabId);
 		conceptVoc.setConceptCode("OMOPonFHIR generated");
@@ -1022,7 +1068,7 @@ public class ScheduledTask {
 		}
 
 		// Create concept
-		logger.debug("Trying to create a concept:\n"+conceptVoc.toString());
+		logger.debug("Trying to create a concept:\n" + conceptVoc.toString());
 		Concept newConcept = conceptService.create(conceptVoc);
 		if (newConcept != null) {
 			logger.debug("Scheduled Task: new concept created for " + name);
