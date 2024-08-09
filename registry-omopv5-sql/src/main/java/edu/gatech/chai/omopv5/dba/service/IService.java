@@ -22,6 +22,7 @@ import java.util.List;
 import com.google.cloud.bigquery.FieldValueList;
 
 import edu.gatech.chai.omopv5.model.entity.BaseEntity;
+import edu.gatech.chai.omopv5.model.entity.CaseInfo;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -134,4 +135,6 @@ public interface IService<v extends BaseEntity> {
 
 	v construct (FieldValueList rowResult, v entity, String alias, List<String> columns);
 
+	// running algorithms 
+	Integer runAlgorithms(CaseInfo caseInfo);
 }

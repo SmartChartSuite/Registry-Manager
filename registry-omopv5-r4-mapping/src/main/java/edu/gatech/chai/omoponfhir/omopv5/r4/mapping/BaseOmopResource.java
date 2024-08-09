@@ -63,6 +63,7 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 	private Class<p> myServiceClass;
 	private String myFhirResourceType;
 	private FResourceDeduplicateService fResourceDeduplicateService;
+	private String returnStringValue;
 
 	public static String MAP_EXCEPTION_FILTER = "FILTER";
 	public static String MAP_EXCEPTION_EXCLUDE = "EXCLUDE";
@@ -89,6 +90,10 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 
 	public void setMyOmopService(WebApplicationContext context) {
 		this.myOmopService = context.getBean(myServiceClass);
+	}
+
+	public String getReturnStringValue() {
+		return this.returnStringValue;
 	}
 
 	public Class<t> getMyEntityClass() {
@@ -360,7 +365,7 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 		return retv.trim();
 	}	
 	
-	public Concept fhirCode2OmopConcept(ConceptService conceptService, CodeableConcept code, String valueSourceString) {
+	public Concept fhirCode2OmopConcept(ConceptService conceptService, CodeableConcept code, String obsSourceString) {
 		List<Coding> codings = code.getCoding();
 		Coding codingFound = null;
 		Coding codingSecondChoice = null;
@@ -370,10 +375,9 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 			// We prefer LOINC code. So, if we found one, we break out from
 			// this loop
 			if (code.getText() != null && !code.getText().isEmpty()) {
-				valueSourceString = code.getText();
+				this.returnStringValue = code.getText();
 			} else {
-				valueSourceString = coding.getSystem() + " " + coding.getCode() + " " + coding.getDisplay();
-				valueSourceString = valueSourceString.trim();
+				this.returnStringValue = (coding.getSystem() + "^" + coding.getCode() + "^" + coding.getDisplay()).trim();
 			}
 
 			if (fhirSystemUri != null && fhirSystemUri.equals(OmopCodeableConceptMapping.LOINC.getFhirUri())) {

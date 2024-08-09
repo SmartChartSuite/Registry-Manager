@@ -412,6 +412,9 @@ public class ScheduledTask {
 			}
 
 			caseInfo.setTriesLeft(StaticValues.MAX_TRY);
+
+			// Query was successful and the entries are written to data bases.
+			caseInfoService.runAlgorithms(caseInfo);
 		}
 
 		caseInfoService.update(caseInfo);

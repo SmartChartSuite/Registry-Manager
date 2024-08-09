@@ -19,12 +19,14 @@ package edu.gatech.chai.omopv5.dba.service;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -56,6 +58,7 @@ import com.google.cloud.bigquery.TableResult;
 import edu.gatech.chai.omopv5.dba.config.DatabaseConfiguration;
 import edu.gatech.chai.omopv5.dba.util.SqlUtil;
 import edu.gatech.chai.omopv5.model.entity.BaseEntity;
+import edu.gatech.chai.omopv5.model.entity.CaseInfo;
 import edu.gatech.chai.omopv5.model.entity.custom.Column;
 import edu.gatech.chai.omopv5.model.entity.custom.GeneratedValue;
 import edu.gatech.chai.omopv5.model.entity.custom.GenerationType;
@@ -1494,5 +1497,25 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		}
 
 		return entities;
+	}
+
+	// The algorithms will be run in the database via functions/procedures.
+	// We provide person id and entity table name and primary id.
+	public Integer runAlgorithms(CaseInfo caseInfo) {
+		// Call the algorithm function.
+		// If error happens, it will print the exception(s). But, it will move on...
+		try (
+		Connection connection = getConnection()) {
+			String sql = "{?=call " + dataSchema + ".run_scd.run_algorithms(?, ?)}";
+			CallableStatement cs=connection.prepareCall(sql); 
+			    cs.registerOutParameter(1, Types.INTEGER); 
+			    cs.setLong(2,caseInfo.getFPerson().getId());
+				cs.setLong(3, caseInfo.getId());
+			    cs.execute();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return 0;
 	}
 }
