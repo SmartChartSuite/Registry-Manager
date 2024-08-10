@@ -1459,6 +1459,33 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		Concept typeConcept = new Concept();
 		typeConcept.setId(typeConceptId);
 
+		// For deduplication, we need to have identifer. Check if we have it.
+		// If not, we create the one that will be unique and consitent.
+		if (fhirResource.getIdentifier().isEmpty()) {
+			String identifierString = fhirResource.getSubject().getReferenceElement().getIdPart();
+			if (fhirResource.getEffective() instanceof DateTimeType) {
+				Date date = ((DateTimeType) fhirResource.getEffective()).getValue();
+				identifierString += "-" + date.getTime();
+			} else if (fhirResource.getEffective() instanceof Period) {
+				Date startDate = ((Period) fhirResource.getEffective()).getStart();
+				Date endDate = ((Period) fhirResource.getEffective()).getEnd();
+				identifierString += "-" + startDate.getTime() + "-" + endDate.getTime();
+			} else {
+				// datetime is required field.
+				identifierString += "-" + (new Date(0)).getTime();
+			}
+
+			CodeableConcept cc = fhirResource.getCode();
+			for (Coding coding : cc.getCoding()) {
+				identifierString += "-" + coding.getSystem() + "-" + coding.getCode();
+			}
+
+			Identifier newId = new Identifier();
+			newId.setSystem("urn:registry:system");
+			newId.setValue(identifierString);
+			fhirResource.addIdentifier(newId);
+		}
+
 		Map<String, Object> entityMap = constructOmopMeasurementObservation(omopId, fhirResource, isSurvey);
 		Long retId = null;
 
