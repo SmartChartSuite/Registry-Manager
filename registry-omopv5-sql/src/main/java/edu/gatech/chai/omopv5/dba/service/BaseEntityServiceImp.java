@@ -1525,19 +1525,29 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 	// The algorithms will be run in the database via functions/procedures.
 	// We provide person id and entity table name and primary id.
 	public Integer runAlgorithms(CaseInfo caseInfo) {
+		int retVal = 0;
+
 		// Call the algorithm function.
 		// If error happens, it will print the exception(s). But, it will move on...
-		try (Connection connection = getConnection()) {
-			String sql = "{?=call " + dataSchema + ".run_scd.run_algorithms(?, ?)}";
-			CallableStatement cs = connection.prepareCall(sql);
-			cs.registerOutParameter(1, Types.INTEGER);
-			cs.setLong(2, caseInfo.getFPerson().getId());
-			cs.setLong(3, caseInfo.getId());
-			cs.execute();
+		try {
+			Connection connection = getConnection();
+			int person_id = caseInfo.getFPerson().getId().intValue();
+			int case_id = caseInfo.getId().intValue();
+
+			String sql = "{? = CALL " + dataSchema + ".run_algorithms(?, ?)}";
+			CallableStatement cstmt = connection.prepareCall(sql);
+			cstmt.registerOutParameter(1, Types.INTEGER);
+			cstmt.setInt(2, person_id);
+			cstmt.setInt(3, case_id);
+			cstmt.executeUpdate();
+			connection.commit();
+
+			retVal = cstmt.getInt(1);
+			closeConnection(connection);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
-		return 0;
+		return retVal;
 	}
 }
