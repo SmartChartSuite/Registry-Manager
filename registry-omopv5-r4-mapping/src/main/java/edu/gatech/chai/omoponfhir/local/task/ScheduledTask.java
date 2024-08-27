@@ -100,7 +100,7 @@ public class ScheduledTask {
 	@Autowired
 	private VocabularyService vocabularyService;
 
-	@Value("${rcapi.nooutstandingreq}")
+	@Value("${rcapi.numoutstandingreq}")
 	private int numOfOutstandingRequests;
 
 	private Long conceptIdStart;
