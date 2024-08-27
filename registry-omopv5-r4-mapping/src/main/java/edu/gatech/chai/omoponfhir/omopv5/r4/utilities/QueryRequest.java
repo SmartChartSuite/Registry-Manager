@@ -7,6 +7,7 @@ public enum QueryRequest {
     TIMED_OUT(0x0008, "TIMED_OUT", "Retry count reached the maximum allowed count. Giving up."), 
     ERROR_IN_CLIENT(0x0100, "ERROR_IN_CLIENT", "Error occurred on client side during Request. Request is paused."), 
     ERROR_IN_SERVER(0x0200, "ERROR_IN_SERVER", "Error occurred on server side during Request. Request will be made again until it reaches the maximum retry-count."), 
+    RESULT_PARSE_ERROR(0x0201, "RESULT_PARSE_ERROR", "Error occurred when parsing the server response data"),
     ERROR_UNKNOWN(0x0400, "ERROR_UNKNOWN", "Unknown error occurred. Ex) Some resources in result bundle failed to be stored in db."), 
     INVALID(0x0000, "INVALID", "Invalid Status. Retrigger with a valid status is required.");
 

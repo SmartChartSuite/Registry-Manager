@@ -33,6 +33,7 @@ import org.hl7.fhir.r4.model.Parameters.ParametersParameterComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -49,6 +50,7 @@ import org.springframework.web.client.UnknownHttpStatusCodeException;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.WebApplicationContext;
 
+import ca.uhn.fhir.parser.DataFormatException;
 import ca.uhn.fhir.parser.IParser;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -97,6 +99,9 @@ public class ScheduledTask {
 	private RelationshipService relationshipService;
 	@Autowired
 	private VocabularyService vocabularyService;
+
+	@Value("${rcapi.nooutstandingreq}")
+	private int numOfOutstandingRequests;
 
 	private Long conceptIdStart;
 
@@ -287,8 +292,22 @@ public class ScheduledTask {
 			// Get response body
 			String responseBody = response.getBody();
 
+			Parameters parameters = null;
 			if (responseBody != null && !responseBody.isEmpty()) {
-				Parameters parameters = parser.parseResource(Parameters.class, responseBody);
+				try {
+					parameters = parser.parseResource(Parameters.class, responseBody);
+				} catch (DataFormatException e) {
+					caseInfo.setStatus(QueryRequest.RESULT_PARSE_ERROR.getCodeString());
+					writeToLog(caseInfo,
+							"case info (" + caseInfo.getId() + ") Response Parameter Parse Error\n Next State ("
+									+ caseInfo.getStatus() + "). " + e.getMessage());
+					caseInfoService.update(caseInfo);
+				} finally {
+					if (parameters == null || parameters.isEmpty()) {
+						return null;
+					}
+				}
+
 				// StringType jobStatus = (StringType) parameters.getParameter("jobStatus");
 				ParametersParameterComponent parameter = parameters.getParameter("jobStatus");
 				StringType jobStatus = null;
@@ -612,7 +631,10 @@ public class ScheduledTask {
 				"and");
 		params.add(param);
 
-		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, 2, params, "id ASC");
+		if (numOfOutstandingRequests <= 0) {
+			numOfOutstandingRequests = 3;
+		}
+		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "id ASC");
 		for (CaseInfo caseInfo : caseInfos) {
 			switch (QueryRequest.codeEnumOf(caseInfo.getStatus())) {
 				case RUNNING: // case is awating for next scheduled time.
@@ -624,7 +646,6 @@ public class ScheduledTask {
 					}
 
 					break;
-
 				case REQUEST_PENDING:
 					logger.debug("Case (" + caseInfo.getId() + ") requesting to RC-API");
 					requestForQuery(caseInfo);
