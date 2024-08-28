@@ -624,10 +624,15 @@ public class ScheduledTask {
 		params.add(param);
 
 		// Add "status != time out and != error in client and != END"
-		param = new ParameterWrapper("String", Arrays.asList("status", "status", "status"),
-				Arrays.asList("!=", "!=", "!=", "!="), Arrays.asList(QueryRequest.TIMED_OUT.getCodeString(),
-						QueryRequest.ERROR_IN_CLIENT.getCodeString(), QueryRequest.END.getCodeString(),
-						QueryRequest.ERROR_UNKNOWN.getCodeString()),
+		param = new ParameterWrapper("String", 
+				Arrays.asList("status", "status", "status", "status", "status"),
+				Arrays.asList("!=", "!=", "!=", "!=", "!="), 
+				Arrays.asList(
+						QueryRequest.TIMED_OUT.getCodeString(),
+						QueryRequest.ERROR_IN_CLIENT.getCodeString(), 
+						QueryRequest.END.getCodeString(),
+						QueryRequest.ERROR_UNKNOWN.getCodeString(),
+						QueryRequest.RESULT_PARSE_ERROR.getCodeString()),
 				"and");
 		params.add(param);
 
