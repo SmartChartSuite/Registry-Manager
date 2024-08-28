@@ -639,7 +639,7 @@ public class ScheduledTask {
 		if (numOfOutstandingRequests <= 0) {
 			numOfOutstandingRequests = 3;
 		}
-		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "triggerAtDateTime ASC");
+		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "triggerAtDateTime DESC");
 		for (CaseInfo caseInfo : caseInfos) {
 			switch (QueryRequest.codeEnumOf(caseInfo.getStatus())) {
 				case RUNNING: // case is awating for next scheduled time.
