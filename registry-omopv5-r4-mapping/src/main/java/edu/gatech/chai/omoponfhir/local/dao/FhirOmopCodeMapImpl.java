@@ -25,6 +25,9 @@ public class FhirOmopCodeMapImpl extends BaseFhirOmopMap implements FhirOmopCode
 
 			pstmt.executeUpdate();
 
+			conn.commit();
+			conn.close();
+
 			logger.info(
 					"New Map entry data added (" + codeMapEntry.getOmopConcept() + ", " + codeMapEntry.getFhirSystem()
 							+ ", " + codeMapEntry.getFhirCode() + ", " + codeMapEntry.getFhirDisplay());
@@ -46,6 +49,10 @@ public class FhirOmopCodeMapImpl extends BaseFhirOmopMap implements FhirOmopCode
 			pstmt.setString(3, codeMapEntry.getFhirDisplay());
 			pstmt.setLong(4, codeMapEntry.getOmopConcept());
 			pstmt.executeUpdate();
+
+			conn.commit();
+			conn.close();
+
 			logger.info(
 					"Map entry data (" + codeMapEntry.getOmopConcept() + ") updated to (" + codeMapEntry.getFhirSystem()
 							+ ", " + codeMapEntry.getFhirCode() + ", " + codeMapEntry.getFhirDisplay() + ")");
@@ -61,6 +68,10 @@ public class FhirOmopCodeMapImpl extends BaseFhirOmopMap implements FhirOmopCode
 		try (Connection conn = this.connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setLong(1, omopConcept);
 			pstmt.executeUpdate();
+
+			conn.commit();
+			conn.close();
+
 			logger.info("filter data (" + omopConcept + ") deleted");
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
@@ -83,6 +94,9 @@ public class FhirOmopCodeMapImpl extends BaseFhirOmopMap implements FhirOmopCode
 				codeMapEntry.setFhirDisplay(rs.getString("fhir_display"));
 				codeMapEntryList.add(codeMapEntry);
 			}
+
+			conn.close();
+
 			logger.info(codeMapEntryList.size() + " Concept Map entries obtained");
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
@@ -111,6 +125,9 @@ public class FhirOmopCodeMapImpl extends BaseFhirOmopMap implements FhirOmopCode
 			if (rs.next()) {
 				retv = rs.getLong("omop_concept");
 			}
+
+			conn.close();
+
 			logger.debug("Omop Concept," + retv + " , found for " + fhirSystem + " and " + fhirCode);
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
@@ -141,6 +158,9 @@ public class FhirOmopCodeMapImpl extends BaseFhirOmopMap implements FhirOmopCode
 				retv.setCode(fhirCode);
 				retv.setDisplay(fhirDisplay);
 			}
+
+			conn.close();
+
 			logger.debug(" Fhir coding found " + fhirSystem + " and " + fhirCode + " and " + fhirDisplay
 					+ " for Omop Concept " + omopConcept);
 		} catch (SQLException e) {
@@ -172,6 +192,9 @@ public class FhirOmopCodeMapImpl extends BaseFhirOmopMap implements FhirOmopCode
 				retv.setCode(fhirCode);
 				retv.setDisplay(fhirDisplay);
 			}
+
+			conn.close();
+
 			logger.debug(" Fhir coding found " + fhirSystem + " and " + fhirCode + " and " + fhirDisplay
 					+ " for Omop Source String " + omopSourceString);
 		} catch (SQLException e) {

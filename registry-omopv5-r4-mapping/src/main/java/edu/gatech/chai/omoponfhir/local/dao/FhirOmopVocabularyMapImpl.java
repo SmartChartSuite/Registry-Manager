@@ -41,6 +41,9 @@ public class FhirOmopVocabularyMapImpl extends BaseFhirOmopMap implements FhirOm
 
 			pstmt.executeUpdate();
 
+			conn.commit();
+			conn.close();
+			
 			logger.info("New Map entry data added (" + conceptMapEntry.getOmopConceptCodeName() + ", "
 					+ conceptMapEntry.getFhirUrlSystemName() + ", " + conceptMapEntry.getOtherSystemName());
 		} catch (SQLException e) {
@@ -60,6 +63,10 @@ public class FhirOmopVocabularyMapImpl extends BaseFhirOmopMap implements FhirOm
 			pstmt.setString(2, conceptMapEntry.getOtherSystemName());
 			pstmt.setString(3, conceptMapEntry.getOmopConceptCodeName());
 			pstmt.executeUpdate();
+
+			conn.commit();
+			conn.close();
+
 			logger.info("Map entry data (" + conceptMapEntry.getOmopConceptCodeName() + ") updated to ("
 					+ conceptMapEntry.getFhirUrlSystemName() + ", " + conceptMapEntry.getOtherSystemName() + ")");
 		} catch (SQLException e) {
@@ -74,6 +81,10 @@ public class FhirOmopVocabularyMapImpl extends BaseFhirOmopMap implements FhirOm
 		try (Connection conn = this.connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, omopConceptCodeName);
 			pstmt.executeUpdate();
+
+			conn.commit();
+			conn.close();
+
 			logger.info("filter data ("+omopConceptCodeName+") deleted");
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
@@ -95,10 +106,13 @@ public class FhirOmopVocabularyMapImpl extends BaseFhirOmopMap implements FhirOm
 				conceptMapEntry.setOtherSystemName(rs.getString("other_system"));
 				conceptMapEntryList.add(conceptMapEntry);
 			}
+
+			conn.close();
+
 			logger.info(conceptMapEntryList.size()+" Concept Map entries obtained");
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
-		}		
+		}
 
 		return conceptMapEntryList;
 	}
@@ -116,6 +130,9 @@ public class FhirOmopVocabularyMapImpl extends BaseFhirOmopMap implements FhirOm
 			if (rs.next()) {
 				retv = rs.getString("omop_vocabulary_id");
 			}
+
+			conn.close();
+
 			logger.debug("Omop Vocabulary,"+retv+" , found for "+fhirSystemName);
 		} catch (SQLException e) {
 			logger.error(e.getMessage());
@@ -139,6 +156,9 @@ public class FhirOmopVocabularyMapImpl extends BaseFhirOmopMap implements FhirOm
 					retv = rs.getString("other_system");
 				}
 			}
+
+			conn.close();
+
 			logger.debug("FHIR System name,"+retv+" , found for "+omopVocabulary);
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());

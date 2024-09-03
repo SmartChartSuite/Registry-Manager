@@ -21,6 +21,9 @@ public class TwoLetterStateMapImpl extends BaseFhirOmopMap implements TwoLetterS
 
 			pstmt.executeUpdate();
 
+			conn.commit();
+			conn.close();
+
 			logger.info(
 					"New Map entry data added (" + mapEntry.getStateName() + ", " + mapEntry.getTwoLetter());
 		} catch (SQLException e) {
@@ -41,6 +44,10 @@ public class TwoLetterStateMapImpl extends BaseFhirOmopMap implements TwoLetterS
 			pstmt.setString(3, mapEntry.getStateName());
 
 			pstmt.executeUpdate();
+
+			conn.commit();
+			conn.close();
+
 			logger.info(
 					"Map entry data (" + mapEntry.getStateName() + ") updated to (" + mapEntry.getStateName()
 							+ ", " + mapEntry.getTwoLetter() + ")");
@@ -56,6 +63,10 @@ public class TwoLetterStateMapImpl extends BaseFhirOmopMap implements TwoLetterS
 		try (Connection conn = this.connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, stateName);
 			pstmt.executeUpdate();
+
+			conn.commit();
+			conn.close();
+
 			logger.info("filter data (" + stateName + ") deleted");
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
@@ -76,6 +87,9 @@ public class TwoLetterStateMapImpl extends BaseFhirOmopMap implements TwoLetterS
 				codeMapEntry.setTwoLetter(rs.getString("two_letter"));
 				codeMapEntryList.add(codeMapEntry);
 			}
+
+			conn.close();
+
 			logger.info(codeMapEntryList.size() + " Concept Map entries obtained");
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
@@ -96,6 +110,9 @@ public class TwoLetterStateMapImpl extends BaseFhirOmopMap implements TwoLetterS
 			if (rs.next()) {
 				retv = rs.getString("state_name");
 			}
+
+			conn.close();
+
 			logger.debug("State Name," + retv + " , found for " + twoLetter);
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
@@ -116,6 +133,9 @@ public class TwoLetterStateMapImpl extends BaseFhirOmopMap implements TwoLetterS
 			if (rs.next()) {
 				retv = rs.getString("two_letter");
 			}
+
+			conn.close();
+
 			logger.debug(" Two Letter found " + retv + " for State Name " + stateName);
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
