@@ -1106,13 +1106,15 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 			// Find the concept id for this coding.
 			concept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService,
 					OmopCodeableConceptMapping.LOINC.getOmopVocabulary(), codingFound.getCode());
-		}
-
-		if (codingSecondChoice != null) {
+		} else if (codingSecondChoice != null) {
 			// This is not our first choice. But, found one that we can
 			// map.
 			concept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, OmopSystem,
 					codingSecondChoice.getCode());
+			if (concept == null) {
+				// TODO: try with only a code. Need to fix this
+				concept = CodeableConceptUtil.getOmopConceptWithOmopCode(conceptService, codingSecondChoice.getCode());
+			}
 		}
 
 		if (concept == null) {
