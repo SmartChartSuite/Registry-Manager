@@ -154,6 +154,7 @@ public class ServerOperations {
 	@Operation(name = "$registry-control", manualResponse = true)
 	public void registryControlOperation(RequestDetails theRequestDetails,
 			@OperationParam(name = "case-id") StringParam theCaseId,
+			@OperationParam(name = "special-action") StringParam theSpecialAction,
 			@OperationParam(name = "patient-identifier") TokenParam thePatientIdentifier,
 			@OperationParam(name = "set-status") StringParam theSetStatus,
 			@OperationParam(name = "set-tries-left") NumberParam theTriesLeft,

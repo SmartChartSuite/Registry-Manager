@@ -69,7 +69,7 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 		if (line1 != null) {
 			where_clause = Location._getColumnName("address1") + " like '@line1'";
 			parameterList.add("line1");
-			valueList.add(line1);
+			valueList.add("'" + line1 + "'");
 		}
 
 		if (line2 != null) {
@@ -79,7 +79,7 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 				where_clause += " AND " + Location._getColumnName("address2") + " like '@line2'";
 
 			parameterList.add("line2");
-			valueList.add(line2);
+			valueList.add("'" + line2 + "'");
 		}
 
 		if (city != null) {
@@ -89,7 +89,7 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 				where_clause += " AND " + Location._getColumnName("city") + " like '@city'";
 
 			parameterList.add("city");
-			valueList.add(city);
+			valueList.add("'" + city + "'");
 		}
 
 		if (state != null) {
@@ -99,7 +99,7 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 				where_clause += " AND " + Location._getColumnName("state") + " like '@state'";
 
 			parameterList.add("state");
-			valueList.add(state);
+			valueList.add("'" + state + "'");
 		}
 
 		if (zip != null) {
@@ -109,7 +109,7 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 				where_clause += " AND " + Location._getColumnName("zip") + " like '@zip'";
 
 			parameterList.add("zip");
-			valueList.add(zip);
+			valueList.add("'" + zip + "'");
 		}
 
 

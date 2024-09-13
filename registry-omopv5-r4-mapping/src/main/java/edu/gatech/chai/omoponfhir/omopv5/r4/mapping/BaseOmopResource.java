@@ -33,12 +33,10 @@ import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.springframework.web.context.WebApplicationContext;
 
 import ca.uhn.fhir.rest.api.SortSpec;
-import edu.gatech.chai.omoponfhir.local.dao.FhirOmopCodeMapImpl;
-import edu.gatech.chai.omoponfhir.local.dao.FhirOmopVocabularyMapImpl;
-import edu.gatech.chai.omoponfhir.local.dao.TwoLetterStateMapImpl;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.EncounterResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.CodeableConceptUtil;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ExtensionUtil;
+import edu.gatech.chai.omopv5.dba.service.ConceptRelationshipService;
 import edu.gatech.chai.omopv5.dba.service.ConceptService;
 import edu.gatech.chai.omopv5.dba.service.FResourceDeduplicateService;
 import edu.gatech.chai.omopv5.dba.service.IService;
@@ -54,16 +52,15 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 			
 	static final Logger logger = LoggerFactory.getLogger(BaseOmopResource.class);
 
-	protected FhirOmopVocabularyMapImpl fhirOmopVocabularyMap;
-	protected FhirOmopCodeMapImpl fhirOmopCodeMap;
-	protected TwoLetterStateMapImpl twoLetterStateMap;
-	
 	private p myOmopService;
 	private Class<t> myEntityClass;
 	private Class<p> myServiceClass;
 	private String myFhirResourceType;
 	private FResourceDeduplicateService fResourceDeduplicateService;
 	private String returnStringValue;
+
+	protected ConceptService conceptService;
+	protected ConceptRelationshipService conceptRelationshipService;
 
 	public static String MAP_EXCEPTION_FILTER = "FILTER";
 	public static String MAP_EXCEPTION_EXCLUDE = "EXCLUDE";
@@ -75,9 +72,9 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 
 		myEntityClass = entityClass;
 		myFhirResourceType = fhirResourceType;
-		fhirOmopVocabularyMap = new FhirOmopVocabularyMapImpl();
-		fhirOmopCodeMap = new FhirOmopCodeMapImpl();
-		twoLetterStateMap = new TwoLetterStateMapImpl();
+
+		conceptService = context.getBean(ConceptService.class);
+		conceptRelationshipService = context.getBean(ConceptRelationshipService.class);
 	}
 
 	public String getMyFhirResourceType() {
@@ -195,14 +192,6 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 		return constructFHIR(fhirId, entity);
 	}
 
-	public FhirOmopVocabularyMapImpl getFhirOmopVocabularyMap() {
-		return this.fhirOmopVocabularyMap;
-	}
-	
-	public FhirOmopCodeMapImpl getFhirOmopCodeMap() {
-		return this.fhirOmopCodeMap;
-	}
-	
 	/***
 	 * toFHIR this is called from FHIR provider for read operation.
 	 */
@@ -310,7 +299,7 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 				if (system == null || system.isEmpty()) {
 					identifier = system_value;
 				} else {
-					String omopVocabId = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(system);
+					String omopVocabId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system);
 					if (!"None".equals(omopVocabId)) {
 						identifier = omopVocabId + "^" + system_value;
 					} else {
@@ -388,7 +377,7 @@ public abstract class BaseOmopResource<v extends Resource, t extends BaseEntity,
 				// See if we can handle this coding.
 				try {
 					if (fhirSystemUri != null && !fhirSystemUri.isEmpty()) {
-						omopSystem = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(fhirSystemUri);
+						omopSystem = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, fhirSystemUri);
 
 						if (!"None".equals(omopSystem)) {
 							// We can at least handle this. Save it

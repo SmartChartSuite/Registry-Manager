@@ -5,6 +5,7 @@ public enum QueryRequest {
     END(0x0002, "END", "Case is at the end of active monitoring period."),
     REQUEST_PENDING(0x0004, "REQUEST_PENDING", "Request to Query for case is queued but not yet in running queue."), 
     TIMED_OUT(0x0008, "TIMED_OUT", "Retry count reached the maximum allowed count. Giving up."), 
+    PAUSED(0x0010, "PAUSED", "Case is paused by system admin."), 
     ERROR_IN_CLIENT(0x0100, "ERROR_IN_CLIENT", "Error occurred on client side during Request. Request is paused."), 
     ERROR_IN_SERVER(0x0200, "ERROR_IN_SERVER", "Error occurred on server side during Request. Request will be made again until it reaches the maximum retry-count."), 
     RESULT_PARSE_ERROR(0x0201, "RESULT_PARSE_ERROR", "Error occurred when parsing the server response data"),

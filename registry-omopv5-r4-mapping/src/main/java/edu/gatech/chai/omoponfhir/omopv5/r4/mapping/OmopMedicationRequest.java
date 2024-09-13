@@ -277,7 +277,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 			Concept unitConcept = CodeableConceptUtil.getOmopConceptWithOmopCode(conceptService, unitUnit);
 			if (unitConcept != null) {
 				String vocId = unitConcept.getVocabularyId();
-				unitSystem = fhirOmopVocabularyMap.getFhirSystemNameFromOmopVocabulary(vocId);
+				unitSystem = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, vocId);
 				unitCode = unitConcept.getConceptCode();
 				unitUnit = unitConcept.getConceptName();
 			}
@@ -298,7 +298,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 			Duration qty = new Duration();
 			qty.setValue(daysSupply);
 			// Set the UCUM unit to day.
-			String fhirUri = fhirOmopVocabularyMap.getFhirSystemNameFromOmopVocabulary("UCUM");
+			String fhirUri = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, "UCUM");
 			qty.setSystem(fhirUri);
 			qty.setCode("d");
 			qty.setUnit("day");
@@ -358,7 +358,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 			if (system != null && !system.isEmpty()) {
 				try {
 //					omopVocabulary = OmopCodeableConceptMapping.omopVocabularyforFhirUri(system);
-					omopVocabulary = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(system);
+					omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system);
 				} catch (FHIRException e) {
 					e.printStackTrace();
 					break;
@@ -667,7 +667,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 						String doseCode = qty.getCode();
 						String doseSystem = qty.getSystem();
 						if (doseSystem != null && !doseSystem.isBlank() && doseCode != null && !doseCode.isBlank()) {
-							String vocabId = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(doseSystem);
+							String vocabId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, doseSystem);
 							Concept unitConcept = 
 								CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, vocabId, doseCode);
 							if (unitConcept != null) {
@@ -699,7 +699,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 					String doseCode = qty.getCode();
 					String doseSystem = qty.getSystem();
 					if (doseSystem != null && !doseSystem.isBlank() && doseCode != null && !doseCode.isBlank()) {
-						String vocabId = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(doseSystem);
+						String vocabId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, doseSystem);
 						Concept unitConcept = 
 							CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, vocabId, doseCode);
 						if (unitConcept != null) {

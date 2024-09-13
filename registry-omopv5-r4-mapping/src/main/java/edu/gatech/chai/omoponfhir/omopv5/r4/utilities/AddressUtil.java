@@ -15,12 +15,20 @@
  *******************************************************************************/
 package edu.gatech.chai.omoponfhir.omopv5.r4.utilities;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.StringType;
 
+import edu.gatech.chai.omopv5.dba.service.ConceptService;
 import edu.gatech.chai.omopv5.dba.service.LocationService;
+import edu.gatech.chai.omopv5.dba.service.ParameterWrapper;
+import edu.gatech.chai.omopv5.model.entity.Concept;
 import edu.gatech.chai.omopv5.model.entity.Location;
 
 public class AddressUtil {
@@ -70,5 +78,47 @@ public class AddressUtil {
 		}
 
 		return null;
+	}
+
+	public static String getStateName(ConceptService conceptService, String twoLetter) {
+		String retv = "";
+
+		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
+
+		ParameterWrapper paramWrapper = new ParameterWrapper();
+		paramWrapper.setParameterType("String");
+		paramWrapper.setParameters(Arrays.asList("conceptCode", "vocabularyId"));
+		paramWrapper.setOperators(Arrays.asList("=", "="));
+		paramWrapper.setValues(Arrays.asList(twoLetter, "USPS"));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		for (Concept concept : concepts) {
+			return concept.getConceptName();
+		}
+
+		return retv;
+	}
+
+	public static String getTwoLetter(ConceptService conceptService, String stateName) {
+		String retv = null;
+
+		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
+
+		ParameterWrapper paramWrapper = new ParameterWrapper();
+		paramWrapper.setParameterType("String");
+		paramWrapper.setParameters(Arrays.asList("conceptName", "vocabularyId"));
+		paramWrapper.setOperators(Arrays.asList("=", "="));
+		paramWrapper.setValues(Arrays.asList(stateName, "USPS"));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		for (Concept concept : concepts) {
+			return concept.getConceptCode();
+		}
+
+		return retv;
 	}
 }

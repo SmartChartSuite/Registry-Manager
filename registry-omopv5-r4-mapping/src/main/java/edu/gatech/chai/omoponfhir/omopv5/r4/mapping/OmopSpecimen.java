@@ -100,7 +100,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 		//       which we can't map to FHIR.... This is a gap.
 		Concept specimenConcept = specimen_.getSpecimenConcept();
 		String omopVocabulary = specimenConcept.getVocabularyId();
-		String specimentTypeSystemUri = fhirOmopVocabularyMap.getFhirSystemNameFromOmopVocabulary(omopVocabulary);
+		String specimentTypeSystemUri = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, omopVocabulary);
 		if ("None".equals(specimentTypeSystemUri)) {
 			// If we can't find FHIR Uri or system name from the Vocabulary ID, we just use Omop Vocabulary Id.
 			specimentTypeSystemUri = omopVocabulary;
@@ -148,7 +148,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 		
 		if (unitConcept != null && unitConcept.getId() != 0L) {
 			String omopUnitVocabularyId = unitConcept.getVocabularyId();
-			unitSystemUri = fhirOmopVocabularyMap.getFhirSystemNameFromOmopVocabulary(omopUnitVocabularyId);
+			unitSystemUri = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, omopUnitVocabularyId);
 			if ("None".equals(unitSystemUri)) {
 				unitSystemUri = omopUnitVocabularyId;
 			}
@@ -171,7 +171,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 		
 		if (specimen_.getAnatomicSiteConcept() != null && specimen_.getAnatomicSiteConcept().getId() != 0L) {
 			String anatomicSiteVocabularyId = specimen_.getAnatomicSiteConcept().getVocabularyId();
-			String anatomicSiteSystemUri = fhirOmopVocabularyMap.getFhirSystemNameFromOmopVocabulary(anatomicSiteVocabularyId);
+			String anatomicSiteSystemUri = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, anatomicSiteVocabularyId);
 			if ("None".equals(anatomicSiteSystemUri)) {
 				anatomicSiteSystemUri = anatomicSiteVocabularyId;
 			}
@@ -278,7 +278,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 				// See if we can handle this coding.
 				try {
 					if (fhirSystemUri != null && !fhirSystemUri.isEmpty()) {
-						OmopSystem = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(fhirSystemUri);
+						OmopSystem = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, fhirSystemUri);
 						if ("None".equals(OmopSystem) == false) {
 							// We can at least handle this. Save it
 							// We may find another one we can handle. Let it replace.
@@ -348,7 +348,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 
 			// FHIR Specimen.collection.quantity.system --> OMOP Specimen.unit_concept.vocabulary_id
 			String fhirSystemUri = quantity.getSystem();
-			String OmopVocabularyId = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(fhirSystemUri);
+			String OmopVocabularyId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, fhirSystemUri);
 			Concept unitConcept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, OmopVocabularyId, quantity.getCode());
 			if (unitConcept != null) {
 				specimen_.setUnitConcept(unitConcept);

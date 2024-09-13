@@ -1307,6 +1307,31 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		return null;
 	}
 
+	public T findById(String id) {
+		List<String> parameterList = new ArrayList<String>();
+		List<String> valueList = new ArrayList<String>();
+
+		String rootTableName = SqlUtil.getFullTableName(dataSchema, vocabSchema, getEntityClass());
+		String tableName = SqlUtil.getTableName(getEntityClass());
+		String sql = constructSqlSelectWithoutWhere(rootTableName);
+		sql = sql + " where @cname=@value";
+		parameterList.add("cname");
+		parameterList.add("value");
+		valueList.add(tableName + "." + getSqlTableColumnName("id"));
+		valueList.add("'" + id.toString() + "'");
+
+		sql = renderedSql(sql, parameterList, valueList);
+
+		try {
+			return readEntity(sql);
+		} catch (Exception e) {
+			logger.error("SqlRender:" + sql);
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
 	public Long removeById(Long id) {
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();

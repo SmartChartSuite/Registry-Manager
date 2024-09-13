@@ -62,6 +62,7 @@ import edu.gatech.chai.omoponfhir.omopv5.r4.provider.OrganizationResourceProvide
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PatientResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PractitionerResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.AddressUtil;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.CodeableConceptUtil;
 import edu.gatech.chai.omopv5.dba.service.ConceptService;
 import edu.gatech.chai.omopv5.dba.service.FPersonService;
 import edu.gatech.chai.omopv5.dba.service.LocationService;
@@ -80,7 +81,6 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 
 	private static OmopPatient omopPatient = new OmopPatient();
 
-	private ConceptService conceptService;
 	private LocationService locationService;
 	private ProviderService providerService;
 	private VisitOccurrenceService visitOccurrenceService;
@@ -112,7 +112,6 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 		locationService = context.getBean(LocationService.class);
 		providerService = context.getBean(ProviderService.class);
 		visitOccurrenceService = context.getBean(VisitOccurrenceService.class);
-		conceptService = context.getBean(ConceptService.class);
 	}
 
 	public static OmopPatient getInstance() {
@@ -195,7 +194,7 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 				identifier.setValue(personIdentifier[0]);
 			} else {
 				String omopVoc = personIdentifier[0];
-				String system = fhirOmopVocabularyMap.getFhirSystemNameFromOmopVocabulary(omopVoc);
+				String system = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, omopVoc);
 				String value = "";
 
 				if (personIdentifier.length > 2) {
@@ -401,12 +400,12 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 		Coding raceCoding = null;
 		if (raceConcept == null) {
 			if (raceSourceString != null && !raceSourceString.isEmpty()) {
-				raceCoding = fhirOmopCodeMap.getFhirCodingFromOmopSourceString(raceSourceString);
+				raceCoding = CodeableConceptUtil.getFhirCodingFromOmopSourceString(conceptService, raceSourceString);
 			}
 		} else {
 			Long raceConceptId = raceConcept.getIdAsLong();
 			if (raceConceptId != 0L) {
-				raceCoding = fhirOmopCodeMap.getFhirCodingFromOmopConcept(raceConceptId);
+				raceCoding = CodeableConceptUtil.getFhirCodingFromOmopConcept(conceptService, conceptRelationshipService, raceConceptId);
 			}
 		}
 
@@ -423,12 +422,12 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 		Coding ethnicityCoding = null;
 		if (ethnicityConcept == null) {
 			if (ethnicitySourceString != null && !ethnicitySourceString.isEmpty()) {
-				ethnicityCoding = fhirOmopCodeMap.getFhirCodingFromOmopSourceString(ethnicitySourceString);
+				ethnicityCoding = CodeableConceptUtil.getFhirCodingFromOmopSourceString(conceptService, ethnicitySourceString);
 			}
 		} else {
 			Long ethnicityConceptId = ethnicityConcept.getIdAsLong();
 			if (ethnicityConceptId != 0L) {
-				ethnicityCoding = fhirOmopCodeMap.getFhirCodingFromOmopConcept(ethnicityConceptId);
+				ethnicityCoding = CodeableConceptUtil.getFhirCodingFromOmopConcept(conceptService, conceptRelationshipService, ethnicityConceptId);
 			}
 		}
 
@@ -449,7 +448,7 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 		String personSourceValue = value;
 
 		if (system != null && !system.isEmpty()) {
-			String omopVoc = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(system);
+			String omopVoc = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system);
 			if (!"None".equals(omopVoc)) {
 				personSourceValue = omopVoc + "^" + value;
 			}
@@ -462,8 +461,8 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 					if (coding != null && !coding.isEmpty()) {
 						String systemUri = coding.getSystem();
 						String code = coding.getCode();
-						String omopVoc = fhirOmopVocabularyMap
-								.getOmopVocabularyFromFhirSystemName(systemUri + "^" + code);
+						String omopVoc = CodeableConceptUtil
+								.getOmopVocabularyFromFhirSystemName(conceptService, systemUri + "^" + code);
 						if (!"None".equals(omopVoc)) {
 							// We found something from internal mapping.
 							personSourceValue = omopVoc + "^" + personSourceValue;
@@ -754,7 +753,7 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 			String searchString = identifierValue;
 
 			if (identifierSystem != null && !identifierSystem.isEmpty()) {
-				String omopVocabId = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(identifierSystem);
+				String omopVocabId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, identifierSystem);
 				if (!"None".equals(omopVocabId)) {
 					searchString = omopVocabId + "^" + searchString;
 				}
@@ -1023,7 +1022,7 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 			// We should check the state.
 			String state = address.getState();
 			if (state.length() != 2) {
-				String twoState = twoLetterStateMap.getTwoLetter(state);
+				String twoState = AddressUtil.getTwoLetter(conceptService, state);
 				if (twoState == null || twoState.isEmpty()) {
 					if (state.length() < 2) {
 						address.setState(state.substring(0, 1));
@@ -1139,7 +1138,7 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 		Concept omopRaceConcept = new Concept(8552L);
 		if (!myRace.isEmpty()) {
 			for (Coding myCategory : myRace.getCategory()) {
-				Long omopRaceConceptId = fhirOmopCodeMap.getOmopCodeFromFhirCoding(myCategory);
+				Long omopRaceConceptId = CodeableConceptUtil.getOmopCodeFromFhirCoding(conceptService, myCategory);
 				fperson.setRaceSourceValue(myCategory.getDisplay());
 				if (omopRaceConceptId != 0L) {
 					omopRaceConcept.setId(omopRaceConceptId);
@@ -1155,7 +1154,7 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 		Concept omopEthnicityConcept = new Concept(0L);
 		if (!myEthnicity.isEmpty()) {
 			for (Coding myCategory : myEthnicity.getCategory()) {
-				Long omopEthnicityConceptId = fhirOmopCodeMap.getOmopCodeFromFhirCoding(myCategory);
+				Long omopEthnicityConceptId = CodeableConceptUtil.getOmopCodeFromFhirCoding(conceptService, myCategory);
 				fperson.setEthnicitySourceValue(myCategory.getDisplay());
 				if (omopEthnicityConceptId != 0L) {
 					omopEthnicityConcept.setId(omopEthnicityConceptId);

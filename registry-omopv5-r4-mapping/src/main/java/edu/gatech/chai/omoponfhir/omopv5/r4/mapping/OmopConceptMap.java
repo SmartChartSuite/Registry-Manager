@@ -74,8 +74,8 @@ public class OmopConceptMap extends BaseOmopResource<ConceptMap, ConceptRelation
 		Parameters retVal = new Parameters();
 		
 		// Using the system/code and targetSystem, map the system/code.
-		String omopSrcVocab = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(system);
-		String omopTargetVocab = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(targetSystem);
+		String omopSrcVocab = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system);
+		String omopTargetVocab = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, targetSystem);
 
 		if ("None".equals(omopSrcVocab) || "None".equals(omopTargetVocab)) {
 			logger.error("$translate: trying to translate not-known coding system ("+system+"|"+code+" to "+targetSystem);
@@ -96,7 +96,7 @@ public class OmopConceptMap extends BaseOmopResource<ConceptMap, ConceptRelation
 		List<ParameterWrapper> params = new ArrayList<ParameterWrapper>();
 		ParameterWrapper paramConceptId1 = new ParameterWrapper(
 				"Long",
-				Arrays.asList("id.conceptId1"),
+				Arrays.asList("concept1"),
 				Arrays.asList("="),
 				Arrays.asList(String.valueOf(omopSrcConcept.getId())),
 				"or"
@@ -105,7 +105,7 @@ public class OmopConceptMap extends BaseOmopResource<ConceptMap, ConceptRelation
 		
 		ParameterWrapper paramRelationshipId = new ParameterWrapper(
 				"String",
-				Arrays.asList("id.relationshipId"),
+				Arrays.asList("relationshipId"),
 				Arrays.asList("like"),
 				Arrays.asList(relationshipId),
 				"or"
@@ -135,11 +135,11 @@ public class OmopConceptMap extends BaseOmopResource<ConceptMap, ConceptRelation
 			partParameter = parameter.addPart();
 			partParameter.setName("concept");
 			
-			Long targetConceptId = conceptRealationship.getId().getConceptId2();
+			Long targetConceptId = conceptRealationship.getConcept2().getId();
 			Concept targetConcept = conceptService.findById(targetConceptId);
 			
 			logger.debug("$translate: target concept obtained with vocabulary_id="+targetConcept.getVocabularyId());
-			Coding targetCoding = CodeableConceptUtil.getCodingFromOmopConcept(targetConcept, getFhirOmopVocabularyMap());
+			Coding targetCoding = CodeableConceptUtil.getCodingFromOmopConcept(conceptService, targetConcept);
 			partParameter.setValue(targetCoding);
 		}
 		

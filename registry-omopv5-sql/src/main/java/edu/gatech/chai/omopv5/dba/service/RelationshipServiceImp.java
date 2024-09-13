@@ -40,14 +40,6 @@ public class RelationshipServiceImp extends BaseEntityServiceImp<Relationship> i
 	}
 
 	/* (non-Javadoc)
-	 * @see edu.gatech.chai.omopv5.dba.service.RelationshipService#findById(java.lang.String)
-	 */
-	@Override
-	public Relationship findById(String id) {
-		return null;
-	}
-
-	/* (non-Javadoc)
 	 * @see edu.gatech.chai.omopv5.dba.service.RelationshipService#removeById(java.lang.String)
 	 */
 	@Override

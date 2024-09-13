@@ -363,7 +363,7 @@ public class OmopMedicationStatement extends BaseOmopResource<MedicationStatemen
 		Concept routeConcept = entity.getRouteConcept();
 		if (routeConcept != null) {
 			try {
-				String myUri = fhirOmopVocabularyMap.getFhirSystemNameFromOmopVocabulary(routeConcept.getVocabularyId());
+				String myUri = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, routeConcept.getVocabularyId());
 				if (!"None".equals(myUri)) {
 					CodeableConcept routeCodeableConcept = new CodeableConcept();
 					Coding routeCoding = new Coding();
@@ -528,7 +528,7 @@ public class OmopMedicationStatement extends BaseOmopResource<MedicationStatemen
 			} else {
 				if (system != null && !system.isEmpty()) {
 					try {
-						omopVocabulary = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(system);
+						omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system);
 					} catch (FHIRException e) {
 						e.printStackTrace();
 					}
@@ -906,7 +906,7 @@ public class OmopMedicationStatement extends BaseOmopResource<MedicationStatemen
 					}
 
 					if (system != null && !system.isEmpty() && code != null && !code.isEmpty()) {
-						String omopVocabularyId = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(system);
+						String omopVocabularyId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system);
 						unitConcept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService,
 								omopVocabularyId, code);
 						if (unitConcept != null) {

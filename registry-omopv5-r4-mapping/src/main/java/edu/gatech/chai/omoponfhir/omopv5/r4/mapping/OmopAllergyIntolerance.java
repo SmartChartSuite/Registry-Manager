@@ -153,11 +153,11 @@ public class OmopAllergyIntolerance extends BaseOmopResource<AllergyIntolerance,
 
 		if (observationValueConcept == null || observationValueConcept.getId() == 0L) {
 			if (observationConcept != null && observationConcept.getId() != 0L) {
-				CodeableConcept substanceCodeableConcept = CodeableConceptUtil.getCodeableConceptFromOmopConcept(observationConcept, getFhirOmopVocabularyMap());
+				CodeableConcept substanceCodeableConcept = CodeableConceptUtil.getCodeableConceptFromOmopConcept(conceptService, observationConcept);
 				allergyIntolerance.setCode(substanceCodeableConcept);
 			}
 		} else {
-			CodeableConcept substanceCodeableConcept = CodeableConceptUtil.getCodeableConceptFromOmopConcept(observationValueConcept, getFhirOmopVocabularyMap());
+			CodeableConcept substanceCodeableConcept = CodeableConceptUtil.getCodeableConceptFromOmopConcept(conceptService, observationValueConcept);
 			allergyIntolerance.setCode(substanceCodeableConcept);
 		}
 		
@@ -297,7 +297,7 @@ public class OmopAllergyIntolerance extends BaseOmopResource<AllergyIntolerance,
 				String omopVocabulary = "None";
 				if (system != null && !system.isEmpty()) {
 					try {
-						omopVocabulary = getFhirOmopVocabularyMap().getOmopVocabularyFromFhirSystemName(system);
+						omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system);
 					} catch (FHIRException e) {
 						e.printStackTrace();
 					}

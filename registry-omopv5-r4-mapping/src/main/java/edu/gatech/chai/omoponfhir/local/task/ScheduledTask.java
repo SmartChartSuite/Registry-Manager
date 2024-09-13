@@ -57,9 +57,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVParser;
 
-import edu.gatech.chai.omoponfhir.local.dao.FhirOmopVocabularyMapImpl;
-import edu.gatech.chai.omoponfhir.local.model.FhirOmopVocabularyMapEntry;
 import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopServerOperations;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.CodeableConceptUtil;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ConfigValues;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.QueryRequest;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
@@ -72,7 +71,6 @@ import edu.gatech.chai.omopv5.dba.service.CaseInfoService;
 import edu.gatech.chai.omopv5.dba.service.VocabularyService;
 import edu.gatech.chai.omopv5.model.entity.Concept;
 import edu.gatech.chai.omopv5.model.entity.ConceptRelationship;
-import edu.gatech.chai.omopv5.model.entity.ConceptRelationshipPK;
 import edu.gatech.chai.omopv5.model.entity.Relationship;
 import edu.gatech.chai.omopv5.model.entity.CaseInfo;
 import edu.gatech.chai.omopv5.model.entity.CaseLog;
@@ -113,11 +111,8 @@ public class ScheduledTask {
 	private Long queryPeriod2;
 	private Long queryPeriod3;
 
-	protected FhirOmopVocabularyMapImpl fhirOmopVocabularyMap;
-
 	public ScheduledTask() {
 		conceptIdStart = StaticValues.CONCEPT_MY_SPACE;
-		fhirOmopVocabularyMap = new FhirOmopVocabularyMapImpl();
 		// setSmartPacerBasicAuth(System.getenv("RCAPI_BASIC_AUTH"));
 
 		// We are using the server operations implementation.
@@ -304,6 +299,11 @@ public class ScheduledTask {
 					caseInfoService.update(caseInfo);
 				} finally {
 					if (parameters == null || parameters.isEmpty()) {
+						retryCountUpdate(caseInfo);
+						if (responseBody.length() > 65535) {
+							responseBody = responseBody.substring(0, 65535);
+						}
+						writeToLog(caseInfo, "Failed to parse the Parameters. Indepth Evaluation on response is needed: " + responseBody);
 						return null;
 					}
 				}
@@ -625,14 +625,15 @@ public class ScheduledTask {
 
 		// Add "status != time out and != error in client and != END"
 		param = new ParameterWrapper("String", 
-				Arrays.asList("status", "status", "status", "status", "status"),
-				Arrays.asList("!=", "!=", "!=", "!=", "!="), 
+				Arrays.asList("status", "status", "status", "status", "status", "status"),
+				Arrays.asList("!=", "!=", "!=", "!=", "!=", "!="), 
 				Arrays.asList(
 						QueryRequest.TIMED_OUT.getCodeString(),
 						QueryRequest.ERROR_IN_CLIENT.getCodeString(), 
 						QueryRequest.END.getCodeString(),
 						QueryRequest.ERROR_UNKNOWN.getCodeString(),
-						QueryRequest.RESULT_PARSE_ERROR.getCodeString()),
+						QueryRequest.RESULT_PARSE_ERROR.getCodeString(),
+						QueryRequest.PAUSED.getCodeString()),
 				"and");
 		params.add(param);
 
@@ -910,18 +911,15 @@ public class ScheduledTask {
 						}
 
 						// see if this relationship exists. If not create one.
-						ConceptRelationshipPK conceptRelationshipPk = new ConceptRelationshipPK(sourceConcept.getId(),
-								targetConcept.getId(), relationshipId);
 						ConceptRelationship conceptRelationship = conceptRelationshipService
-								.findById(conceptRelationshipPk);
+								.find(sourceConcept, targetConcept, relationshipId);
 						if (conceptRelationship != null) {
 							line = reader.readLine();
 							continue;
 						}
 
 						// Create concept_relationship entry
-						conceptRelationship = new ConceptRelationship();
-						conceptRelationship.setId(conceptRelationshipPk);
+						conceptRelationship = new ConceptRelationship(sourceConcept, targetConcept, relationshipId);
 						conceptRelationship.setValidStartDate(new Date(0L));
 						SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 						try {
@@ -971,17 +969,10 @@ public class ScheduledTask {
 		Vocabulary vocab = createOmopVocabularyConcept(omopVacab);
 
 		// Create FHIR representation of the vocabulary.
-		String fhirCodeSystem = fhirOmopVocabularyMap.getFhirSystemNameFromOmopVocabulary(vocab.getId());
+		String fhirCodeSystem = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, vocab.getId());
 		if ("none".equalsIgnoreCase(fhirCodeSystem)) {
 			// add this to local omopvocab2fhir code map db
-			FhirOmopVocabularyMapEntry conceptMapEntry;
-			if (fhirCodeSystem.startsWith("http")) {
-				conceptMapEntry = new FhirOmopVocabularyMapEntry(vocab.getId(), fhirCoding, null);
-			} else {
-				conceptMapEntry = new FhirOmopVocabularyMapEntry(vocab.getId(), null, fhirCoding);
-			}
-
-			fhirOmopVocabularyMap.save(conceptMapEntry);
+			vocabularyService.create(vocab);
 		}
 
 		return vocab;

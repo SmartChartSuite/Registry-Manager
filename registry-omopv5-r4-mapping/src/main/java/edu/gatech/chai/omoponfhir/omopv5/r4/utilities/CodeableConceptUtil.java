@@ -15,6 +15,9 @@
  *******************************************************************************/
 package edu.gatech.chai.omoponfhir.omopv5.r4.utilities;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,11 +26,12 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.exceptions.FHIRException;
 
-import edu.gatech.chai.omoponfhir.local.dao.FhirOmopVocabularyMapImpl;
 import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopCodeableConceptMapping;
+import edu.gatech.chai.omopv5.dba.service.ConceptRelationshipService;
 import edu.gatech.chai.omopv5.dba.service.ConceptService;
 import edu.gatech.chai.omopv5.dba.service.ParameterWrapper;
 import edu.gatech.chai.omopv5.model.entity.Concept;
+import edu.gatech.chai.omopv5.model.entity.ConceptRelationship;
 
 public class CodeableConceptUtil {
 	public static void addCodingFromOmopConcept(CodeableConcept codeableConcept, Concept concept) throws FHIRException {
@@ -41,9 +45,8 @@ public class CodeableConceptUtil {
 		codeableConcept.addCoding(coding);
 	}
 	
-	public static Coding getCodingFromOmopConcept(Concept concept, FhirOmopVocabularyMapImpl fhirOmopVocabularyMap) throws FHIRException {
-		String fhirUri = fhirOmopVocabularyMap.getFhirSystemNameFromOmopVocabulary(concept.getVocabularyId());
-		
+	public static Coding getCodingFromOmopConcept(ConceptService conceptService, Concept concept) {
+		String fhirUri = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, concept.getVocabularyId());
 		Coding coding = new Coding();
 		coding.setSystem(fhirUri);
 		coding.setCode(concept.getConceptCode());
@@ -52,9 +55,9 @@ public class CodeableConceptUtil {
 		return coding;
 	}
 	
-	public static CodeableConcept getCodeableConceptFromOmopConcept(Concept concept, FhirOmopVocabularyMapImpl fhirOmopVocabularyMap) throws FHIRException {
+	public static CodeableConcept getCodeableConceptFromOmopConcept(ConceptService conceptService, Concept concept) {
 		CodeableConcept codeableConcept = new CodeableConcept();
-		Coding coding = getCodingFromOmopConcept(concept, fhirOmopVocabularyMap);
+		Coding coding = CodeableConceptUtil.getCodingFromOmopConcept(conceptService, concept);
 		codeableConcept.addCoding(coding);
 
 		return codeableConcept;
@@ -118,6 +121,48 @@ public class CodeableConceptUtil {
 		return getOmopConceptWithOmopVacabIdAndCode(conceptService, omopVocabularyId, code);
 	}
 	
+	public static String getOmopVocabularyFromFhirSystemName(ConceptService conceptService, String fhirSystemUri) {
+		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
+
+		ParameterWrapper paramWrapper = new ParameterWrapper();
+		paramWrapper.setParameterType("String");
+		paramWrapper.setParameters(Arrays.asList("conceptName", "conceptClassId"));
+		paramWrapper.setOperators(Arrays.asList("=", "="));
+		paramWrapper.setValues(Arrays.asList(fhirSystemUri, "FHIR Concept Mapping"));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		for (Concept concept : concepts) {
+			return concept.getVocabularyId();
+		}
+
+		return "None";
+	}
+
+	public static String getFhirSystemNameFromOmopVocabulary(ConceptService conceptService, String omopVocabulary) {
+		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
+
+		ParameterWrapper paramWrapper = new ParameterWrapper();
+		paramWrapper.setParameterType("String");
+		paramWrapper.setParameters(Arrays.asList("conceptClassId", "vocabularyId"));
+		paramWrapper.setOperators(Arrays.asList("=", "="));
+		paramWrapper.setValues(Arrays.asList("FHIR Concept Mapping", omopVocabulary));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		String fhirConceptName = "None";
+		for (Concept concept : concepts) {
+			fhirConceptName = concept.getConceptName();
+			if (fhirConceptName.startsWith("http://") || fhirConceptName.startsWith("https://")) {
+				return fhirConceptName;
+			}
+		}
+
+		return fhirConceptName;
+	}
+
 	public static Concept searchConcept(ConceptService conceptService, CodeableConcept codeableConcept) throws FHIRException {
 		List<Coding> codings = codeableConcept.getCoding();
 		for (Coding coding : codings) {
@@ -197,4 +242,147 @@ public class CodeableConceptUtil {
 		return -1;
 	}
 
+	public static Coding getFhirCodingFromOmopSourceString(ConceptService conceptService, String raceSourceString) {
+		Coding retv = null;
+
+		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
+		ParameterWrapper paramWrapper = new ParameterWrapper();
+		paramWrapper.setParameterType("String");
+		paramWrapper.setParameters(Arrays.asList("conceptName", "conceptClassId"));
+		paramWrapper.setOperators(Arrays.asList("=", "="));
+		paramWrapper.setValues(Arrays.asList(raceSourceString, "FHIR Concept"));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		String vocabularyId = "None";
+		String fhirCode = "None";
+		String fhirDisplay = raceSourceString;
+		String fhirSystem = "None";
+		for (Concept concept : concepts) {
+			vocabularyId = concept.getVocabularyId();
+			fhirCode = concept.getConceptCode();
+		}
+
+		if ("None".equals(vocabularyId)) {
+			return retv;
+		}
+
+		paramList.clear();
+		paramWrapper.setParameterType("String");
+		paramWrapper.setParameters(Arrays.asList("vocabularyId", "conceptClassId"));
+		paramWrapper.setOperators(Arrays.asList("=", "="));
+		paramWrapper.setValues(Arrays.asList(vocabularyId, "FHIR Concept Mapping"));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		for (Concept concept : concepts) {
+			fhirSystem = concept.getConceptName();
+		}
+
+		retv = new Coding();
+		retv.setSystem(fhirSystem);
+		retv.setCode(fhirCode);
+		retv.setDisplay(fhirDisplay);
+
+		return retv;
+	}
+
+	public static Long getOmopCodeFromFhirCoding(ConceptService conceptService, Coding fhirCoding) {
+		Long retv = 0L;
+
+		String fhirSystem = fhirCoding.getSystem();
+		String fhirCode = fhirCoding.getCode();
+		if (fhirSystem == null || fhirSystem.isEmpty() || fhirCode == null || fhirCode.isEmpty()) {
+			// We need to know system and code.
+			return retv;
+		}
+
+		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
+		ParameterWrapper paramWrapper = new ParameterWrapper();
+		paramWrapper.setParameterType("String");
+		paramWrapper.setParameters(Arrays.asList("conceptName", "conceptClassId"));
+		paramWrapper.setOperators(Arrays.asList("=", "="));
+		paramWrapper.setValues(Arrays.asList(fhirSystem, "FHIR Concept Mapping"));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		String vocabularyId = null;
+		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		for (Concept concept : concepts) {
+			vocabularyId = concept.getConceptName();
+		}
+
+		if (vocabularyId == null) {
+			return retv;
+		}
+
+		paramList.clear();
+
+		paramWrapper = new ParameterWrapper();
+		paramWrapper.setParameterType("String");
+		paramWrapper.setParameters(Arrays.asList("conceptCode", "vocabularyId"));
+		paramWrapper.setOperators(Arrays.asList("=", "="));
+		paramWrapper.setValues(Arrays.asList(fhirCode, vocabularyId));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		for (Concept concept : concepts) {
+			return concept.getId();
+		}
+
+		return retv;
+	}
+
+	public static Coding getFhirCodingFromOmopConcept(ConceptService conceptService, ConceptRelationshipService conceptRelationshipService, Long raceConceptId) {
+		Coding retv = null;
+
+		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
+		ParameterWrapper paramWrapper = new ParameterWrapper();
+		paramWrapper.setParameterType("Long");
+		paramWrapper.setParameters(Arrays.asList("concept2.conceptId"));
+		paramWrapper.setOperators(Arrays.asList("="));
+		paramWrapper.setValues(Arrays.asList(String.valueOf(raceConceptId)));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		List<ConceptRelationship> conceptRelationships = conceptRelationshipService.searchWithParams(0, 0, paramList, null);
+		Long fhirOmopConceptId = null;
+		String fhirSystem = "None";
+		String fhirCode = "None";
+		String fhirDisplay = "None";
+		String vocabularyId = "None";
+		for (ConceptRelationship conceptRelationship : conceptRelationships) {
+			fhirOmopConceptId = conceptRelationship.getConcept1().getId();
+			fhirCode = conceptRelationship.getConcept1().getConceptCode();
+			fhirDisplay = conceptRelationship.getConcept1().getConceptName();
+			vocabularyId = conceptRelationship.getConcept1().getVocabularyId();
+		}
+
+		if (fhirOmopConceptId == null) {
+			return retv;
+		}
+
+		paramList.clear();
+		paramWrapper.setParameterType("String");
+		paramWrapper.setParameters(Arrays.asList("vocabularyId", "conceptClassId"));
+		paramWrapper.setOperators(Arrays.asList("=", "="));
+		paramWrapper.setValues(Arrays.asList(vocabularyId, "FHIR Concept Mapping"));
+		paramWrapper.setRelationship("and");
+		paramList.add(paramWrapper);
+
+		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		for (Concept concept : concepts) {
+			fhirSystem = concept.getConceptName();
+		}
+
+		retv = new Coding();
+		retv.setSystem(fhirSystem);
+		retv.setCode(fhirCode);
+		retv.setDisplay(fhirDisplay);
+
+		return retv;
+	}
 }

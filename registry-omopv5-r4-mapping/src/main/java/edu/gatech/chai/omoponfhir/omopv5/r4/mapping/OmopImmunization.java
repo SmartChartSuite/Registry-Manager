@@ -264,7 +264,7 @@ public class OmopImmunization extends BaseOmopResource<Immunization, FImmunizati
 						// Find OMOP vocabulary_id for this system. If not found,
 						// put empty so that we can search it by code only (if provided).
 						try {
-							omopVocabulary = fhirOmopVocabularyMap.getOmopVocabularyFromFhirSystemName(systemValue);
+							omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, systemValue);
 						} catch (FHIRException e) {
 							e.printStackTrace();
 							systemValue = "";
@@ -407,8 +407,7 @@ public class OmopImmunization extends BaseOmopResource<Immunization, FImmunizati
 		immunization.setOccurrence(new DateTimeType(entity.getImmunizationDate()));
 
 		// vaccine code
-		CodeableConcept vaccineCodeable = CodeableConceptUtil.getCodeableConceptFromOmopConcept(entity.getImmunizationConcept(),
-				getFhirOmopVocabularyMap());
+		CodeableConcept vaccineCodeable = CodeableConceptUtil.getCodeableConceptFromOmopConcept(conceptService, entity.getImmunizationConcept());
 		immunization.setVaccineCode(vaccineCodeable);
 
 		// performer
@@ -437,8 +436,7 @@ public class OmopImmunization extends BaseOmopResource<Immunization, FImmunizati
 		// route
 		Concept routeConcept = entity.getRouteConcept();
 		if (routeConcept != null) {
-			CodeableConcept routeCodeable = CodeableConceptUtil.getCodeableConceptFromOmopConcept(routeConcept,
-					getFhirOmopVocabularyMap());
+			CodeableConcept routeCodeable = CodeableConceptUtil.getCodeableConceptFromOmopConcept(conceptService, routeConcept);
 			immunization.setRoute(routeCodeable);
 		}
 
