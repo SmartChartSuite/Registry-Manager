@@ -619,28 +619,49 @@ public class ScheduledTask {
 		List<ParameterWrapper> params = new ArrayList<ParameterWrapper>();
 
 		// Add "triggerAt parameter"
-		ParameterWrapper param = new ParameterWrapper("Date", Arrays.asList("triggerAtDateTime"),
-				Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
-		params.add(param);
-
-		// Add "status != time out and != error in client and != END"
-		param = new ParameterWrapper("String", 
-				Arrays.asList("status", "status", "status", "status", "status", "status"),
-				Arrays.asList("!=", "!=", "!=", "!=", "!=", "!="), 
-				Arrays.asList(
-						QueryRequest.TIMED_OUT.getCodeString(),
-						QueryRequest.ERROR_IN_CLIENT.getCodeString(), 
-						QueryRequest.END.getCodeString(),
-						QueryRequest.ERROR_UNKNOWN.getCodeString(),
-						QueryRequest.RESULT_PARSE_ERROR.getCodeString(),
-						QueryRequest.PAUSED.getCodeString()),
-				"and");
-		params.add(param);
-
 		if (numOfOutstandingRequests <= 0) {
 			numOfOutstandingRequests = 3;
 		}
+
+		ParameterWrapper paramDate = new ParameterWrapper("Date", Arrays.asList("triggerAtDateTime"),
+				Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
+		params.add(paramDate);
+
+		ParameterWrapper param = new ParameterWrapper("String", 
+		Arrays.asList("status"),
+		Arrays.asList("="), 
+		Arrays.asList(QueryRequest.RUNNING.getCodeString()),
+		"and");
+
+		params.add(param);
 		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "triggerAtDateTime ASC");
+
+		if (caseInfos.size() < numOfOutstandingRequests) {
+			numOfOutstandingRequests = numOfOutstandingRequests - caseInfos.size();
+			params.clear();
+			params.add(paramDate);	
+			
+			param = new ParameterWrapper("String", 
+				Arrays.asList("status", "status", "status", "status", "status", "status", "status"),
+				Arrays.asList("!=", "!=", "!=", "!=", "!=", "!=", "!="), 
+				Arrays.asList(
+					QueryRequest.TIMED_OUT.getCodeString(),
+					QueryRequest.ERROR_IN_CLIENT.getCodeString(), 
+					QueryRequest.END.getCodeString(),
+					QueryRequest.ERROR_UNKNOWN.getCodeString(),
+					QueryRequest.RESULT_PARSE_ERROR.getCodeString(),
+					QueryRequest.RUNNING.getCodeString(),
+					QueryRequest.PAUSED.getCodeString()),
+				"and");
+
+			params.add(param);
+			
+			List<CaseInfo> pendingInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "triggerAtDateTime ASC");
+			if (pendingInfos.size() > 0) {
+				caseInfos.addAll(pendingInfos);
+			}
+		}
+
 		for (CaseInfo caseInfo : caseInfos) {
 			switch (QueryRequest.codeEnumOf(caseInfo.getStatus())) {
 				case RUNNING: // case is awating for next scheduled time.
