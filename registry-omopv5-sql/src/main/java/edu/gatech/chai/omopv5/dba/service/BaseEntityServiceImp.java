@@ -133,6 +133,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 
 	public void closeConnection(Connection connection) throws SQLException {
 		if (connection != null) {
+			connection.commit();
 			connection.close();
 		}
 	}
