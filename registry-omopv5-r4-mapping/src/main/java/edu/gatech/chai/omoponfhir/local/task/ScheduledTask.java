@@ -637,7 +637,7 @@ public class ScheduledTask {
 		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "triggerAtDateTime ASC");
 
 		if (caseInfos.size() < numOfOutstandingRequests) {
-			numOfOutstandingRequests = numOfOutstandingRequests - caseInfos.size();
+			int availableOutstandingRequests = numOfOutstandingRequests - caseInfos.size();
 			params.clear();
 			params.add(paramDate);	
 			
@@ -656,7 +656,7 @@ public class ScheduledTask {
 
 			params.add(param);
 			
-			List<CaseInfo> pendingInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "triggerAtDateTime ASC");
+			List<CaseInfo> pendingInfos = caseInfoService.searchWithParams(0, availableOutstandingRequests, params, "triggerAtDateTime ASC");
 			if (pendingInfos.size() > 0) {
 				caseInfos.addAll(pendingInfos);
 			}
