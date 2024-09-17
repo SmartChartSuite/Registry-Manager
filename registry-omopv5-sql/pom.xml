@@ -79,12 +79,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 			<artifactId>spring-context</artifactId>
 			<version>${spring_version}</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-jdbc</artifactId>
-			<version>${spring_version}</version>
-		</dependency>
 		<dependency>
 			<groupId>net.jcip</groupId>
 			<artifactId>jcip-annotations</artifactId>
