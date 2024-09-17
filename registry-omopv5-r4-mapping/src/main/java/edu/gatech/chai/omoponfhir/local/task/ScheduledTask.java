@@ -611,7 +611,7 @@ public class ScheduledTask {
 	/**
 	 * Query State Machine that maintains a session for each case.
 	 */
-	@Scheduled(initialDelay = 30000, fixedDelay = 60000)
+	@Scheduled(initialDelay = 30000, fixedDelay = 120000)
 	public void runPeriodicQuery() {
 		Date currentTime = new Date();
 

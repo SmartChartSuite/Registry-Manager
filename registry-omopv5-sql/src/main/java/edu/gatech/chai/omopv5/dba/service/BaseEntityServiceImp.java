@@ -43,6 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import com.google.api.client.util.DateTime;
 import com.google.cloud.bigquery.BigQuery;
@@ -134,12 +136,15 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 	public void closeConnection(Connection connection) throws SQLException {
 		if (connection != null) {
 			connection.commit();
-			connection.close();
+			// connection.close();
+			DataSourceUtils.releaseConnection(connection, ds);
 		}
 	}
 
-	public Connection getConnection() throws SQLException {
-		Connection connection = ds.getConnection();
+	public Connection getConnection() throws SQLException, CannotGetJdbcConnectionException {
+		Connection connection = DataSourceUtils.getConnection(ds);
+		
+		// ds.getConnection();
 		if (connection.getAutoCommit()) {
 			try {
 				connection.setAutoCommit(false);
