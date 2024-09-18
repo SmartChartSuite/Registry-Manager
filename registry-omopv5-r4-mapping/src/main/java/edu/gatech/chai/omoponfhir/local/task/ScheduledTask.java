@@ -55,6 +55,7 @@ import ca.uhn.fhir.parser.IParser;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.services.bigquery.Bigquery.Jobs.Query;
 import com.opencsv.CSVParser;
 
 import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopServerOperations;
@@ -347,10 +348,18 @@ public class ScheduledTask {
 
 				if (jobStatus != null && !jobStatus.isEmpty()
 						&& "inProgress".equalsIgnoreCase(jobStatus.asStringValue())) {
-					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
-					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... ");
-					caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
-					caseInfoService.update(caseInfo);
+					long expirationTime = caseInfo.getCaseStartedRunningDateTime().getTime() + 1800000L;
+					if (expirationTime <= currentTime.getTime()) {
+						caseInfo.setStatus(QueryRequest.PAUSED.getCodeString());
+						logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Will pause. Took too long ... Nest State: " + caseInfo.getStatus());
+						writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Will pause. Took too lone ... Nest State: " + caseInfo.getStatus());
+						caseInfoService.update(caseInfo);
+					} else {
+						logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... Nest State: " + caseInfo.getStatus());
+						writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " Will try again ... Nest State: " + caseInfo.getStatus());
+						// caseInfo.setStatus(QueryRequest.RUNNING.getCodeString());
+						// caseInfoService.update(caseInfo);
+					}
 					return null;
 				}
 
