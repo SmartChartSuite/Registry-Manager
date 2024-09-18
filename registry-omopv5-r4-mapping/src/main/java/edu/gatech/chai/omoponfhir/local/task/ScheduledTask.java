@@ -60,6 +60,7 @@ import com.opencsv.CSVParser;
 import edu.gatech.chai.omoponfhir.omopv5.r4.mapping.OmopServerOperations;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.CodeableConceptUtil;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ConfigValues;
+import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.DateUtil;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.QueryRequest;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
 import edu.gatech.chai.omopv5.dba.service.ConceptRelationshipService;
@@ -198,6 +199,8 @@ public class ScheduledTask {
 		String statusUrl = caseInfo.getStatusUrl();
 		HttpEntity<String> reqAuth = new HttpEntity<String>(createHeaders());
 
+		Date currentTime = new Date();
+
 		try {
 			String statusEndPoint;
 			if (statusUrl.startsWith("http")) {
@@ -240,10 +243,14 @@ public class ScheduledTask {
 		} catch (HttpServerErrorException e) {
 			String rBody = e.getResponseBodyAsString();
 			caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
+			caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+
 			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") SERVER ERROR: " + e.getStatusCode() + "\n"
 					+ rBody + "\n Next State (" + caseInfo.getStatus() + ")");
 			retryCountUpdate(caseInfo);
+
 			caseInfoService.update(caseInfo);
+
 			return null;
 			// We do not change the status as this is a server error.
 		} catch (UnknownHttpStatusCodeException e) {
@@ -266,10 +273,13 @@ public class ScheduledTask {
 				}
 			} else if (statusCode.is5xxServerError()) {
 				caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
+				caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+
 				retryCountUpdate(caseInfo);
 			} else {
 				caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
 			}
+
 			logger.debug("Status Query Failed and Responded with statusCode:" + statusCode.toString());
 			OperationOutcome oo = parser.parseResource(OperationOutcome.class, response.getBody());
 			if (oo != null && !oo.isEmpty()) {
@@ -297,15 +307,18 @@ public class ScheduledTask {
 							"case info (" + caseInfo.getId() + ") Response Parameter Parse Error\n Next State ("
 									+ caseInfo.getStatus() + "). " + e.getMessage());
 					caseInfoService.update(caseInfo);
-				} finally {
-					if (parameters == null || parameters.isEmpty()) {
-						retryCountUpdate(caseInfo);
-						if (responseBody.length() > 65535) {
-							responseBody = responseBody.substring(0, 65535);
-						}
-						writeToLog(caseInfo, "Failed to parse the Parameters. Indepth Evaluation on response is needed: " + responseBody);
-						return null;
+					return null;
+				}
+				
+				if (parameters == null || parameters.isEmpty()) {
+					caseInfo.setStatus(QueryRequest.RESULT_PARSE_ERROR.getCodeString());
+
+					if (responseBody.length() > 65535) {
+						responseBody = responseBody.substring(0, 65535);
 					}
+
+					writeToLog(caseInfo, "Failed to parse the Parameters. Indepth Evaluation on response is needed: " + responseBody);
+					return null;
 				}
 
 				// StringType jobStatus = (StringType) parameters.getParameter("jobStatus");
@@ -313,6 +326,8 @@ public class ScheduledTask {
 				StringType jobStatus = null;
 				if (parameter == null || parameter.isEmpty()) {
 					caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
+					caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+
 					retryCountUpdate(caseInfo);
 					caseInfoService.update(caseInfo);
 					return null;
@@ -322,7 +337,9 @@ public class ScheduledTask {
 				if (jobStatus == null || jobStatus.isEmpty()) {
 					logger.debug("RC-API jobStatus is null or empty ...");
 					writeToLog(caseInfo, "RC-API jobStatus is null or empty ...");
-					caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
+					caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
+					caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+
 					retryCountUpdate(caseInfo);
 					caseInfoService.update(caseInfo);
 					return null;
@@ -342,7 +359,9 @@ public class ScheduledTask {
 						&& !"complete".equalsIgnoreCase(jobStatus.asStringValue())) {
 					logger.debug("RC-API jobStatus: " + jobStatus.asStringValue() + " is not recognized ... ");
 					writeToLog(caseInfo, "RC-API jobStatus: " + jobStatus.asStringValue() + " is not recognized ... ");
-					caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
+					caseInfo.setStatus(QueryRequest.ERROR_IN_SERVER.getCodeString());
+					caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+
 					retryCountUpdate(caseInfo);
 					caseInfoService.update(caseInfo);
 					return null;
@@ -502,8 +521,7 @@ public class ScheduledTask {
 					if (serverHost == null || serverHost.isEmpty()) {
 						writeToLog(caseInfo, "server endpoint error: " + serverHost + serverUrl);
 						logger.error("server endpoint error: " + serverHost + serverUrl);
-						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
-						retryCountUpdate(caseInfo);
+						caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
 						caseInfoService.update(caseInfo);
 						return;
 					}
@@ -515,6 +533,8 @@ public class ScheduledTask {
 			} catch (Exception e) {
 				e.printStackTrace();
 				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+				caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+
 				retryCountUpdate(caseInfo);
 				writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") REQUEST FAILED: " + e.getMessage()
 						+ "\n Next State(" + caseInfo.getStatus() + ")");
@@ -536,6 +556,8 @@ public class ScheduledTask {
 					ParametersParameterComponent parameter = returnedParameters.getParameter("jobId");
 					if (parameter == null || parameter.isEmpty()) {
 						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+						caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+
 						retryCountUpdate(caseInfo);
 						writeToLog(caseInfo,
 								"case info (" + caseInfo.getId()
@@ -551,6 +573,8 @@ public class ScheduledTask {
 				if (jobId == null || jobId.isEmpty()) {
 					// We failed to get a JobID.
 					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+
 					writeToLog(caseInfo, "case info (" + caseInfo.getId()
 							+ ") failed to get jobId (null). \n Next State (" + caseInfo.getStatus() + ")");
 					retryCountUpdate(caseInfo);
@@ -572,6 +596,8 @@ public class ScheduledTask {
 								+ QueryRequest.RUNNING.getCodeString());
 					} else {
 						caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+						caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+
 						writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") failed to get status URL.");
 						retryCountUpdate(caseInfo);
 					}
@@ -591,7 +617,15 @@ public class ScheduledTask {
 							+ response.getStatusCode().toString() + ")");
 				}
 
-				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+				if (response.getStatusCode().is4xxClientError()) {
+					caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+				} else if (response.getStatusCode().is5xxServerError()) {
+					caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+					caseInfo.setTriggerAtDateTime(org.apache.commons.lang3.time.DateUtils.addDays(currentTime, 1));
+				} else {
+					caseInfo.setStatus(QueryRequest.ERROR_UNKNOWN.getCodeString());
+				}
+				
 				retryCountUpdate(caseInfo);
 			}
 		} else {
@@ -602,7 +636,6 @@ public class ScheduledTask {
 			caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
 			writeToLog(caseInfo, "case info (" + caseInfo.getId() + ") without patient identifier. \n Next State ("
 					+ caseInfo.getStatus() + ")");
-			retryCountUpdate(caseInfo);
 		}
 
 		caseInfoService.update(caseInfo);
@@ -611,7 +644,7 @@ public class ScheduledTask {
 	/**
 	 * Query State Machine that maintains a session for each case.
 	 */
-	@Scheduled(initialDelay = 30000, fixedDelay = 120000)
+	@Scheduled(initialDelay = 30000, fixedDelay = 60000)
 	public void runPeriodicQuery() {
 		Date currentTime = new Date();
 
@@ -625,47 +658,26 @@ public class ScheduledTask {
 
 		ParameterWrapper paramDate = new ParameterWrapper("Date", Arrays.asList("triggerAtDateTime"),
 				Arrays.asList("<="), Arrays.asList(String.valueOf(currentTimeEpoch)), "and");
-		params.add(paramDate);
-
+		params.add(paramDate);			
 		ParameterWrapper param = new ParameterWrapper("String", 
-		Arrays.asList("status"),
-		Arrays.asList("="), 
-		Arrays.asList(QueryRequest.RUNNING.getCodeString()),
-		"and");
+			Arrays.asList("status", "status", "status", "status", "status", "status", "status"),
+			Arrays.asList("!=", "!=", "!=", "!=", "!=", "!=", "!="), 
+			Arrays.asList(
+				QueryRequest.END.getCodeString(),
+				QueryRequest.TIMED_OUT.getCodeString(),
+				QueryRequest.PAUSED.getCodeString(),
+				QueryRequest.ERROR_IN_CLIENT.getCodeString(), 
+				QueryRequest.RESULT_PARSE_ERROR.getCodeString(),
+				QueryRequest.ERROR_UNKNOWN.getCodeString(),
+				QueryRequest.INVALID.getCodeString()),
+			"and");
 
 		params.add(param);
-		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "triggerAtDateTime ASC");
-
-		if (caseInfos.size() < numOfOutstandingRequests) {
-			int availableOutstandingRequests = numOfOutstandingRequests - caseInfos.size();
-			params.clear();
-			params.add(paramDate);	
-			
-			param = new ParameterWrapper("String", 
-				Arrays.asList("status", "status", "status", "status", "status", "status", "status"),
-				Arrays.asList("!=", "!=", "!=", "!=", "!=", "!=", "!="), 
-				Arrays.asList(
-					QueryRequest.TIMED_OUT.getCodeString(),
-					QueryRequest.ERROR_IN_CLIENT.getCodeString(), 
-					QueryRequest.END.getCodeString(),
-					QueryRequest.ERROR_UNKNOWN.getCodeString(),
-					QueryRequest.RESULT_PARSE_ERROR.getCodeString(),
-					QueryRequest.RUNNING.getCodeString(),
-					QueryRequest.PAUSED.getCodeString()),
-				"and");
-
-			params.add(param);
-			
-			List<CaseInfo> pendingInfos = caseInfoService.searchWithParams(0, availableOutstandingRequests, params, "triggerAtDateTime ASC");
-			if (pendingInfos.size() > 0) {
-				caseInfos.addAll(pendingInfos);
-			}
-		}
-
+		
+		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "status DESC,triggerAtDateTime ASC");
 		for (CaseInfo caseInfo : caseInfos) {
 			switch (QueryRequest.codeEnumOf(caseInfo.getStatus())) {
 				case RUNNING: // case is awating for next scheduled time.
-				case ERROR_IN_SERVER:
 					logger.debug("Case (" + caseInfo.getId() + ") retrieving from RC-API");
 					Bundle queryResult = retrieveQueryResult(caseInfo);
 					if (queryResult != null && !queryResult.isEmpty()) {
@@ -674,6 +686,7 @@ public class ScheduledTask {
 
 					break;
 				case REQUEST_PENDING:
+				case ERROR_IN_SERVER:
 					logger.debug("Case (" + caseInfo.getId() + ") requesting to RC-API");
 					requestForQuery(caseInfo);
 					break;
@@ -683,7 +696,7 @@ public class ScheduledTask {
 					break;
 			}
 
-			caseInfoService.update(caseInfo);
+			// caseInfoService.update(caseInfo);
 		}
 	}
 

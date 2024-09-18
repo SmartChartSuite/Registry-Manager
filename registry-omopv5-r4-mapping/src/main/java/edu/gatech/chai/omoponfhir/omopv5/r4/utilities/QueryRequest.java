@@ -41,8 +41,10 @@ public enum QueryRequest {
         else if ("END".equals(s)) retv =  END;
         else if ("REQUEST_PENDING".equals(s)) retv = REQUEST_PENDING;
         else if ("TIMED_OUT".equals(s)) return TIMED_OUT;
+        else if ("PAUSED".equals(s)) return PAUSED;
         else if ("ERROR_IN_CLIENT".equals(s)) return ERROR_IN_CLIENT;
         else if ("ERROR_IN_SERVER".equals(s)) return ERROR_IN_SERVER;
+        else if ("RESULT_PARSE_ERROR".equals(s)) return RESULT_PARSE_ERROR;
         else if ("ERROR_UNKNOWN".equals(s)) return ERROR_UNKNOWN;
 
         return retv;
@@ -55,8 +57,10 @@ public enum QueryRequest {
         else if ("END".equals(s)) retv =  END.code;
         else if ("REQUEST_PENDING".equals(s)) retv = REQUEST_PENDING.code;
         else if ("TIMED_OUT".equals(s)) return TIMED_OUT.code;
+        else if ("PAUSED".equals(s)) return PAUSED.code;
         else if ("ERROR_IN_CLIENT".equals(s)) return ERROR_IN_CLIENT.code;
         else if ("ERROR_IN_SERVER".equals(s)) return ERROR_IN_SERVER.code;
+        else if ("RESULT_PARSE_ERROR".equals(s)) return RESULT_PARSE_ERROR.code;
         else if ("ERROR_UNKNOWN".equals(s)) return ERROR_UNKNOWN.code;
 
         return retv;
@@ -69,8 +73,10 @@ public enum QueryRequest {
         else if ("END".equals(s)) retv =  END.desc;
         else if ("REQUEST_PENDING".equals(s)) retv = REQUEST_PENDING.desc;
         else if ("TIMED_OUT".equals(s)) return TIMED_OUT.desc;
+        else if ("PAUSED".equals(s)) return PAUSED.desc;
         else if ("ERROR_IN_CLIENT".equals(s)) return ERROR_IN_CLIENT.desc;
         else if ("ERROR_IN_SERVER".equals(s)) return ERROR_IN_SERVER.desc;
+        else if ("RESULT_PARSE_ERROR".equals(s)) return RESULT_PARSE_ERROR.desc;
         else if ("ERROR_UNKNOWN".equals(s)) return ERROR_UNKNOWN.desc;
 
         return retv;
