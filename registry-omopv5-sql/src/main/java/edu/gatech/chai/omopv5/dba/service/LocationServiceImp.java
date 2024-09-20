@@ -67,16 +67,16 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 
 		String where_clause = new String();
 		if (line1 != null) {
-			where_clause = Location._getColumnName("address1") + " like '@line1'";
+			where_clause = Location._getColumnName("address1") + " like @line1";
 			parameterList.add("line1");
 			valueList.add("'" + line1 + "'");
 		}
 
 		if (line2 != null) {
 			if (where_clause.isEmpty())
-				where_clause = Location._getColumnName("address2") + " like '@line2'";
+				where_clause = Location._getColumnName("address2") + " like @line2";
 			else
-				where_clause += " AND " + Location._getColumnName("address2") + " like '@line2'";
+				where_clause += " AND " + Location._getColumnName("address2") + " like @line2";
 
 			parameterList.add("line2");
 			valueList.add("'" + line2 + "'");
@@ -84,9 +84,9 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 
 		if (city != null) {
 			if (where_clause.isEmpty())
-				where_clause = Location._getColumnName("city") + " like '@city'";
+				where_clause = Location._getColumnName("city") + " like @city";
 			else
-				where_clause += " AND " + Location._getColumnName("city") + " like '@city'";
+				where_clause += " AND " + Location._getColumnName("city") + " like @city";
 
 			parameterList.add("city");
 			valueList.add("'" + city + "'");
@@ -94,9 +94,9 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 
 		if (state != null) {
 			if (where_clause.isEmpty())
-				where_clause = Location._getColumnName("state") + " like '@state'";
+				where_clause = Location._getColumnName("state") + " like @state";
 			else
-				where_clause += " AND " + Location._getColumnName("state") + " like '@state'";
+				where_clause += " AND " + Location._getColumnName("state") + " like @state";
 
 			parameterList.add("state");
 			valueList.add("'" + state + "'");
@@ -104,9 +104,9 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 
 		if (zip != null) {
 			if (where_clause.isEmpty())
-				where_clause = Location._getColumnName("zip") + " like '@zip'";
+				where_clause = Location._getColumnName("zip") + " like @zip";
 			else
-				where_clause += " AND " + Location._getColumnName("zip") + " like '@zip'";
+				where_clause += " AND " + Location._getColumnName("zip") + " like @zip";
 
 			parameterList.add("zip");
 			valueList.add("'" + zip + "'");
