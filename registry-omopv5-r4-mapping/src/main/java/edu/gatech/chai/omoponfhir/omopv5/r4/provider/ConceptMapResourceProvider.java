@@ -79,6 +79,7 @@ public class ConceptMapResourceProvider implements IResourceProvider {
 
 	/**
 	 * $translate operation for concept translation.
+	 * @throws Exception 
 	 * 
 	 */
 	@Operation(name = "$translate", idempotent = true)
@@ -89,7 +90,7 @@ public class ConceptMapResourceProvider implements IResourceProvider {
 			@OperationParam(name = "codeableConcept") CodeableConcept theCodeableConcept,
 			@OperationParam(name = "target") UriType theTarget,
 			@OperationParam(name = "targetsystem") UriType theTargetSystem,
-			@OperationParam(name = "reverse") BooleanType theReverse) {
+			@OperationParam(name = "reverse") BooleanType theReverse) throws Exception {
 
 		Parameters retVal = new Parameters();
 

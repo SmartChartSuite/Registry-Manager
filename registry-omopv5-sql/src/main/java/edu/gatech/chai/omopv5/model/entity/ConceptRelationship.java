@@ -122,6 +122,9 @@ public class ConceptRelationship extends BaseEntity {
 
 	@Override
 	public String getColumnName(String columnVariable) {
+		if ("id".equals(columnVariable)) {
+			return null;
+		}
 		return ConceptRelationship._getColumnName(columnVariable);
 	}
 	

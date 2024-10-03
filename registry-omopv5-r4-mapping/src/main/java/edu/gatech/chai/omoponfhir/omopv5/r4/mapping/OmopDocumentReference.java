@@ -88,7 +88,7 @@ public class OmopDocumentReference extends BaseOmopResource<DocumentReference, N
 		initialize(context);
 		
 		// Get count and put it in the counts.
-		getSize(true);
+		// getSize(true);
 	}
 
 	private void initialize(WebApplicationContext context) {
@@ -103,7 +103,7 @@ public class OmopDocumentReference extends BaseOmopResource<DocumentReference, N
 	}
 
 	@Override
-	public Long toDbase(DocumentReference fhirResource, IdType fhirId) throws FHIRException {
+	public Long toDbase(DocumentReference fhirResource, IdType fhirId) throws Exception {
 		Long omopId = null;
 		if (fhirId != null) {
 			// Update
@@ -134,7 +134,7 @@ public class OmopDocumentReference extends BaseOmopResource<DocumentReference, N
 	}
 
 	@Override
-	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) {
+	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) throws Exception {
 		List<ParameterWrapper> mapList = new ArrayList<ParameterWrapper>();
 		ParameterWrapper paramWrapper = new ParameterWrapper();
         if (or) paramWrapper.setUpperRelationship("or");
@@ -231,7 +231,7 @@ public class OmopDocumentReference extends BaseOmopResource<DocumentReference, N
 	}
 
 	@Override
-	public Note constructOmop(Long omopId, DocumentReference fhirResource) {
+	public Note constructOmop(Long omopId, DocumentReference fhirResource) throws Exception {
 		Note note = null;
 		if (omopId == null) {
 			// Create
@@ -395,7 +395,7 @@ public class OmopDocumentReference extends BaseOmopResource<DocumentReference, N
 	}
 	
 	@Override
-	public DocumentReference constructResource(Long fhirId, Note entity, List<String> includes) {
+	public DocumentReference constructResource(Long fhirId, Note entity, List<String> includes) throws Exception {
 		DocumentReference documentReference = constructFHIR(fhirId, entity);
 		
 		if (!includes.isEmpty()) {
@@ -423,7 +423,7 @@ public class OmopDocumentReference extends BaseOmopResource<DocumentReference, N
 	}
 
 	@Override
-	public DocumentReference constructFHIR(Long fhirId, Note entity) {
+	public DocumentReference constructFHIR(Long fhirId, Note entity) throws Exception {
 		MyDocumentReference documentReference = new MyDocumentReference();
 
 		documentReference.setId(new IdType(fhirId));

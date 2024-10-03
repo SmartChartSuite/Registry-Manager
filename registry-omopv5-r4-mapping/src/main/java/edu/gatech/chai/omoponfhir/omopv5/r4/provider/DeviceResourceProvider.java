@@ -72,7 +72,7 @@ public class DeviceResourceProvider implements IResourceProvider {
     	return myMapper;
     }
 
-	private Integer getTotalSize(List<ParameterWrapper> paramList) {
+	private Integer getTotalSize(List<ParameterWrapper> paramList) throws Exception {
 		final Long totalSize;
 		if (paramList.isEmpty()) {
 			totalSize = getMyMapper().getSize();
@@ -90,6 +90,7 @@ public class DeviceResourceProvider implements IResourceProvider {
 	 * OMOP DeviceExposure is more like device usage info. So, the device resource
 	 * does not have enough information to create DeviceExposure in OMOP. Device
 	 * needs to be created from DeviceUseStatement resource.
+	 * @throws Exception 
 	 */
 //	@Create()
 //	public MethodOutcome createDevice(@ResourceParam Device theDevice) {
@@ -106,7 +107,7 @@ public class DeviceResourceProvider implements IResourceProvider {
 //	}
 
 	@Delete()
-	public void deleteDevice(@IdParam IdType theId) {
+	public void deleteDevice(@IdParam IdType theId) throws Exception {
 		if (getMyMapper().removeByFhirId(theId) <= 0) {
 			throw new ResourceNotFoundException(theId);
 		}
@@ -114,7 +115,7 @@ public class DeviceResourceProvider implements IResourceProvider {
 
 	@Search()
 	public IBundleProvider findDevicesById(
-			@RequiredParam(name=Device.SP_RES_ID) TokenParam theDeviceId) {
+			@RequiredParam(name=Device.SP_RES_ID) TokenParam theDeviceId) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 
 		if (theDeviceId != null) {
@@ -132,7 +133,7 @@ public class DeviceResourceProvider implements IResourceProvider {
 	public IBundleProvider findDevicesByParams(
 			@OptionalParam(name=Device.SP_PATIENT, chainWhitelist={"", Patient.SP_NAME}) ReferenceParam thePatient, 
 			@OptionalParam(name=Device.SP_TYPE) TokenOrListParam theOrTypes
-			) {
+			) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 
 		if (theOrTypes != null) {
@@ -168,7 +169,7 @@ public class DeviceResourceProvider implements IResourceProvider {
 	}
 	
 	@Read()
-	public MyDevice readPatient(@IdParam IdType theId) {
+	public MyDevice readPatient(@IdParam IdType theId) throws Exception {
 		MyDevice retval = (MyDevice) getMyMapper().toFHIR(theId);
 		if (retval == null) {
 			throw new ResourceNotFoundException(theId);
@@ -216,12 +217,16 @@ public class DeviceResourceProvider implements IResourceProvider {
 			// _Include
 			List<String> includes = new ArrayList<String>();
 
-			if (paramList.size() == 0) {
-				getMyMapper().searchWithoutParams(theFromIndex, theToIndex, retv, includes, null);
-			} else {
-				getMyMapper().searchWithParams(theFromIndex, theToIndex, paramList, retv, includes, null);
+			try {
+				if (paramList.size() == 0) {
+					getMyMapper().searchWithoutParams(theFromIndex, theToIndex, retv, includes, null);
+				} else {
+					getMyMapper().searchWithParams(theFromIndex, theToIndex, paramList, retv, includes, null);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
+			
 			return retv;
 		}
 

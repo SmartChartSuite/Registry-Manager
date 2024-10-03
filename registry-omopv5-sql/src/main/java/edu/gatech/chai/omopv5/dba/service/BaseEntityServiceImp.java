@@ -33,9 +33,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-
 import org.apache.commons.lang.StringEscapeUtils;
 import org.ohdsi.sql.SqlRender;
 import org.ohdsi.sql.SqlTranslate;
@@ -76,15 +73,14 @@ import edu.gatech.chai.omopv5.model.entity.custom.Table;
 public abstract class BaseEntityServiceImp<T extends BaseEntity> implements IService<T> {
 	private static final Logger logger = LoggerFactory.getLogger(BaseEntityServiceImp.class);
 	private BigQuery bigQuery;
-	private DataSource ds;
 	private Class<T> entityClass;
 	private T entity;
 
 	@Autowired
 	DatabaseConfiguration databaseConfig;
 
-	@Autowired
-	FCacheService fCacheService;
+	// @Autowired
+	// FCacheService fCacheService;
 
 	@Value("${schema.registry}")
 	private String dataSchema;
@@ -105,11 +101,6 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				| NoSuchMethodException | SecurityException e) {
 			e.printStackTrace();
 		}
-	}
-
-	@PostConstruct
-	private void postConstruct() {
-		ds = databaseConfig.getDataSource();
 	}
 
 	public boolean isBigQuery() {
@@ -137,11 +128,11 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			connection.commit();
 			// connection.close();
 		}
-		DataSourceUtils.releaseConnection(connection, ds);
+		DataSourceUtils.releaseConnection(connection, databaseConfig.getDataSource());
 	}
 
 	public Connection getConnection() throws SQLException {
-		Connection connection = DataSourceUtils.getConnection(ds);
+		Connection connection = DataSourceUtils.getConnection(databaseConfig.getDataSource());
 		// ds.getConnection();
 		if (connection.getAutoCommit()) {
 			try {
@@ -203,7 +194,8 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			closeConnection(connection);
+			throw e;
 		}
 
 		closeConnection(connection);
@@ -246,15 +238,20 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				} while (generatedKeys.next());
 			}
 		} catch (Exception e) {
-			connection.rollback();
-			e.printStackTrace();
-		}
+			if (connection != null) {
+				connection.rollback();
+				closeConnection(connection);
+			}
 
-		if (retVal == null || retVal == 0) {
-			logger.warn("update Query failed, no ID generated, with " + query);
+			throw e;
 		}
 
 		closeConnection(connection);
+
+		if (retVal == null || retVal == 0) {
+			logger.warn("update Query failed, no ID generated, with " + query);
+			return null;
+		}
 
 		return retVal;
 	}
@@ -271,7 +268,8 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				retVal = (long) rs.getInt(alias);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			closeConnection(connection);
+			throw e;
 		}
 
 		closeConnection(connection);
@@ -542,7 +540,11 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 								String add2List = referenceTableAlias + "." + foreignFieldColumnAnnotation.name()
 										+ " as " + referenceTableAlias + "_" + foreignFieldColumnAnnotation.name();
 								if (sqlResultList.contains(add2List) == false) {
-									sqlResultList = sqlResultList.concat(", " + add2List);
+									if (sqlResultList.isBlank()) {
+										sqlResultList = add2List;
+									} else {
+										sqlResultList = sqlResultList.concat(", " + add2List);
+									}
 								}
 							}
 
@@ -594,19 +596,19 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		return ret;
 	}
 
-	public Long getSize() {
+	public Long getSize() throws Exception {
 		return getSize(null, null, null);
 	}
 
-	public Long getSize(boolean cacheOnly) {
-		return getSize(null, null, null, cacheOnly);
-	}
+	// public Long getSize(boolean cacheOnly) {
+	// 	return getSize(null, null, null, cacheOnly);
+	// }
 
-	public Long getSize(List<ParameterWrapper> paramList) {
-		return getSize(paramList, false);
-	}
+	// public Long getSize(List<ParameterWrapper> paramList) {
+	// 	return getSize(paramList, false);
+	// }
 
-	public Long getSize(List<ParameterWrapper> paramList, boolean cacheOnly) {
+	public Long getSize(List<ParameterWrapper> paramList) throws Exception {
 		Long retVal = 0L;
 
 		List<String> parameterList = new ArrayList<String>();
@@ -623,16 +625,16 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			sql = renderedSql(sql, parameterList, valueList);
 
 			// check if we have cached this value.
-			Integer count = fCacheService.searchQueryCount(sql);
-			if (count >= 0) {
-				return count.longValue();
-			}
+			// Integer count = fCacheService.searchQueryCount(sql);
+			// if (count >= 0) {
+			// 	return count.longValue();
+			// }
 
-			if (cacheOnly) {
-				/// We only add this as an entry for cache db.
-				fCacheService.updateQuery(sql, null, -1, -1);
-				return null;
-			}
+			// if (cacheOnly) {
+			// 	/// We only add this as an entry for cache db.
+			// 	fCacheService.updateQuery(sql, null, -1, -1);
+			// 	return null;
+			// }
 
 			if (isBigQuery()) {
 				TableResult result = runBigQuery(sql);
@@ -651,18 +653,20 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			}
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw e;
 		}
 
-		fCacheService.updateQuery(sql, null, retVal.intValue(), 0);
+		// fCacheService.updateQuery(sql, null, retVal.intValue(), 0);
 		return retVal;
 	}
 
-	public Long getSize(String sql, List<String> parameterList, List<String> valueList) {
-		return getSize(sql, parameterList, valueList, false);
-	}
+	// public Long getSize(String sql, List<String> parameterList, List<String> valueList) {
+	// 	// return getSize(sql, parameterList, valueList, false);
+	// 	return getSize(sql, parameterList, valueList);
+	// }
 
-	public Long getSize(String sql, List<String> parameterList, List<String> valueList, boolean cacheOnly) {
+	// public Long getSize(String sql, List<String> parameterList, List<String> valueList, boolean cacheOnly) {
+	public Long getSize(String sql, List<String> parameterList, List<String> valueList) throws Exception {		
 		Long retVal = 0L;
 
 		String queryString = "";
@@ -700,16 +704,16 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		}
 
 		queryString = renderedSql(sql, parameterList, valueList);
-		Integer count = fCacheService.searchQueryCount(queryString);
-		if (count >= 0) {
-			return count.longValue();
-		}
+		// Integer count = fCacheService.searchQueryCount(queryString);
+		// if (count >= 0) {
+		// 	return count.longValue();
+		// }
 
-		if (cacheOnly) {
-			/// We only add this as an entry for cache db.
-			fCacheService.updateQuery(queryString, null, -1, -1);
-			return null;
-		}
+		// if (cacheOnly) {
+		// 	/// We only add this as an entry for cache db.
+		// 	fCacheService.updateQuery(queryString, null, -1, -1);
+		// 	return null;
+		// }
 
 		try {
 			if (isBigQuery()) {
@@ -729,10 +733,10 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				// getQueryEntityDao().closeConnection();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw e;
 		}
 
-		fCacheService.updateQuery(queryString, null, retVal.intValue(), 0);
+		// fCacheService.updateQuery(queryString, null, retVal.intValue(), 0);
 		return retVal;
 	}
 
@@ -802,8 +806,8 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				}
 			}
 		} else {
-			List<T> retEntities = runQuery(sql, null, getSqlTableName());
-			entities.addAll(retEntities);
+			entities = runQuery(sql, null, getSqlTableName());
+			// entities.addAll(retEntities);
 
 			// while (rs.next()) {
 			// T entity = construct(rs, null, getSqlTableName());
@@ -869,7 +873,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		return fieldValue;
 	}
 
-	private Long insertEntity(Class<T> clazz, T entity) {
+	private Long insertEntity(Class<T> clazz, T entity) throws Exception {
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();
 
@@ -928,12 +932,8 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 							nextIdString = String.valueOf(nextId);
 						}
 					}
-				} catch (SecurityException e) {
-					e.printStackTrace();
-				} catch (IllegalAccessException | IllegalArgumentException e) {
-					// If setId failed, then we have a problem.
-					e.printStackTrace();
-					return null;
+				} catch (Exception e) {
+					throw e;
 				}
 			}
 
@@ -982,19 +982,16 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 
 			} catch (NullPointerException e) {
 				if (columnAnnotation != null && !columnAnnotation.nullable()) {
-					e.printStackTrace();
-					return null;
+					throw e;
 				}
 
 				if (joinColumnAnnotation != null && !joinColumnAnnotation.nullable()) {
-					e.printStackTrace();
-					return null;
+					throw e;
 				}
 				continue;
 			} catch (IllegalArgumentException | IllegalAccessException | NoSuchMethodException | SecurityException
 					| InvocationTargetException e) {
-				e.printStackTrace();
-				return null;
+				throw e;
 			}
 
 			if (i > 1) {
@@ -1047,9 +1044,10 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 								break;
 							}
 						}
-					} else {
-						id = 0L;
 					}
+					//  else {
+					// 	id = 0L;
+					// }
 				} else {
 					id = updateQuery(sql);
 					if (id == 0L && primaryId != null) {
@@ -1060,14 +1058,14 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 					}
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				throw e;
 			}
 		}
 
 		return id;
 	}
 
-	public T create(T entity) {
+	public T create(T entity) throws Exception {
 		Class<T> clazz = (Class<T>) entity.getClass();
 		Class<T> parentClazz = (Class<T>) clazz.getSuperclass();
 
@@ -1081,7 +1079,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 					setMethod.invoke(entity, newId);
 				} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
 						| InvocationTargetException e) {
-					e.printStackTrace();
+					throw e;
 				}
 			}
 		}
@@ -1102,7 +1100,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			return null;
 		}
 
-		fCacheService.invalidate(SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz));
+		// fCacheService.invalidate(SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz));
 		return entity;
 	}
 
@@ -1120,7 +1118,7 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		}
 	}
 
-	private T updateEntity(Long id, Class<T> clazz, T entity) {
+	private T updateEntity(Long id, Class<T> clazz, T entity) throws Exception {
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();
 
@@ -1192,20 +1190,17 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 
 			} catch (IllegalArgumentException | IllegalAccessException | NoSuchMethodException
 					| SecurityException | InvocationTargetException e) {
-				e.printStackTrace();
-				return null;
+				throw e;
 			} catch (NullPointerException e) {
 				if (columnAnnotation != null) {
 					if (columnAnnotation.nullable() == false) {
-						e.printStackTrace();
-						return null;
+						throw e;
 					}
 				}
 
 				if (joinColumnAnnotation != null) {
 					if (joinColumnAnnotation.nullable() == false) {
-						e.printStackTrace();
-						return null;
+						throw e;
 					}
 				}
 				continue;
@@ -1241,14 +1236,14 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 				}
 				return entity;
 			} catch (Exception e) {
-				e.printStackTrace();
+				throw e;
 			}
 		}
 
 		return null;
 	}
 
-	public T update(T entity) {
+	public T update(T entity) throws Exception {
 		Class<T> clazz = (Class<T>) entity.getClass();
 		Class<T> parentClazz = (Class<T>) clazz.getSuperclass();
 
@@ -1283,12 +1278,12 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			return null;
 		}
 
-		fCacheService.invalidate(SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz));
+		// fCacheService.invalidate(SqlUtil.getFullTableName(dataSchema, vocabSchema, clazz));
 
 		return entity;
 	}
 
-	public T findById(Long id) {
+	public T findById(Long id) throws Exception {
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();
 
@@ -1303,17 +1298,10 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 
 		sql = renderedSql(sql, parameterList, valueList);
 
-		try {
-			return readEntity(sql);
-		} catch (Exception e) {
-			logger.error("SqlRender:" + sql);
-			e.printStackTrace();
-		}
-
-		return null;
+		return readEntity(sql);
 	}
 
-	public T findById(String id) {
+	public T findById(String id) throws Exception {
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();
 
@@ -1332,13 +1320,11 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			return readEntity(sql);
 		} catch (Exception e) {
 			logger.error("SqlRender:" + sql);
-			e.printStackTrace();
+			throw e;
 		}
-
-		return null;
 	}
 
-	public Long removeById(Long id) {
+	public Long removeById(Long id) throws Exception {
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();
 
@@ -1352,24 +1338,18 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		valueList.add(id.toString());
 
 		sql = renderedSql(sql, parameterList, valueList);
-		try {
-			Long ret;
-			if (isBigQuery()) {
-				runBigQuery(sql);
-				ret = 1L;
-			} else {
-				ret = updateQuery(sql);
-			}
-			return ret;
-		} catch (Exception e) {
-			e.printStackTrace();
+		Long ret;
+		if (isBigQuery()) {
+			runBigQuery(sql);
+			ret = 1L;
+		} else {
+			ret = updateQuery(sql);
 		}
-
-		return 0L;
+		return ret;
 	}
 
 	@Override
-	public List<T> searchByColumnString(String column, String valueOrignial) {
+	public List<T> searchByColumnString(String column, String valueOrignial) throws Exception {
 		String value = StringEscapeUtils.escapeSql(valueOrignial);
 
 		List<T> entities = new ArrayList<T>();
@@ -1392,14 +1372,14 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			entities.addAll(searchEntity(sql));
 		} catch (Exception e) {
 			logger.error("searchByColumnString:" + sql);
-			e.printStackTrace();
+			throw e;
 		}
 
 		return entities;
 	}
 
 	@Override
-	public List<T> searchByColumnString(String column, Long value) {
+	public List<T> searchByColumnString(String column, Long value) throws Exception {
 		List<T> entities = new ArrayList<T>();
 
 		List<String> parameterList = new ArrayList<String>();
@@ -1420,13 +1400,13 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			entities.addAll(searchEntity(sql));
 		} catch (Exception e) {
 			logger.debug("searchByColumnString:" + sql);
-			e.printStackTrace();
+			throw e;
 		}
 
 		return entities;
 	}
 
-	public List<T> searchWithoutParams(int fromIndex, int toIndex, String sort) {
+	public List<T> searchWithoutParams(int fromIndex, int toIndex, String sort) throws Exception {
 		List<T> entities = new ArrayList<T>();
 		int length = toIndex - fromIndex;
 
@@ -1458,13 +1438,13 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			entities.addAll(searchEntity(sql));
 		} catch (Exception e) {
 			logger.debug("searchWithoutParams:" + sql);
-			e.printStackTrace();
+			throw e;
 		}
 
 		return entities;
 	}
 
-	public List<T> searchWithParams(int fromIndex, int toIndex, List<ParameterWrapper> paramList, String sort) {
+	public List<T> searchWithParams(int fromIndex, int toIndex, List<ParameterWrapper> paramList, String sort) throws Exception {
 		List<T> entities = new ArrayList<T>();
 		int length = toIndex - fromIndex;
 
@@ -1474,17 +1454,9 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 		List<String> parameterList = new ArrayList<String>();
 		List<String> valueList = new ArrayList<String>();
 
-		try {
-			String joinTablesWhere = ParameterWrapper.constructClause(getEntityClass(), paramList, parameterList,
-					valueList);
-			if (joinTablesWhere != null && !joinTablesWhere.isEmpty()) {
-				sql = constructSqlSelectWithoutWhere() + joinTablesWhere;
-			}
-		} catch (NoSuchFieldException | SecurityException | NoSuchMethodException | IllegalAccessException
-				| IllegalArgumentException | InvocationTargetException e) {
-			e.printStackTrace();
-
-			return entities;
+		String joinTablesWhere = ParameterWrapper.constructClause(getEntityClass(), paramList, parameterList, valueList);
+		if (joinTablesWhere != null && !joinTablesWhere.isEmpty()) {
+			sql = constructSqlSelectWithoutWhere() + joinTablesWhere;
 		}
 
 		if (sql != null && !sql.isEmpty()) {
@@ -1505,19 +1477,14 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			}
 
 			sql = renderedSql(sql, parameterList, valueList);
-			try {
-				entities.addAll(searchEntity(sql));
-			} catch (Exception e) {
-				logger.debug("searchWithParams:" + sql);
-				e.printStackTrace();
-			}
+			entities.addAll(searchEntity(sql));
 		}
 
 		return entities;
 	}
 
 	public List<T> searchBySql(int fromIndex, int toIndex, String sql, List<String> parameterList,
-			List<String> valueList, String sort) {
+		List<String> valueList, String sort) throws Exception {
 		List<T> entities = new ArrayList<T>();
 		int length = toIndex - fromIndex;
 
@@ -1541,12 +1508,9 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			}
 
 			sql = renderedSql(sql, parameterList, valueList);
-
-			try {
-				entities.addAll(searchEntity(sql));
-			} catch (Exception e) {
-				logger.debug("searchBySql:" + sql);
-				e.printStackTrace();
+			List<T> searchResult = searchEntity(sql);
+			if (searchResult != null && !searchResult.isEmpty()) {
+				entities.addAll(searchResult);
 			}
 		}
 
@@ -1560,8 +1524,9 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 
 		// Call the algorithm function.
 		// If error happens, it will print the exception(s). But, it will move on...
+		Connection connection = null;
 		try {
-			Connection connection = getConnection();
+			connection = getConnection();
 			int person_id = caseInfo.getFPerson().getId().intValue();
 			int case_id = caseInfo.getId().intValue();
 
@@ -1577,6 +1542,13 @@ public abstract class BaseEntityServiceImp<T extends BaseEntity> implements ISer
 			closeConnection(connection);
 		} catch (SQLException e) {
 			e.printStackTrace();
+			if (connection != null) {
+				try {
+					closeConnection(connection);
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			}
 		}
 
 		return retVal;

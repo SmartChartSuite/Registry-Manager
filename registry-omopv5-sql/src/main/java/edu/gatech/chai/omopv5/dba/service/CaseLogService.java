@@ -13,33 +13,28 @@ import edu.gatech.chai.omopv5.model.entity.CaseInfo;
 import edu.gatech.chai.omopv5.model.entity.CaseLog;
 
 public interface CaseLogService extends IService<CaseLog> {
-	public static CaseLog _construct(ResultSet rs, CaseLog caseLog, String alias) {
+	public static CaseLog _construct(ResultSet rs, CaseLog caseLog, String alias) throws SQLException {
 		if (caseLog == null)
         caseLog = new CaseLog();
 
 		if (alias == null || alias.isEmpty())
 			alias = CaseLog._getTableName();
 
-		try {
-			ResultSetMetaData metaData = rs.getMetaData();
-			int totalColumnSize = metaData.getColumnCount();
-			for (int i = 1; i <= totalColumnSize; i++) {
-				String columnInfo = metaData.getColumnName(i);
+		ResultSetMetaData metaData = rs.getMetaData();
+		int totalColumnSize = metaData.getColumnCount();
+		for (int i = 1; i <= totalColumnSize; i++) {
+			String columnInfo = metaData.getColumnName(i);
 
-				if (columnInfo.equalsIgnoreCase(alias + "_case_log_id")) {
-					caseLog.setId(rs.getLong(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase("case_info_id")) {
-					CaseInfo caseInfo = CaseInfoService._construct(rs, null, "caseInfo");
-					caseLog.setCaseInfo(caseInfo);
-				} else if (columnInfo.equalsIgnoreCase(alias + "_log_datetime")) {
-					caseLog.setLogDateTime(rs.getTimestamp(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_text")) {
-					caseLog.setText(rs.getString(columnInfo));
-				}
+			if (columnInfo.equalsIgnoreCase(alias + "_case_log_id")) {
+				caseLog.setId(rs.getLong(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase("case_info_id")) {
+				CaseInfo caseInfo = CaseInfoService._construct(rs, null, "caseInfo");
+				caseLog.setCaseInfo(caseInfo);
+			} else if (columnInfo.equalsIgnoreCase(alias + "_log_datetime")) {
+				caseLog.setLogDateTime(rs.getTimestamp(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_text")) {
+				caseLog.setText(rs.getString(columnInfo));
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return null;
 		}
 
 		return caseLog;

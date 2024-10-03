@@ -85,7 +85,7 @@ public class SpecimenResourceProvider implements IResourceProvider {
 		return myMapper;
 	}
 	
-	private Integer getTotalSize(List<ParameterWrapper> paramList) {
+	private Integer getTotalSize(List<ParameterWrapper> paramList) throws Exception {
 		final Long totalSize;
 		if (paramList.isEmpty()) {
 			totalSize = getMyMapper().getSize();
@@ -100,9 +100,10 @@ public class SpecimenResourceProvider implements IResourceProvider {
 	/**
 	 * The "@Create" annotation indicates that this method implements "create=type", which adds a 
 	 * new instance of a resource to the server.
+	 * @throws Exception 
 	 */
 	@Create()
-	public MethodOutcome createSpecimen(@ResourceParam Specimen theSpecimen) {
+	public MethodOutcome createSpecimen(@ResourceParam Specimen theSpecimen) throws Exception {
 		validateResource(theSpecimen);
 		
 		Long id = null;
@@ -125,7 +126,7 @@ public class SpecimenResourceProvider implements IResourceProvider {
 	}
 
 	@Delete()
-	public void deleteObservation(@IdParam IdType theId) {
+	public void deleteObservation(@IdParam IdType theId) throws Exception {
 		if (getMyMapper().removeByFhirId(theId) <= 0) {
 			throw new ResourceNotFoundException(theId);
 		}
@@ -141,7 +142,7 @@ public class SpecimenResourceProvider implements IResourceProvider {
 			
 			@IncludeParam(reverse=true)
             final Set<Include> theReverseIncludes
-			) {
+			) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 
 		if (theSpecimenId != null) {
@@ -169,7 +170,7 @@ public class SpecimenResourceProvider implements IResourceProvider {
 			
 			@IncludeParam(reverse=true)
             final Set<Include> theReverseIncludes
-			) {		
+			) throws Exception {		
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 		
 		if (theRangeDate != null) {
@@ -226,9 +227,10 @@ public class SpecimenResourceProvider implements IResourceProvider {
 	 * @param theId
 	 *            The read operation takes one parameter, which must be of type IdDt and must be annotated with the "@Read.IdParam" annotation.
 	 * @return Returns a resource matching this identifier, or null if none exists.
+	 * @throws Exception 
 	 */
 	@Read()
-	public Specimen readSpecimen(@IdParam IdType theId) {
+	public Specimen readSpecimen(@IdParam IdType theId) throws Exception {
 		Specimen retval = (Specimen) getMyMapper().toFHIR(theId);
 		if (retval == null) {
 			throw new ResourceNotFoundException(theId);
@@ -246,9 +248,10 @@ public class SpecimenResourceProvider implements IResourceProvider {
 	 * @param thePatient
 	 *            This is the actual resource to save
 	 * @return This method returns a "MethodOutcome"
+	 * @throws Exception 
 	 */
 	@Update()
-	public MethodOutcome updateSpecimen(@IdParam IdType theId, @ResourceParam Specimen theSpecimen) {
+	public MethodOutcome updateSpecimen(@IdParam IdType theId, @ResourceParam Specimen theSpecimen) throws Exception {
 		validateResource(theSpecimen);
 		
 		Long fhirId=null;
@@ -312,12 +315,16 @@ public class SpecimenResourceProvider implements IResourceProvider {
 				includes.add("Specimen:subject");
 			}
 
-			if (paramList.size() == 0) {
-				getMyMapper().searchWithoutParams(fromIndex, toIndex, retv, includes, orderParams);
-			} else {
-				getMyMapper().searchWithParams(fromIndex, toIndex, paramList, retv, includes, orderParams);
+			try {
+				if (paramList.size() == 0) {
+					getMyMapper().searchWithoutParams(fromIndex, toIndex, retv, includes, orderParams);
+				} else {
+					getMyMapper().searchWithParams(fromIndex, toIndex, paramList, retv, includes, orderParams);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
+			
 			return retv;
 		}
 	}

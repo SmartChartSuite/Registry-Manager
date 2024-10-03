@@ -64,7 +64,7 @@ public class SystemTransactionProvider {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public <v extends BaseOmopResource> void undoCreate(List<Object> resourcesAdded) {
+	public <v extends BaseOmopResource> void undoCreate(List<Object> resourcesAdded) throws Exception {
 		v mapper;
 
 		for (Object entry : resourcesAdded) {
@@ -107,9 +107,10 @@ public class SystemTransactionProvider {
 	}
 
 	/**
+	 * @throws Exception 
 	 */
 	@Transaction
-	public Bundle transaction(@TransactionParam MyBundle theBundle, HttpServletRequest theRequest) {
+	public Bundle transaction(@TransactionParam MyBundle theBundle, HttpServletRequest theRequest) throws Exception {
 		validateResource(theBundle);
 
 		Bundle retVal = new Bundle();

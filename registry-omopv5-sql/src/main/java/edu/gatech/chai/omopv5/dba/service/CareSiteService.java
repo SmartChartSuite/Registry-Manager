@@ -48,7 +48,7 @@ public interface CareSiteService extends IService<CareSite> {
 	 * @param location     the location
 	 * @return the care site
 	 */
-	public CareSite searchByNameAndLocation(String careSiteName, Location location);
+	public CareSite searchByNameAndLocation(String careSiteName, Location location) throws Exception;
 
 	/**
 	 * For ResultSet based Entity Construction
@@ -57,41 +57,37 @@ public interface CareSiteService extends IService<CareSite> {
 	 * @param careSite
 	 * @param alias
 	 * @return
+	 * @throws SQLException 
 	 */
-	public static CareSite _construct(ResultSet rs, CareSite careSite, String alias) {
+	public static CareSite _construct(ResultSet rs, CareSite careSite, String alias) throws SQLException {
 		if (careSite == null)
 			careSite = new CareSite();
 
 		if (alias == null || alias.isEmpty())
 			alias = CareSite._getTableName();
 
-		try {
-			ResultSetMetaData metaData = rs.getMetaData();
-			int totalColumnSize = metaData.getColumnCount();
-			for (int i = 1; i <= totalColumnSize; i++) {
-				String columnInfo = metaData.getColumnName(i);
+		ResultSetMetaData metaData = rs.getMetaData();
+		int totalColumnSize = metaData.getColumnCount();
+		for (int i = 1; i <= totalColumnSize; i++) {
+			String columnInfo = metaData.getColumnName(i);
 
-				if (columnInfo.equalsIgnoreCase(alias + "_care_site_id")) {
-					careSite.setId(rs.getLong(columnInfo));
-					if (rs.wasNull()) return null;
-				} else if (columnInfo.equalsIgnoreCase("location_location_id")) {
-					Location location = LocationService._construct(rs, null, "location");
-					careSite.setLocation(location);
-				} else if (columnInfo.equalsIgnoreCase("placeOfServiceConcept_concept_id")) {
-					Concept placeOfServiceConcept = ConceptService._construct(rs, null, "placeOfServiceConcept");
-					careSite.setPlaceOfServiceConcept(placeOfServiceConcept);
-				} else if (columnInfo.equalsIgnoreCase(alias + "_care_site_name")) {
-					careSite.setCareSiteName(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_care_site_source_value")) {
-					careSite.setCareSiteSourceValue(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_place_of_service_source_value")) {
-					careSite.setPlaceOfServiceSourceValue(rs.getString(columnInfo));
-				}
-
+			if (columnInfo.equalsIgnoreCase(alias + "_care_site_id")) {
+				careSite.setId(rs.getLong(columnInfo));
+				if (rs.wasNull()) return null;
+			} else if (columnInfo.equalsIgnoreCase("location_location_id")) {
+				Location location = LocationService._construct(rs, null, "location");
+				careSite.setLocation(location);
+			} else if (columnInfo.equalsIgnoreCase("placeOfServiceConcept_concept_id")) {
+				Concept placeOfServiceConcept = ConceptService._construct(rs, null, "placeOfServiceConcept");
+				careSite.setPlaceOfServiceConcept(placeOfServiceConcept);
+			} else if (columnInfo.equalsIgnoreCase(alias + "_care_site_name")) {
+				careSite.setCareSiteName(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_care_site_source_value")) {
+				careSite.setCareSiteSourceValue(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_place_of_service_source_value")) {
+				careSite.setPlaceOfServiceSourceValue(rs.getString(columnInfo));
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return null;
+
 		}
 
 		return careSite;

@@ -106,8 +106,8 @@ public class SMARTonFHIRConformanceStatement {
 		cs
          .getSoftware()
 		 .setName("Registry OMOPonFHIR")
-         .setVersion("v1.5.0")
-         .setReleaseDateElement(new DateTimeType("2024-09-20"));
+         .setVersion("v1.6.0")
+         .setReleaseDateElement(new DateTimeType("2024-10-03"));
 
 		cs.setPublisher("Georgia Tech Research Institute - HEAT");
 

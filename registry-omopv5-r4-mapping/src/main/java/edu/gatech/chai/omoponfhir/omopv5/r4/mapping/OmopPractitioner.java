@@ -58,7 +58,7 @@ public class OmopPractitioner extends BaseOmopResource<Practitioner, Provider, P
 		initialize(context);
 			
 		// Get count and put it in the counts.
-		getSize(true);
+		// getSize(true);
 	}
 	
 	public OmopPractitioner() {
@@ -137,7 +137,7 @@ public class OmopPractitioner extends BaseOmopResource<Practitioner, Provider, P
 	}
 
 	@Override
-	public Long toDbase(Practitioner practitioner, IdType fhirId) throws FHIRException {
+	public Long toDbase(Practitioner practitioner, IdType fhirId) throws Exception {
 		
 		// If we have match in identifier, then we can update or create since
 		// we have the patient. If we have no match, but fhirId is not null,
@@ -219,7 +219,7 @@ public class OmopPractitioner extends BaseOmopResource<Practitioner, Provider, P
 		return null;
 	}
 	
-	public CareSite searchAndUpdateCareSite(Address address) {
+	public CareSite searchAndUpdateCareSite(Address address) throws Exception {
 		Location location = AddressUtil.searchAndUpdate(locationService, address, null);
 		if(location == null) return null;
 		CareSite careSite = careSiteService.searchByLocation(location);
@@ -310,7 +310,7 @@ public class OmopPractitioner extends BaseOmopResource<Practitioner, Provider, P
 	}
 
 	@Override
-	public Provider constructOmop(Long omopId, Practitioner practitioner) {
+	public Provider constructOmop(Long omopId, Practitioner practitioner) throws Exception {
 		Provider omopProvider = null;
 
 		if (omopId != null) {

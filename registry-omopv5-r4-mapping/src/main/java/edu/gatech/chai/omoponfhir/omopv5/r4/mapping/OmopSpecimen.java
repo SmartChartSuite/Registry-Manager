@@ -67,7 +67,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 		initialize(context);
 
 		// Get count and put it in the counts.
-		getSize(true);
+		// getSize(true);
 	}
 
 	public OmopSpecimen() {
@@ -86,7 +86,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 	}
 
 	@Override
-	public Specimen constructFHIR(Long fhirId, edu.gatech.chai.omopv5.model.entity.Specimen specimen_) {
+	public Specimen constructFHIR(Long fhirId, edu.gatech.chai.omopv5.model.entity.Specimen specimen_) throws Exception {
 		Specimen specimen = new Specimen();
 
 		specimen.setId(new IdType(fhirId));
@@ -192,7 +192,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 	}
 
 	@Override
-	public Long removeByFhirId(IdType fhirId) {
+	public Long removeByFhirId(IdType fhirId) throws Exception {
 		Long id_long_part = fhirId.getIdPartAsLong();
 		Long myId = IdMapping.getOMOPfromFHIR(id_long_part, getMyFhirResourceType());
 
@@ -231,7 +231,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 	}
 
 	@Override
-	public edu.gatech.chai.omopv5.model.entity.Specimen constructOmop(Long omopId, Specimen fhirResource) {
+	public edu.gatech.chai.omopv5.model.entity.Specimen constructOmop(Long omopId, Specimen fhirResource) throws Exception {
 		edu.gatech.chai.omopv5.model.entity.Specimen specimen_ = null;
 		if (omopId == null) {
 			// This is CREATE.
@@ -408,7 +408,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 	}
 
 	@Override
-	public Long toDbase(Specimen fhirResource, IdType fhirId) throws FHIRException {
+	public Long toDbase(Specimen fhirResource, IdType fhirId) throws Exception {
 		Long fhirIdLong = null;
 		Long omopId = null;
 
@@ -494,7 +494,7 @@ public class OmopSpecimen extends BaseOmopResource<Specimen, edu.gatech.chai.omo
 		return myDate;
 	}
 
-	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) {
+	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) throws Exception {
 		List<ParameterWrapper> mapList = new ArrayList<ParameterWrapper>();
 		ParameterWrapper paramWrapper = new ParameterWrapper();
 		if (or)

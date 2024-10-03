@@ -30,7 +30,6 @@ import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.WebApplicationContext;
@@ -90,7 +89,7 @@ public class OmopTransaction {
 		list.add(entity);
 	}
 
-	private IdType linkToPatient(Reference subject, Map<String, Long> patientMap) {
+	private IdType linkToPatient(Reference subject, Map<String, Long> patientMap) throws Exception {
 		if (subject == null || subject.isEmpty()) {
 			// We must have subject information to link this to patient.
 			// This is OMOP requirement. We skip this for Transaction Messages.
@@ -143,7 +142,7 @@ public class OmopTransaction {
 		responseEntries.add(entryBundle);
 	}
 
-	public List<BundleEntryComponent> executeRequests(Map<HTTPVerb, Object> entries) throws FHIRException {
+	public List<BundleEntryComponent> executeRequests(Map<HTTPVerb, Object> entries) throws Exception {
 		List<BundleEntryComponent> responseEntries = new ArrayList<BundleEntryComponent>();
 
 		List<Resource> postList = (List<Resource>) entries.get(HTTPVerb.POST);
@@ -226,15 +225,9 @@ public class OmopTransaction {
 	 * 
 	 * @param entries
 	 * @return
-	 * @throws FHIRException
-	 * 
-	 *                       Transaction type of Transaction operation is atomic. If
-	 *                       one fails, all should be dropped. Thus, we can't
-	 *                       process one entry at a time. We should do this in one
-	 *                       JPA transaction so that if one failed, all can be
-	 *                       rolled back.
+	 * @throws Exception 
 	 */
-	public List<BundleEntryComponent> executeTransaction(Map<HTTPVerb, Object> entries) throws FHIRException {
+	public List<BundleEntryComponent> executeTransaction(Map<HTTPVerb, Object> entries) throws Exception {
 		List<BundleEntryComponent> responseEntries = new ArrayList<BundleEntryComponent>();
 		Map<String, List<BaseEntity>> entityToCreate = new HashMap<String, List<BaseEntity>>();
 

@@ -17,6 +17,7 @@
 package edu.gatech.chai.omopv5.dba.service;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -114,6 +115,7 @@ public class ConceptServiceImp extends BaseEntityServiceImp<Concept> implements 
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			return null;
 		}
 
 		return concepts;
@@ -135,7 +137,7 @@ public class ConceptServiceImp extends BaseEntityServiceImp<Concept> implements 
 	}
 
 	@Override
-	public Concept construct(ResultSet rs, Concept entity, String alias) {
+	public Concept construct(ResultSet rs, Concept entity, String alias) throws SQLException {
 		return ConceptService._construct(rs, entity, alias);
 	}
 

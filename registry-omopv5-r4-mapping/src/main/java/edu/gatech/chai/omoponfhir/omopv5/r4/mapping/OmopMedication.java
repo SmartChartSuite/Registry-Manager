@@ -46,7 +46,7 @@ public class OmopMedication extends BaseOmopResource<Medication, Concept, Concep
 		initialize(context);
 
 		// Get count and put it in the counts.
-		getSize(true);
+		// getSize(true);
 	}
 
 	public OmopMedication() {
@@ -69,7 +69,7 @@ public class OmopMedication extends BaseOmopResource<Medication, Concept, Concep
 	}
 
 	@Override
-	public Medication constructFHIR(Long fhirId, Concept entity) {
+	public Medication constructFHIR(Long fhirId, Concept entity) throws Exception {
 		Medication medication = new Medication();
 		
 		medication.setId(new IdType(fhirId));
@@ -171,7 +171,7 @@ public class OmopMedication extends BaseOmopResource<Medication, Concept, Concep
 			);
 
 	@Override
-	public Long getSize() {
+	public Long getSize() throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 
 		Long size = getSize(paramList);
@@ -183,7 +183,7 @@ public class OmopMedication extends BaseOmopResource<Medication, Concept, Concep
 	}
 
 	@Override
-	public Long getSize(List<ParameterWrapper> paramList) {
+	public Long getSize(List<ParameterWrapper> paramList) throws Exception {
 		paramList.add(filterParam);
 
 		return getMyOmopService().getSize(paramList); 		
@@ -191,7 +191,7 @@ public class OmopMedication extends BaseOmopResource<Medication, Concept, Concep
 
 	@Override
 	public void searchWithoutParams(int fromIndex, int toIndex, List<IBaseResource> listResources,
-			List<String> includes, String sort) {
+			List<String> includes, String sort) throws Exception {
 
 		// This is read all. But, since we will add an exception conditions to add filter.
 		// we will call the search with params method.
@@ -201,7 +201,7 @@ public class OmopMedication extends BaseOmopResource<Medication, Concept, Concep
 
 	@Override
 	public void searchWithParams(int fromIndex, int toIndex, List<ParameterWrapper> mapList,
-			List<IBaseResource> listResources, List<String> includes, String sort) {
+			List<IBaseResource> listResources, List<String> includes, String sort) throws Exception {
 		mapList.add(filterParam);
 
 		List<Concept> entities = getMyOmopService().searchWithParams(fromIndex, toIndex, mapList, sort);

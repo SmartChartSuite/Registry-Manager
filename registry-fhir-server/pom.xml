@@ -16,7 +16,7 @@
 	<groupId>edu.gatech.chai</groupId>
 	<artifactId>registry-fhir-server</artifactId>
 	<packaging>war</packaging>
-	<version>1.5.0</version>
+	<version>1.6.0</version>
 
 	<name>registry-fhir-server</name>
 
@@ -32,7 +32,7 @@
 
 	<properties>
 		<hapi_stable_version>7.0.0</hapi_stable_version>
-		<registry_mapping_version>1.8.3</registry_mapping_version>
+		<registry_mapping_version>1.9.0</registry_mapping_version>
 
 		<!-- configure timestamp in MANIFEST.MF for maven-war-provider -->
 		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>

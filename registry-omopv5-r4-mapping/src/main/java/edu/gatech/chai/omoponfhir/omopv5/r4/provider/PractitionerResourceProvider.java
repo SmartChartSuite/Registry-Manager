@@ -80,7 +80,7 @@ public class PractitionerResourceProvider implements IResourceProvider {
 		return myMapper;
 	}
 	
-	private Integer getTotalSize(List<ParameterWrapper> paramList) {
+	private Integer getTotalSize(List<ParameterWrapper> paramList) throws Exception {
 		final Long totalSize;
 		if (paramList.size() == 0) {
 			totalSize = getMyMapper().getSize();
@@ -95,9 +95,10 @@ public class PractitionerResourceProvider implements IResourceProvider {
 	/**
 	 * The "@Create" annotation indicates that this method implements
 	 * "create=type", which adds a new instance of a resource to the server.
+	 * @throws Exception 
 	 */
 	@Create()
-	public MethodOutcome createPractitioner(@ResourceParam Practitioner thePractitioner) {
+	public MethodOutcome createPractitioner(@ResourceParam Practitioner thePractitioner) throws Exception {
 		validateResource(thePractitioner);
 
 		Long id = null;
@@ -112,7 +113,7 @@ public class PractitionerResourceProvider implements IResourceProvider {
 	}
 	
 	@Delete()
-	public void deletePractitioner(@IdParam IdType theId) {
+	public void deletePractitioner(@IdParam IdType theId) throws Exception {
 		if (getMyMapper().removeByFhirId(theId) <= 0) {
 			throw new ResourceNotFoundException(theId);
 		}
@@ -133,6 +134,7 @@ public class PractitionerResourceProvider implements IResourceProvider {
 	 *            specific search criteria.
 	 * @return This method returns a list of Patients in bundle. This list may
 	 *         contain multiple matching resources, or it may also be empty.
+	 * @throws Exception 
 	 */
 	@Search()
 	public IBundleProvider findPractitionersByParams(
@@ -142,7 +144,7 @@ public class PractitionerResourceProvider implements IResourceProvider {
 			@OptionalParam(name = Practitioner.SP_GIVEN) StringParam theGivenName,
 			@OptionalParam(name = Practitioner.SP_GENDER) StringParam theGender,
 			@IncludeParam(allow = {}) final Set<Include> theIncludes,
-			@IncludeParam(reverse = true) final Set<Include> theReverseIncludes) {
+			@IncludeParam(reverse = true) final Set<Include> theReverseIncludes) throws Exception {
 
 		/*
 		 * Create parameter map, which will be used later to construct
@@ -204,9 +206,10 @@ public class PractitionerResourceProvider implements IResourceProvider {
 	 *            annotation.
 	 * @return Returns a resource matching this identifier, or null if none
 	 *         exists.
+	 * @throws Exception 
 	 */
 	@Read()
-	public Practitioner readPractitioner(@IdParam IdType theId) {
+	public Practitioner readPractitioner(@IdParam IdType theId) throws Exception {
 		Practitioner retval = (Practitioner) myMapper.toFHIR(theId);
 		if (retval == null) {
 			throw new ResourceNotFoundException(theId);
@@ -224,9 +227,10 @@ public class PractitionerResourceProvider implements IResourceProvider {
 	 * @param thePractitioner
 	 *            This is the actual resource to save
 	 * @return This method returns a "MethodOutcome"
+	 * @throws Exception 
 	 */
 	@Update()
-	public MethodOutcome updatePractitioner(@IdParam IdType theId, @ResourceParam Practitioner thePractitioner) {
+	public MethodOutcome updatePractitioner(@IdParam IdType theId, @ResourceParam Practitioner thePractitioner) throws Exception {
 		validateResource(thePractitioner);
 
 		Long fhirId=null;
@@ -275,12 +279,16 @@ public class PractitionerResourceProvider implements IResourceProvider {
 			List<IBaseResource> retv = new ArrayList<IBaseResource>();
 			List<String> includes = new ArrayList<String>();
 
-			if (paramList.size() == 0) {
-				myMapper.searchWithoutParams(fromIndex, toIndex, retv, includes, null);
-			} else {
-				myMapper.searchWithParams(fromIndex, toIndex, paramList, retv, includes, null);
+			try {
+				if (paramList.size() == 0) {
+					myMapper.searchWithoutParams(fromIndex, toIndex, retv, includes, null);
+				} else {
+					myMapper.searchWithParams(fromIndex, toIndex, paramList, retv, includes, null);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
+			
 			return retv;
 		}
 	}

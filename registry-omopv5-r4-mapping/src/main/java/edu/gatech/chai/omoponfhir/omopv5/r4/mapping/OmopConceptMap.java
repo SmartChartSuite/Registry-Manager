@@ -70,7 +70,7 @@ public class OmopConceptMap extends BaseOmopResource<ConceptMap, ConceptRelation
 		return null;
 	}
 
-	public Parameters translateConcept(String code, String system, String targetUri, String targetSystem) {
+	public Parameters translateConcept(String code, String system, String targetUri, String targetSystem) throws Exception {
 		Parameters retVal = new Parameters();
 		
 		// Using the system/code and targetSystem, map the system/code.

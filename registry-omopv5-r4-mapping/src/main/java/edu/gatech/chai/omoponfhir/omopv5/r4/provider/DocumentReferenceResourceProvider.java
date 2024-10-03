@@ -89,7 +89,7 @@ public class DocumentReferenceResourceProvider implements IResourceProvider {
 		return myMapper;
 	}
 	
-	private Integer getTotalSize(List<ParameterWrapper> paramList) {
+	private Integer getTotalSize(List<ParameterWrapper> paramList) throws Exception {
 		final Long totalSize;
 		if (paramList.size() == 0) {
 			totalSize = getMyMapper().getSize();
@@ -101,7 +101,7 @@ public class DocumentReferenceResourceProvider implements IResourceProvider {
 	}
 
 	@Create()
-	public MethodOutcome createDocumentReference(@ResourceParam DocumentReference theDocumentReference) {
+	public MethodOutcome createDocumentReference(@ResourceParam DocumentReference theDocumentReference) throws Exception {
 		validateResource(theDocumentReference);
 
 		Long id = null;
@@ -116,14 +116,14 @@ public class DocumentReferenceResourceProvider implements IResourceProvider {
 	}
 	
 	@Delete()
-	public void deleteDocumentReference(@IdParam IdType theId) {
+	public void deleteDocumentReference(@IdParam IdType theId) throws Exception {
 		if (getMyMapper().removeByFhirId(theId) <= 0) {
 			throw new ResourceNotFoundException(theId);
 		}
 	}
 	
 	@Read()
-	public DocumentReference readDocumentReference(@IdParam IdType theId) {
+	public DocumentReference readDocumentReference(@IdParam IdType theId) throws Exception {
 		DocumentReference retval = (DocumentReference) getMyMapper().toFHIR(theId);
 		if (retval == null) {
 			throw new ResourceNotFoundException(theId);
@@ -133,7 +133,7 @@ public class DocumentReferenceResourceProvider implements IResourceProvider {
 	}
 
 	@Update()
-	public MethodOutcome updateDocumentReference(@IdParam IdType theId, @ResourceParam DocumentReference theDocumentReference) {
+	public MethodOutcome updateDocumentReference(@IdParam IdType theId, @ResourceParam DocumentReference theDocumentReference) throws Exception {
 		validateResource(theDocumentReference);
 
 		Long fhirId = null;
@@ -159,7 +159,7 @@ public class DocumentReferenceResourceProvider implements IResourceProvider {
 			
 			@IncludeParam(reverse=true)
             final Set<Include> theReverseIncludes
-			) {
+			) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 
 		if (theDocumentReferenceId != null) {
@@ -186,7 +186,7 @@ public class DocumentReferenceResourceProvider implements IResourceProvider {
 			
 			@IncludeParam(reverse=true)
             final Set<Include> theReverseIncludes
-			) {
+			) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 
 		if (theOrType != null) {
@@ -272,12 +272,16 @@ public class DocumentReferenceResourceProvider implements IResourceProvider {
 				includes.add("DocumentReference:subject");
 			}
 
-			if (paramList.size() == 0) {
-				getMyMapper().searchWithoutParams(fromIndex, toIndex, retv, includes, null);
-			} else {
-				getMyMapper().searchWithParams(fromIndex, toIndex, paramList, retv, includes, null);
+			try {
+				if (paramList.size() == 0) {
+					getMyMapper().searchWithoutParams(fromIndex, toIndex, retv, includes, null);
+				} else {
+					getMyMapper().searchWithParams(fromIndex, toIndex, paramList, retv, includes, null);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
+			
 			return retv;
 		}
 	}

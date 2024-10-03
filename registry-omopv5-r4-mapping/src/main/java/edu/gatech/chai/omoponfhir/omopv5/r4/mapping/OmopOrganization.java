@@ -55,7 +55,7 @@ public class OmopOrganization extends BaseOmopResource<Organization, CareSite, C
 		initialize(context);
 		
 		// Get count and put it in the counts.
-		getSize(true);
+		// getSize(true);
 	}
 
 	public OmopOrganization() {
@@ -107,7 +107,7 @@ public class OmopOrganization extends BaseOmopResource<Organization, CareSite, C
 	}
 
 	@Override
-	public Long toDbase(Organization organization, IdType fhirId) throws FHIRException {
+	public Long toDbase(Organization organization, IdType fhirId) throws Exception {
 		// If fhirId is null, then it's CREATE.
 		// If fhirId is not null, then it's UPDATE.
 
@@ -158,7 +158,7 @@ public class OmopOrganization extends BaseOmopResource<Organization, CareSite, C
 	
 
 	@Override
-	public Organization constructResource(Long fhirId, CareSite entity, List<String> includes) {
+	public Organization constructResource(Long fhirId, CareSite entity, List<String> includes) throws Exception {
 		Organization myOrganization = constructFHIR(fhirId, entity);
 		
 		if (!includes.isEmpty()) {
@@ -213,7 +213,7 @@ public class OmopOrganization extends BaseOmopResource<Organization, CareSite, C
 	}
 
 	@Override
-	public CareSite constructOmop(Long omopId, Organization myOrganization) {
+	public CareSite constructOmop(Long omopId, Organization myOrganization) throws Exception {
 		String careSiteSourceValue = null;
 		Location location = null;
 		

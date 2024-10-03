@@ -38,7 +38,7 @@ public class AddressUtil {
 	 */
 	private AddressUtil() { }
 	
-	public static Location searchAndUpdate(LocationService locationService, Address address, Location location) {
+	public static Location searchAndUpdate(LocationService locationService, Address address, Location location) throws Exception {
 		if (address == null)
 			return null;
 
@@ -77,7 +77,7 @@ public class AddressUtil {
 		return null;
 	}
 
-	public static String getStateName(ConceptService conceptService, String twoLetter) {
+	public static String getStateName(ConceptService conceptService, String twoLetter) throws Exception {
 		String retv = "";
 
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
@@ -98,7 +98,7 @@ public class AddressUtil {
 		return retv;
 	}
 
-	public static String getTwoLetter(ConceptService conceptService, String stateName) {
+	public static String getTwoLetter(ConceptService conceptService, String stateName) throws Exception {
 		String retv = null;
 
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();

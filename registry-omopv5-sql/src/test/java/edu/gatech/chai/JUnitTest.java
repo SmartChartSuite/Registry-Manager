@@ -91,10 +91,15 @@ public class JUnitTest {
 //			System.out.println(fperson.toString());
 //		}
 
-		List<FObservationView> outFObs = fObservationViewService.searchWithoutParams(0, 10, null);
-		logger.debug("Total Returned FObservationView: "+outFObs.size());
-		for (FObservationView fObservationView : outFObs) {
-			System.out.println(fObservationView.toString());
+		List<FObservationView> outFObs;
+		try {
+			outFObs = fObservationViewService.searchWithoutParams(0, 10, null);
+			logger.debug("Total Returned FObservationView: "+outFObs.size());
+			for (FObservationView fObservationView : outFObs) {
+				System.out.println(fObservationView.toString());
+			}	
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 //		assert(outFperson.size() > 0);
@@ -141,9 +146,14 @@ public class JUnitTest {
 		measurement.setMeasurementDate(date);
 		measurement.setMeasurementDateTime(date);
 		
-		Measurement retVal = measurementService.create(measurement);
-		System.out.println(retVal.toString());
-
+		Measurement retVal;
+		try {
+			retVal = measurementService.create(measurement);
+			System.out.println(retVal.toString());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		//		List<ParameterWrapper> params = new ArrayList<ParameterWrapper>();
 //		ParameterWrapper paramWrapper = new ParameterWrapper();

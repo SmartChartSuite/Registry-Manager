@@ -71,7 +71,7 @@ public class OmopProcedure extends BaseOmopResource<Procedure, ProcedureOccurren
 		initialize(context);
 		
 		// Get count and put it in the counts.
-		getSize(true);
+		// getSize(true);
 	}
 
 	public OmopProcedure() {
@@ -91,7 +91,7 @@ public class OmopProcedure extends BaseOmopResource<Procedure, ProcedureOccurren
 	}
 	
 	@Override
-	public Long toDbase(Procedure fhirResource, IdType fhirId) throws FHIRException {
+	public Long toDbase(Procedure fhirResource, IdType fhirId) throws Exception {
 		Long omopId = null;
 		if (fhirId != null) {
 			// Update
@@ -111,7 +111,7 @@ public class OmopProcedure extends BaseOmopResource<Procedure, ProcedureOccurren
 	}
 
 	@Override
-	public Procedure constructResource(Long fhirId, ProcedureOccurrence entity, List<String> includes) {
+	public Procedure constructResource(Long fhirId, ProcedureOccurrence entity, List<String> includes) throws Exception {
 		Procedure procedure = constructFHIR(fhirId,entity); 
 		Long omopId = entity.getId();
 		
@@ -366,7 +366,7 @@ public class OmopProcedure extends BaseOmopResource<Procedure, ProcedureOccurren
 	}
 
 	@Override
-	public ProcedureOccurrence constructOmop(Long omopId, Procedure fhirResource) {
+	public ProcedureOccurrence constructOmop(Long omopId, Procedure fhirResource) throws Exception {
 		ProcedureOccurrence procedureOccurrence = null;
 		if (omopId == null) {
 			// Create

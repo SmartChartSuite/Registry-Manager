@@ -1,6 +1,7 @@
 package edu.gatech.chai.omopv5.dba.service;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 import com.google.cloud.bigquery.FieldValueList;
@@ -17,7 +18,7 @@ public class FResourceDeduplicateServiceImp extends BaseEntityServiceImp<FResour
     }
 
     @Override
-	public FResourceDeduplicate construct(ResultSet rs, FResourceDeduplicate entity, String alias) {
+	public FResourceDeduplicate construct(ResultSet rs, FResourceDeduplicate entity, String alias) throws SQLException {
 		return FResourceDeduplicateService._construct(rs, entity, alias);
 	}
 

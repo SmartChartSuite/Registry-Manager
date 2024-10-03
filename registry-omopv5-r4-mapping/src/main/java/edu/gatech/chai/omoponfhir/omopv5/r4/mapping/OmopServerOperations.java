@@ -36,7 +36,6 @@ import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.Type;
-import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryResponseComponent;
 import org.hl7.fhir.r4.model.Condition.ConditionEvidenceComponent;
@@ -125,11 +124,11 @@ public class OmopServerOperations {
 		return entryBundle;
 	}
 
-	public List<BundleEntryComponent> createEntries(List<BundleEntryComponent> entries) throws FHIRException {
+	public List<BundleEntryComponent> createEntries(List<BundleEntryComponent> entries) throws Exception {
 		return createEntries(entries, null);
 	}
 
-	public List<BundleEntryComponent> createEntries(List<BundleEntryComponent> entries, CaseInfo caseInfo) throws FHIRException {
+	public List<BundleEntryComponent> createEntries(List<BundleEntryComponent> entries, CaseInfo caseInfo) throws Exception {
 		List<BundleEntryComponent> responseEntries = new ArrayList<BundleEntryComponent>();
 		// Map<String, Long> patientMap = new HashMap<String, Long>();
 

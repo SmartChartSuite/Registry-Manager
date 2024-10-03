@@ -18,7 +18,7 @@ import edu.gatech.chai.omopv5.model.entity.CaseInfo;
 public interface CaseInfoService extends IService<CaseInfo> {
 	public static final Logger logger = LoggerFactory.getLogger(CaseInfoService.class);
 
-	public static CaseInfo _construct(ResultSet rs, CaseInfo caseInfo, String alias) {
+	public static CaseInfo _construct(ResultSet rs, CaseInfo caseInfo, String alias) throws SQLException {
 		if (caseInfo == null) {
 			caseInfo = new CaseInfo();
 		}
@@ -26,49 +26,43 @@ public interface CaseInfoService extends IService<CaseInfo> {
 		if (alias == null || alias.isEmpty())
 			alias = CaseInfo._getTableName();
 
-		try {
-			ResultSetMetaData metaData = rs.getMetaData();
-			int totalColumnSize = metaData.getColumnCount();
-			for (int i = 1; i <= totalColumnSize; i++) {
-				String columnInfo = metaData.getColumnName(i);
+		ResultSetMetaData metaData = rs.getMetaData();
+		int totalColumnSize = metaData.getColumnCount();
+		for (int i = 1; i <= totalColumnSize; i++) {
+			String columnInfo = metaData.getColumnName(i);
 
-				if (columnInfo.equalsIgnoreCase(alias + "_case_info_id")) {
-					caseInfo.setId(rs.getLong(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase("fPerson_person_id")) {
-					FPerson fPerson = FPersonService._construct(rs, null, "fPerson");
-					caseInfo.setFPerson(fPerson);
-                } else if (columnInfo.equalsIgnoreCase(alias + "_job_id")) {
-					caseInfo.setJobId(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_status")) {
-					caseInfo.setStatus(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_server_host")) {
-					caseInfo.setServerHost(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_status_url")) {
-					caseInfo.setStatusUrl(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_server_url")) {
-					caseInfo.setServerUrl(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_patient_identifier")) {
-					caseInfo.setPatientIdentifier(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_trigger_at_datetime")) {
-					caseInfo.setTriggerAtDateTime(rs.getTimestamp(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_last_updated_datetime")) {
-					caseInfo.setLastUpdatedDateTime(rs.getTimestamp(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_activated_datetime")) {
-					caseInfo.setActivatedDateTime(rs.getTimestamp(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_created_datetime")) {
-					caseInfo.setCreatedDateTime(rs.getTimestamp(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_tries_left")) {
-					caseInfo.setTriesLeft(rs.getInt(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_last_successful_datetime")) {
-					caseInfo.setLastSuccessfulDateTime(rs.getTimestamp(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_case_started_running_datetime")) {
-					caseInfo.setCaseStartedRunningDateTime(rs.getTimestamp(columnInfo));
-				}
+			if (columnInfo.equalsIgnoreCase(alias + "_case_info_id")) {
+				caseInfo.setId(rs.getLong(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase("fPerson_person_id")) {
+				FPerson fPerson = FPersonService._construct(rs, null, "fPerson");
+				caseInfo.setFPerson(fPerson);
+			} else if (columnInfo.equalsIgnoreCase(alias + "_job_id")) {
+				caseInfo.setJobId(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_status")) {
+				caseInfo.setStatus(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_server_host")) {
+				caseInfo.setServerHost(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_status_url")) {
+				caseInfo.setStatusUrl(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_server_url")) {
+				caseInfo.setServerUrl(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_patient_identifier")) {
+				caseInfo.setPatientIdentifier(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_trigger_at_datetime")) {
+				caseInfo.setTriggerAtDateTime(rs.getTimestamp(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_last_updated_datetime")) {
+				caseInfo.setLastUpdatedDateTime(rs.getTimestamp(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_activated_datetime")) {
+				caseInfo.setActivatedDateTime(rs.getTimestamp(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_created_datetime")) {
+				caseInfo.setCreatedDateTime(rs.getTimestamp(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_tries_left")) {
+				caseInfo.setTriesLeft(rs.getInt(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_last_successful_datetime")) {
+				caseInfo.setLastSuccessfulDateTime(rs.getTimestamp(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_case_started_running_datetime")) {
+				caseInfo.setCaseStartedRunningDateTime(rs.getTimestamp(columnInfo));
 			}
-		} catch (SQLException e) {
-			logger.error("CaseInfo construct failed: ");
-			e.printStackTrace();
-			return null;
 		}
 
 		return caseInfo;

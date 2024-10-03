@@ -1,6 +1,7 @@
 package edu.gatech.chai.omopv5.dba.service;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +33,7 @@ public class ConceptRelationshipServiceImp extends BaseEntityServiceImp<ConceptR
 	}
 
 	@Override
-	public ConceptRelationship find(Concept concept1, Concept concept2, String reationshipId) {
+	public ConceptRelationship find(Concept concept1, Concept concept2, String reationshipId) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
 
 		ParameterWrapper parameterWrapper = new ParameterWrapper();
@@ -52,10 +53,10 @@ public class ConceptRelationshipServiceImp extends BaseEntityServiceImp<ConceptR
 		paramList.add(parameterWrapper2);
 
 		List<ConceptRelationship> conceptRelationships = searchWithParams(0, 0, paramList, null);
-		for (ConceptRelationship conceptRelationship : conceptRelationships) {
-			return conceptRelationship;
+		if (conceptRelationships != null && !conceptRelationships.isEmpty()) {
+			return conceptRelationships.get(0);
 		}
-
+		
 		return null;
 	}
 	
@@ -75,7 +76,7 @@ public class ConceptRelationshipServiceImp extends BaseEntityServiceImp<ConceptR
 	}
 
 	@Override
-	public ConceptRelationship construct(ResultSet rs, ConceptRelationship entity, String alias) {
+	public ConceptRelationship construct(ResultSet rs, ConceptRelationship entity, String alias) throws SQLException {
 		return ConceptRelationshipService._construct(rs, entity, alias);
 	}
 

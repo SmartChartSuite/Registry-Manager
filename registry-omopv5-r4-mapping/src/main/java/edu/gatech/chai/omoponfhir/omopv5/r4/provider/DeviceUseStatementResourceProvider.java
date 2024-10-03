@@ -88,7 +88,7 @@ public class DeviceUseStatementResourceProvider implements IResourceProvider {
     	return myMapper;
     }
 	
-	private Integer getTotalSize(List<ParameterWrapper> paramList) {
+	private Integer getTotalSize(List<ParameterWrapper> paramList) throws Exception {
 		final Long totalSize;
 		if (paramList.size() == 0) {
 			totalSize = getMyMapper().getSize();
@@ -107,9 +107,10 @@ public class DeviceUseStatementResourceProvider implements IResourceProvider {
 	 * This creates a DeviceExposure entry. Since the table servers
 	 * Devce and DeviceUseStatement, Create request should embed 
 	 * Device FHIR information in the DeviceUseStatement resource.
+	 * @throws Exception 
 	 */
 	@Create()
-	public MethodOutcome createDeviceUseStatement(@ResourceParam MyDeviceUseStatement theDeviceUseStatement) {
+	public MethodOutcome createDeviceUseStatement(@ResourceParam MyDeviceUseStatement theDeviceUseStatement) throws Exception {
 		validateResource(theDeviceUseStatement);
 		
 		// We need to check if this resource has device resource embedded.
@@ -137,7 +138,7 @@ public class DeviceUseStatementResourceProvider implements IResourceProvider {
 	}
 	
 	@Delete()
-	public void deleteDeviceUseStatement(@IdParam IdType theId) {
+	public void deleteDeviceUseStatement(@IdParam IdType theId) throws Exception {
 		if (getMyMapper().removeByFhirId(theId) <= 0) {
 			throw new ResourceNotFoundException(theId);
 		}
@@ -152,7 +153,7 @@ public class DeviceUseStatementResourceProvider implements IResourceProvider {
 			@IncludeParam(allow={"DeviceUseStatement:device"})
 			final Set<Include> theIncludes
 
-			) {
+			) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 
 		if (theDeviceUseStatementId != null) {
@@ -197,7 +198,7 @@ public class DeviceUseStatementResourceProvider implements IResourceProvider {
 	}
 	
 	@Read()
-	public MyDeviceUseStatement readPatient(@IdParam IdType theId) {
+	public MyDeviceUseStatement readPatient(@IdParam IdType theId) throws Exception {
 		MyDeviceUseStatement retval = (MyDeviceUseStatement) getMyMapper().toFHIR(theId);
 		if (retval == null) {
 			throw new ResourceNotFoundException(theId);
@@ -207,7 +208,7 @@ public class DeviceUseStatementResourceProvider implements IResourceProvider {
 	}
 	
 	@Update()
-	public MethodOutcome updateDeviceUseStatement(@IdParam IdType theId, @ResourceParam MyDeviceUseStatement theDeviceUseStatement) {
+	public MethodOutcome updateDeviceUseStatement(@IdParam IdType theId, @ResourceParam MyDeviceUseStatement theDeviceUseStatement) throws Exception {
 		validateResource(theDeviceUseStatement);
 
 		Long fhirId = null;
@@ -259,10 +260,14 @@ public class DeviceUseStatementResourceProvider implements IResourceProvider {
 				includes.add("DeviceUseStatement:device");
 			}
 
-			if (paramList.size() == 0) {
-				getMyMapper().searchWithoutParams(theFromIndex, theToIndex, retv, includes, null);
-			} else {
-				getMyMapper().searchWithParams(theFromIndex, theToIndex, paramList, retv, includes, null);
+			try {
+				if (paramList.size() == 0) {
+					getMyMapper().searchWithoutParams(theFromIndex, theToIndex, retv, includes, null);
+				} else {
+					getMyMapper().searchWithParams(theFromIndex, theToIndex, paramList, retv, includes, null);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return retv;

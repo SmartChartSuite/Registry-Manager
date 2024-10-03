@@ -43,41 +43,35 @@ public interface LocationService extends IService<Location> {
 	 */
 	public Location searchByAddress(String line1, String line2, String city, String state, String zipCode);
 
-	public static Location _construct(ResultSet rs, Location location, String alias) {
+	public static Location _construct(ResultSet rs, Location location, String alias) throws SQLException {
 		if (location == null)
 			location = new Location();
 
 		if (alias == null || alias.isEmpty())
 			alias = Location._getTableName();
 
-		ResultSetMetaData metaData;
-		try {
-			metaData = rs.getMetaData();
-			int totalColumnSize = metaData.getColumnCount();
-			for (int i = 1; i <= totalColumnSize; i++) {
-				String columnInfo = metaData.getColumnName(i);
+		ResultSetMetaData metaData = rs.getMetaData();
+		int totalColumnSize = metaData.getColumnCount();
+		for (int i = 1; i <= totalColumnSize; i++) {
+			String columnInfo = metaData.getColumnName(i);
 
-				if (columnInfo.equalsIgnoreCase(alias + "_location_id")) {
-					location.setId(rs.getLong(columnInfo));
-					if (rs.wasNull()) return null;
-				} else if (columnInfo.equalsIgnoreCase(alias + "_address_1")) {
-					location.setAddress1(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_address_2")) {
-					location.setAddress2(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_city")) {
-					location.setCity(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_state")) {
-					location.setState(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_zip")) {
-					location.setZip(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_location_source_value")) {
-					location.setLocationSourceValue(rs.getString(columnInfo));
-				}
-
+			if (columnInfo.equalsIgnoreCase(alias + "_location_id")) {
+				location.setId(rs.getLong(columnInfo));
+				if (rs.wasNull()) return null;
+			} else if (columnInfo.equalsIgnoreCase(alias + "_address_1")) {
+				location.setAddress1(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_address_2")) {
+				location.setAddress2(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_city")) {
+				location.setCity(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_state")) {
+				location.setState(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_zip")) {
+				location.setZip(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_location_source_value")) {
+				location.setLocationSourceValue(rs.getString(columnInfo));
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return null;
+
 		}
 
 		return location;

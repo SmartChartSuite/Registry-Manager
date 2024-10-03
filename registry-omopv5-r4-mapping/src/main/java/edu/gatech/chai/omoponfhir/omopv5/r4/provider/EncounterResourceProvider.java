@@ -82,7 +82,7 @@ public class EncounterResourceProvider implements IResourceProvider {
 		return myMapper;
 	}
 
-	private Integer getTotalSize(List<ParameterWrapper> paramList) {
+	private Integer getTotalSize(List<ParameterWrapper> paramList) throws Exception {
 		final Long totalSize;
 		if (paramList.size() == 0) {
 			totalSize = getMyMapper().getSize();
@@ -96,9 +96,10 @@ public class EncounterResourceProvider implements IResourceProvider {
 	/**
 	 * The "@Create" annotation indicates that this method implements "create=type",
 	 * which adds a new instance of a resource to the server.
+	 * @throws Exception 
 	 */
 	@Create()
-	public MethodOutcome createEncounter(@ResourceParam Encounter theEncounter) {
+	public MethodOutcome createEncounter(@ResourceParam Encounter theEncounter) throws Exception {
 		validateResource(theEncounter);
 
 		Long id = null;
@@ -111,7 +112,7 @@ public class EncounterResourceProvider implements IResourceProvider {
 	}
 
 	@Delete()
-	public void deleteEncounter(@IdParam IdType theId) {
+	public void deleteEncounter(@IdParam IdType theId) throws Exception {
 		if (getMyMapper().removeByFhirId(theId) <= 0) {
 			throw new ResourceNotFoundException(theId);
 		}
@@ -130,7 +131,7 @@ public class EncounterResourceProvider implements IResourceProvider {
 					"Encounter:service-provider", "Encounter:patient", "Encounter:practitioner",
 					"Encounter:subject" }) final Set<Include> theIncludes,
 
-			@IncludeParam(reverse = true) final Set<Include> theReverseIncludes) {
+			@IncludeParam(reverse = true) final Set<Include> theReverseIncludes) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
 
 		if (theEncounterId != null) {
@@ -197,9 +198,10 @@ public class EncounterResourceProvider implements IResourceProvider {
 	 * @param theId The read operation takes one parameter, which must be of type
 	 *              IdDt and must be annotated with the "@Read.IdParam" annotation.
 	 * @return Returns a resource matching this identifier, or null if none exists.
+	 * @throws Exception 
 	 */
 	@Read()
-	public Encounter readEncounter(@IdParam IdType theId) {
+	public Encounter readEncounter(@IdParam IdType theId) throws Exception {
 		Encounter retval = (Encounter) getMyMapper().toFHIR(theId);
 		if (retval == null) {
 			throw new ResourceNotFoundException(theId);
@@ -215,9 +217,10 @@ public class EncounterResourceProvider implements IResourceProvider {
 	 * @param theId      This is the ID of the patient to update
 	 * @param thePatient This is the actual resource to save
 	 * @return This method returns a "MethodOutcome"
+	 * @throws Exception 
 	 */
 	@Update()
-	public MethodOutcome updateEncounter(@IdParam IdType theId, @ResourceParam Encounter theEncounter) {
+	public MethodOutcome updateEncounter(@IdParam IdType theId, @ResourceParam Encounter theEncounter) throws Exception {
 		validateResource(theEncounter);
 
 		Long fhirId = null;
@@ -301,10 +304,14 @@ public class EncounterResourceProvider implements IResourceProvider {
 				includes.add("Encounter:subject");
 			}
 
-			if (paramList.size() == 0) {
-				myMapper.searchWithoutParams(fromIndex, toIndex, retv, includes, null);
-			} else {
-				myMapper.searchWithParams(fromIndex, toIndex, paramList, retv, includes, null);
+			try {
+				if (paramList.size() == 0) {
+					myMapper.searchWithoutParams(fromIndex, toIndex, retv, includes, null);
+				} else {
+					myMapper.searchWithParams(fromIndex, toIndex, paramList, retv, includes, null);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return retv;

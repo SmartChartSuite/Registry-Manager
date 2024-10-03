@@ -15,9 +15,6 @@
  *******************************************************************************/
 package edu.gatech.chai.omoponfhir.omopv5.r4.utilities;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,7 +42,7 @@ public class CodeableConceptUtil {
 		codeableConcept.addCoding(coding);
 	}
 	
-	public static Coding getCodingFromOmopConcept(ConceptService conceptService, Concept concept) {
+	public static Coding getCodingFromOmopConcept(ConceptService conceptService, Concept concept) throws Exception {
 		String fhirUri = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, concept.getVocabularyId());
 		Coding coding = new Coding();
 		coding.setSystem(fhirUri);
@@ -55,7 +52,7 @@ public class CodeableConceptUtil {
 		return coding;
 	}
 	
-	public static CodeableConcept getCodeableConceptFromOmopConcept(ConceptService conceptService, Concept concept) {
+	public static CodeableConcept getCodeableConceptFromOmopConcept(ConceptService conceptService, Concept concept) throws Exception {
 		CodeableConcept codeableConcept = new CodeableConcept();
 		Coding coding = CodeableConceptUtil.getCodingFromOmopConcept(conceptService, concept);
 		codeableConcept.addCoding(coding);
@@ -69,7 +66,7 @@ public class CodeableConceptUtil {
 		return codeableConcept;
 	}
 
-	public static Concept getOmopConceptWithOmopCode(ConceptService conceptService, String code) {		
+	public static Concept getOmopConceptWithOmopCode(ConceptService conceptService, String code) throws Exception {		
 		ParameterWrapper param = new ParameterWrapper(
 				"String",
 				Arrays.asList("conceptCode"),
@@ -90,7 +87,7 @@ public class CodeableConceptUtil {
 		return conceptIds.get(0);
 	}
 
-	public static Concept getOmopConceptWithOmopVacabIdAndCode(ConceptService conceptService, String omopVocabularyId, String code) {
+	public static Concept getOmopConceptWithOmopVacabIdAndCode(ConceptService conceptService, String omopVocabularyId, String code) throws Exception {
 		if (omopVocabularyId == null) return null;
 		
 		ParameterWrapper param = new ParameterWrapper(
@@ -113,7 +110,7 @@ public class CodeableConceptUtil {
 		return conceptIds.get(0);
 	}
 	
-	public static Concept getOmopConceptWithFhirConcept(ConceptService conceptService, Coding fhirCoding) throws FHIRException {
+	public static Concept getOmopConceptWithFhirConcept(ConceptService conceptService, Coding fhirCoding) throws Exception {
 		String system = fhirCoding.getSystem();
 		String code = fhirCoding.getCode();
 		
@@ -121,7 +118,7 @@ public class CodeableConceptUtil {
 		return getOmopConceptWithOmopVacabIdAndCode(conceptService, omopVocabularyId, code);
 	}
 	
-	public static String getOmopVocabularyFromFhirSystemName(ConceptService conceptService, String fhirSystemUri) {
+	public static String getOmopVocabularyFromFhirSystemName(ConceptService conceptService, String fhirSystemUri) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
 
 		ParameterWrapper paramWrapper = new ParameterWrapper();
@@ -140,7 +137,7 @@ public class CodeableConceptUtil {
 		return "None";
 	}
 
-	public static String getFhirSystemNameFromOmopVocabulary(ConceptService conceptService, String omopVocabulary) {
+	public static String getFhirSystemNameFromOmopVocabulary(ConceptService conceptService, String omopVocabulary) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
 
 		ParameterWrapper paramWrapper = new ParameterWrapper();
@@ -163,7 +160,7 @@ public class CodeableConceptUtil {
 		return fhirConceptName;
 	}
 
-	public static Concept searchConcept(ConceptService conceptService, CodeableConcept codeableConcept) throws FHIRException {
+	public static Concept searchConcept(ConceptService conceptService, CodeableConcept codeableConcept) throws Exception {
 		List<Coding> codings = codeableConcept.getCoding();
 		for (Coding coding : codings) {
 			// get OMOP Vocabulary from mapping.
@@ -242,7 +239,7 @@ public class CodeableConceptUtil {
 		return -1;
 	}
 
-	public static Coding getFhirCodingFromOmopSourceString(ConceptService conceptService, String raceSourceString) {
+	public static Coding getFhirCodingFromOmopSourceString(ConceptService conceptService, String sourceString) throws Exception {
 		Coding retv = null;
 
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
@@ -250,14 +247,14 @@ public class CodeableConceptUtil {
 		paramWrapper.setParameterType("String");
 		paramWrapper.setParameters(Arrays.asList("conceptName", "conceptClassId"));
 		paramWrapper.setOperators(Arrays.asList("=", "="));
-		paramWrapper.setValues(Arrays.asList(raceSourceString, "FHIR Concept"));
+		paramWrapper.setValues(Arrays.asList(sourceString, "FHIR Concept"));
 		paramWrapper.setRelationship("and");
 		paramList.add(paramWrapper);
 
 		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
 		String vocabularyId = "None";
 		String fhirCode = "None";
-		String fhirDisplay = raceSourceString;
+		String fhirDisplay = sourceString;
 		String fhirSystem = "None";
 		for (Concept concept : concepts) {
 			vocabularyId = concept.getVocabularyId();
@@ -289,7 +286,7 @@ public class CodeableConceptUtil {
 		return retv;
 	}
 
-	public static Long getOmopCodeFromFhirCoding(ConceptService conceptService, Coding fhirCoding) {
+	public static Long getOmopCodeFromFhirCoding(ConceptService conceptService, Coding fhirCoding) throws Exception {
 		Long retv = 0L;
 
 		String fhirSystem = fhirCoding.getSystem();
@@ -336,32 +333,31 @@ public class CodeableConceptUtil {
 		return retv;
 	}
 
-	public static Coding getFhirCodingFromOmopConcept(ConceptService conceptService, ConceptRelationshipService conceptRelationshipService, Long raceConceptId) {
+	public static Coding getFhirCodingFromOmopConcept(ConceptService conceptService, Long conceptId) throws Exception {
 		Coding retv = null;
 
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
 		ParameterWrapper paramWrapper = new ParameterWrapper();
 		paramWrapper.setParameterType("Long");
-		paramWrapper.setParameters(Arrays.asList("concept2.conceptId"));
+		paramWrapper.setParameters(Arrays.asList("id"));
 		paramWrapper.setOperators(Arrays.asList("="));
-		paramWrapper.setValues(Arrays.asList(String.valueOf(raceConceptId)));
+		paramWrapper.setValues(Arrays.asList(String.valueOf(conceptId)));
 		paramWrapper.setRelationship("and");
 		paramList.add(paramWrapper);
 
-		List<ConceptRelationship> conceptRelationships = conceptRelationshipService.searchWithParams(0, 0, paramList, null);
-		Long fhirOmopConceptId = null;
+		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
+
 		String fhirSystem = "None";
 		String fhirCode = "None";
 		String fhirDisplay = "None";
 		String vocabularyId = "None";
-		for (ConceptRelationship conceptRelationship : conceptRelationships) {
-			fhirOmopConceptId = conceptRelationship.getConcept1().getId();
-			fhirCode = conceptRelationship.getConcept1().getConceptCode();
-			fhirDisplay = conceptRelationship.getConcept1().getConceptName();
-			vocabularyId = conceptRelationship.getConcept1().getVocabularyId();
+		for (Concept concept : concepts) {
+			fhirCode = concept.getConceptCode();
+			fhirDisplay = concept.getConceptName();
+			vocabularyId = concept.getVocabularyId();
 		}
 
-		if (fhirOmopConceptId == null) {
+		if ("None".equals(vocabularyId)) {
 			return retv;
 		}
 
@@ -373,7 +369,7 @@ public class CodeableConceptUtil {
 		paramWrapper.setRelationship("and");
 		paramList.add(paramWrapper);
 
-		List<Concept> concepts = conceptService.searchWithParams(0, 0, paramList, null);
+		concepts = conceptService.searchWithParams(0, 0, paramList, null);
 		for (Concept concept : concepts) {
 			fhirSystem = concept.getConceptName();
 		}

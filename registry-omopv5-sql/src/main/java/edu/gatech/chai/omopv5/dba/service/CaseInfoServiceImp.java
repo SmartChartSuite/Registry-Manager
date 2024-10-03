@@ -1,6 +1,7 @@
 package edu.gatech.chai.omopv5.dba.service;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 import com.google.cloud.bigquery.FieldValueList;
@@ -17,7 +18,7 @@ public class CaseInfoServiceImp extends BaseEntityServiceImp<CaseInfo> implement
     }
 
     @Override
-    public CaseInfo construct(ResultSet rs, CaseInfo entity, String alias) {
+    public CaseInfo construct(ResultSet rs, CaseInfo entity, String alias) throws SQLException {
 		  return CaseInfoService._construct(rs, entity, alias);
     }
 

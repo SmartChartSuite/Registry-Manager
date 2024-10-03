@@ -69,7 +69,7 @@ public class ImmunizationResourceProvider implements IResourceProvider {
     	return myMapper;
     }
 
-	private Integer getTotalSize(List<ParameterWrapper> paramList) {
+	private Integer getTotalSize(List<ParameterWrapper> paramList) throws Exception {
 		final Long totalSize;
 		if (paramList.isEmpty()) {
 			totalSize = getMyMapper().getSize();
@@ -80,7 +80,7 @@ public class ImmunizationResourceProvider implements IResourceProvider {
 		return totalSize.intValue();
 	}
 
-	private Integer getTotalSize(String queryString, List<String> parameterList, List<String> valueList) {
+	private Integer getTotalSize(String queryString, List<String> parameterList, List<String> valueList) throws Exception {
 		final Long totalSize = getMyMapper().getSize(queryString, parameterList, valueList);
 			
 		return totalSize.intValue();
@@ -94,9 +94,10 @@ public class ImmunizationResourceProvider implements IResourceProvider {
 	/**
 	 * The "@Create" annotation indicates that this method implements "create=type", which adds a 
 	 * new instance of a resource to the server.
+	 * @throws Exception 
 	 */
 	@Create()
-	public MethodOutcome createImmunization(@ResourceParam Immunization theImmunization) {
+	public MethodOutcome createImmunization(@ResourceParam Immunization theImmunization) throws Exception {
 		validateResource(theImmunization);
 		
 		Long id=null;
@@ -118,7 +119,7 @@ public class ImmunizationResourceProvider implements IResourceProvider {
 	}
 
 	@Delete()
-	public void deleteMedicationRequest(@IdParam IdType theId) {
+	public void deleteMedicationRequest(@IdParam IdType theId) throws Exception {
 		if (myMapper.removeByFhirId(theId) <= 0) {
 			throw new ResourceNotFoundException(theId);
 		}
@@ -126,7 +127,7 @@ public class ImmunizationResourceProvider implements IResourceProvider {
 
 
 	@Update()
-	public MethodOutcome updateUmmunization(@IdParam IdType theId, @ResourceParam Immunization theImmunization) {
+	public MethodOutcome updateUmmunization(@IdParam IdType theId, @ResourceParam Immunization theImmunization) throws Exception {
 		validateResource(theImmunization);
 		
 		Long fhirId=null;
@@ -144,7 +145,7 @@ public class ImmunizationResourceProvider implements IResourceProvider {
 	}
 
 	@Read()
-	public Immunization readImmunization(@IdParam IdType theId) {
+	public Immunization readImmunization(@IdParam IdType theId) throws Exception {
 		Immunization retval = getMyMapper().toFHIR(theId);
 		if (retval == null) {
 			throw new ResourceNotFoundException(theId);
@@ -156,7 +157,7 @@ public class ImmunizationResourceProvider implements IResourceProvider {
 	@Search()
 	public IBundleProvider findImmunizationById(
 			@RequiredParam(name = Immunization.SP_RES_ID) TokenParam theImmunizationId
-			) {
+			) throws Exception {
 
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
 
@@ -176,7 +177,7 @@ public class ImmunizationResourceProvider implements IResourceProvider {
 			@OptionalParam(name = Immunization.SP_DATE) DateRangeParam theDateRangeParam,
 			@OptionalParam(name = Immunization.SP_PATIENT) ReferenceParam thePatient,
 			@Sort SortSpec theSort
-			) {
+			) throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
 
 		if (theVaccineOrVCodes != null) {
@@ -247,10 +248,14 @@ public class ImmunizationResourceProvider implements IResourceProvider {
 			// _Include
 			List<String> includes = new ArrayList<String>();
 
-			if (paramList.isEmpty()) {
-				myMapper.searchWithoutParams(fromIndex, toIndex, retv, includes, null);
-			} else {
-				myMapper.searchWithParams(fromIndex, toIndex, paramList, retv, includes, null);
+			try {
+				if (paramList.isEmpty()) {
+					myMapper.searchWithoutParams(fromIndex, toIndex, retv, includes, null);
+				} else {
+					myMapper.searchWithParams(fromIndex, toIndex, paramList, retv, includes, null);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return retv;

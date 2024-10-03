@@ -101,7 +101,7 @@ public class OmopImmunization extends BaseOmopResource<Immunization, FImmunizati
 
 		// String sizeSql = "select count(distinct d) from " + _from + " where " + _where;
 		// getSize(sizeSql, null, null);
-		getSize(true);
+		// getSize(true);
 	}
 
 	public OmopImmunization() {
@@ -124,7 +124,7 @@ public class OmopImmunization extends BaseOmopResource<Immunization, FImmunizati
 	}
 	
 	@Override
-	public Long toDbase(Immunization fhirResource, IdType fhirId) throws FHIRException {
+	public Long toDbase(Immunization fhirResource, IdType fhirId) throws Exception {
 		Long omopId = null;
 		DrugExposure drugExposure = null;
 		if (fhirId != null) {
@@ -143,7 +143,7 @@ public class OmopImmunization extends BaseOmopResource<Immunization, FImmunizati
 	}
 
 	@Override
-	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) {
+	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) throws Exception {
 		List<ParameterWrapper> mapList = new ArrayList<ParameterWrapper>();
 		ParameterWrapper paramWrapper = new ParameterWrapper();
 		if (or)
@@ -235,7 +235,7 @@ public class OmopImmunization extends BaseOmopResource<Immunization, FImmunizati
 	// 	return searchSql;
 	// }
 
-	public String mapParameter(String parameter, Object value, List<String> parameterList, List<String> valueList) {
+	public String mapParameter(String parameter, Object value, List<String> parameterList, List<String> valueList) throws Exception {
 		String whereStatement = "";
 
 		switch (parameter) {
@@ -385,7 +385,7 @@ public class OmopImmunization extends BaseOmopResource<Immunization, FImmunizati
 	}
 
 	@Override
-	public Immunization constructFHIR(Long fhirId, FImmunizationView entity) {
+	public Immunization constructFHIR(Long fhirId, FImmunizationView entity) throws Exception {
 		Immunization immunization = new Immunization();
 		immunization.setId(new IdType(fhirId));
 
@@ -457,7 +457,7 @@ public class OmopImmunization extends BaseOmopResource<Immunization, FImmunizati
 		return immunization;
 	}
 
-	public DrugExposure constructDrugExposure(Long omopId, Immunization fhirResource) {
+	public DrugExposure constructDrugExposure(Long omopId, Immunization fhirResource) throws Exception {
 		DrugExposure drugExposure = null;
 		if (omopId != null) {
 			// Update

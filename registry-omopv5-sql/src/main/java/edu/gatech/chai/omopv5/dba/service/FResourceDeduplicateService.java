@@ -10,36 +10,31 @@ import com.google.cloud.bigquery.FieldValueList;
 import edu.gatech.chai.omopv5.model.entity.FResourceDeduplicate;
 
 public interface FResourceDeduplicateService extends IService<FResourceDeduplicate>{
-	public static FResourceDeduplicate _construct(ResultSet rs, FResourceDeduplicate fResourceDeduplicate, String alias) {
+	public static FResourceDeduplicate _construct(ResultSet rs, FResourceDeduplicate fResourceDeduplicate, String alias) throws SQLException {
 		if (fResourceDeduplicate == null)
             fResourceDeduplicate = new FResourceDeduplicate();
 
 		if (alias == null || alias.isEmpty())
 			alias = FResourceDeduplicate._getTableName();
 
-		try {
-			ResultSetMetaData metaData = rs.getMetaData();
-			int totalColumnSize = metaData.getColumnCount();
-			for (int i = 1; i <= totalColumnSize; i++) {
-				String columnInfo = metaData.getColumnName(i);
+		ResultSetMetaData metaData = rs.getMetaData();
+		int totalColumnSize = metaData.getColumnCount();
+		for (int i = 1; i <= totalColumnSize; i++) {
+			String columnInfo = metaData.getColumnName(i);
 
-				if (columnInfo.equalsIgnoreCase(alias + "_id")) {
-					fResourceDeduplicate.setId(rs.getLong(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_domain_id")) {
-					fResourceDeduplicate.setDomainId(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_omop_id")) {
-					fResourceDeduplicate.setOmopId(rs.getLong(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_fhir_resource_type")) {
-					fResourceDeduplicate.setFhirResourceType(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_fhir_identifier_system")) {
-					fResourceDeduplicate.setFhirIdentifierSystem(rs.getString(columnInfo));
-				} else if (columnInfo.equalsIgnoreCase(alias + "_fhir_identifier_value")) {
-					fResourceDeduplicate.setFhirIdentifierValue(rs.getString(columnInfo));
-				}
+			if (columnInfo.equalsIgnoreCase(alias + "_id")) {
+				fResourceDeduplicate.setId(rs.getLong(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_domain_id")) {
+				fResourceDeduplicate.setDomainId(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_omop_id")) {
+				fResourceDeduplicate.setOmopId(rs.getLong(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_fhir_resource_type")) {
+				fResourceDeduplicate.setFhirResourceType(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_fhir_identifier_system")) {
+				fResourceDeduplicate.setFhirIdentifierSystem(rs.getString(columnInfo));
+			} else if (columnInfo.equalsIgnoreCase(alias + "_fhir_identifier_value")) {
+				fResourceDeduplicate.setFhirIdentifierValue(rs.getString(columnInfo));
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return null;
 		}
 
 		return fResourceDeduplicate;

@@ -9,6 +9,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLTimeoutException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -161,7 +162,7 @@ public class ScheduledTask {
 	// }
 	// }
 
-	protected void writeToLog(CaseInfo caseInfo, String message) {
+	protected void writeToLog(CaseInfo caseInfo, String message) throws Exception {
 		CaseLog caseLog = new CaseLog();
 
 		caseLog.setCaseInfo(caseInfo);
@@ -186,7 +187,7 @@ public class ScheduledTask {
 		return endPoint;
 	}
 
-	protected Bundle retrieveQueryResult(CaseInfo caseInfo) {
+	protected Bundle retrieveQueryResult(CaseInfo caseInfo) throws Exception {
 		RestTemplate restTemplate = new RestTemplate();
 		IParser parser = StaticValues.myFhirContext.newJsonParser();
 
@@ -387,7 +388,7 @@ public class ScheduledTask {
 		return resultBundle;
 	}
 
-	protected void createEntries(Bundle resultBundle, CaseInfo caseInfo) {
+	protected void createEntries(Bundle resultBundle, CaseInfo caseInfo) throws Exception {
 		Date currentTime = new Date();
 
 		List<BundleEntryComponent> entries = resultBundle.getEntry();
@@ -404,11 +405,18 @@ public class ScheduledTask {
 			writeToLog(caseInfo,
 					"Error occured while creating resources in the Output FHIR Bundle entries.\n" + sw.toString());
 
-			caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
-			caseInfoService.update(caseInfo);
+			if (e instanceof SQLTimeoutException) {
+				Long next = (2 + (int) Math.random()*10) * 3600000L;
+				caseInfo.setTriggerAtDateTime(new Date(currentTime.getTime()+next));
+				caseInfo.setStatus(QueryRequest.REQUEST_PENDING.getCodeString());
+			} else {
+				caseInfo.setStatus(QueryRequest.ERROR_IN_CLIENT.getCodeString());
+			}
 
+			caseInfoService.update(caseInfo);
 			return;
 		}
+
 		int errorFlag = 0;
 		String errMessage = "";
 		for (BundleEntryComponent responseEntry : responseEntries) {
@@ -472,8 +480,9 @@ public class ScheduledTask {
 	 *                 to override other conditions that will
 	 *                 change the state status.
 	 * @return
+	 * @throws Exception 
 	 */
-	protected Integer retryCountUpdate(CaseInfo caseInfo) {
+	protected Integer retryCountUpdate(CaseInfo caseInfo) throws Exception {
 		Integer retrytLeft = caseInfo.getTriesLeft();
 
 		// decrement the counter
@@ -488,7 +497,7 @@ public class ScheduledTask {
 		return next_retryLeft;
 	}
 
-	protected void requestForQuery(CaseInfo caseInfo) {
+	protected void requestForQuery(CaseInfo caseInfo) throws Exception {
 		Date currentTime = new Date();
 
 		RestTemplate restTemplate = new RestTemplate();
@@ -681,21 +690,38 @@ public class ScheduledTask {
 
 		params.add(param);
 		
-		List<CaseInfo> caseInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "status DESC,triggerAtDateTime ASC");
+		List<CaseInfo> caseInfos;
+		try {
+			caseInfos = caseInfoService.searchWithParams(0, numOfOutstandingRequests, params, "status DESC,triggerAtDateTime ASC");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+
 		for (CaseInfo caseInfo : caseInfos) {
 			switch (QueryRequest.codeEnumOf(caseInfo.getStatus())) {
 				case RUNNING: // case is awating for next scheduled time.
 					logger.debug("Case (" + caseInfo.getId() + ") retrieving from RC-API");
-					Bundle queryResult = retrieveQueryResult(caseInfo);
-					if (queryResult != null && !queryResult.isEmpty()) {
-						createEntries(queryResult, caseInfo);
+					try {
+						Bundle queryResult = retrieveQueryResult(caseInfo);
+						if (queryResult != null && !queryResult.isEmpty()) {
+							createEntries(queryResult, caseInfo);
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+						return;
 					}
 
 					break;
 				case REQUEST_PENDING:
 				case ERROR_IN_SERVER:
 					logger.debug("Case (" + caseInfo.getId() + ") requesting to RC-API");
-					requestForQuery(caseInfo);
+					try {
+						requestForQuery(caseInfo);
+					} catch (Exception e) {
+						e.printStackTrace();
+						return;
+					}
 					break;
 
 				default:
@@ -708,7 +734,7 @@ public class ScheduledTask {
 	}
 
 	@Scheduled(fixedDelay = 120000)
-	public void localCodeMappingTask() {
+	public void localCodeMappingTask() throws Exception {
 		// We may need to load local mapping data. Get a path where the mapping CSV
 		// file(s) are located and load them if files exist. The files will then be
 		// deleted.
@@ -1006,7 +1032,7 @@ public class ScheduledTask {
 		return conceptIdStart;
 	}
 
-	private Vocabulary createNewEntry(String[] omopVacab, String fhirCoding) {
+	private Vocabulary createNewEntry(String[] omopVacab, String fhirCoding) throws Exception {
 		Vocabulary vocab = createOmopVocabularyConcept(omopVacab);
 
 		// Create FHIR representation of the vocabulary.
@@ -1019,7 +1045,7 @@ public class ScheduledTask {
 		return vocab;
 	}
 
-	private Vocabulary createOmopVocabularyConcept(String[] values) {
+	private Vocabulary createOmopVocabularyConcept(String[] values) throws Exception {
 		Vocabulary newVocab = new Vocabulary();
 		String vocName = null;
 		newVocab.setId(values[0]);
@@ -1075,7 +1101,7 @@ public class ScheduledTask {
 		return vocabularyService.create(newVocab);
 	}
 
-	private Relationship createOmopRelationshipConcept(String id, String name, String revId) {
+	private Relationship createOmopRelationshipConcept(String id, String name, String revId) throws Exception {
 		Relationship newRelationship = new Relationship();
 		newRelationship.setId(id);
 		newRelationship.setRelationshipName(name);
@@ -1109,7 +1135,7 @@ public class ScheduledTask {
 		return relationshipService.create(newRelationship);
 	}
 
-	private Concept createVocabularyConcept(String name, String vocabId) {
+	private Concept createVocabularyConcept(String name, String vocabId) throws Exception {
 		Concept conceptVoc = new Concept();
 		conceptVoc.setId(getTheLargestConceptId());
 		conceptVoc.setConceptName(name);

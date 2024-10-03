@@ -91,7 +91,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 		initialize(context);
 		
 		// Get count and put it in the counts.
-		getSize(true);
+		// getSize(true);
 	}
 	
 	public OmopMedicationRequest() {
@@ -111,7 +111,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 	}
 	
 	@Override
-	public Long toDbase(MedicationRequest fhirResource, IdType fhirId) throws FHIRException {
+	public Long toDbase(MedicationRequest fhirResource, IdType fhirId) throws Exception {
 		Long omopId = null;
 		DrugExposure drugExposure = null;
 		if (fhirId != null) {
@@ -142,7 +142,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 	}
 	
 	@Override
-	public MedicationRequest constructResource(Long fhirId, DrugExposure entity, List<String> includes) {
+	public MedicationRequest constructResource(Long fhirId, DrugExposure entity, List<String> includes) throws Exception {
 		MedicationRequest fhirResource = constructFHIR(fhirId, entity);
 
 		if (!includes.isEmpty()) {
@@ -167,7 +167,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 	}
 
 	@Override
-	public MedicationRequest constructFHIR(Long fhirId, DrugExposure entity) {
+	public MedicationRequest constructFHIR(Long fhirId, DrugExposure entity) throws Exception {
 		MedicationRequest medicationRequest = new MedicationRequest();
 		
 		medicationRequest.setId(new IdType(fhirId));
@@ -330,7 +330,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 	}
 	
 	@Override
-	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) {
+	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) throws Exception {
 		List<ParameterWrapper> mapList = new ArrayList<ParameterWrapper>();
 		ParameterWrapper paramWrapper = new ParameterWrapper();
         if (or) paramWrapper.setUpperRelationship("or");
@@ -455,7 +455,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 			);
 
 	@Override
-	public Long getSize() {
+	public Long getSize() throws Exception {
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 		// call getSize with empty parameter list. The getSize will add filter parameter.
 
@@ -466,7 +466,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 	}
 
 	@Override
-	public Long getSize(List<ParameterWrapper> paramList) {
+	public Long getSize(List<ParameterWrapper> paramList) throws Exception {
 		paramList.add(filterParam);
 
 		return getMyOmopService().getSize(paramList);
@@ -474,7 +474,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 
 	@Override
 	public void searchWithoutParams(int fromIndex, int toIndex, List<IBaseResource> listResources,
-			List<String> includes, String sort) {
+			List<String> includes, String sort) throws Exception {
 
 		// This is read all. But, since we will add an exception conditions to add filter.
 		// we will call the search with params method.
@@ -484,7 +484,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 
 	@Override
 	public void searchWithParams(int fromIndex, int toIndex, List<ParameterWrapper> mapList,
-			List<IBaseResource> listResources, List<String> includes, String sort) {
+			List<IBaseResource> listResources, List<String> includes, String sort) throws Exception {
 		mapList.add(filterParam);
 
 		List<DrugExposure> entities = getMyOmopService().searchWithParams(fromIndex, toIndex, mapList, sort);
@@ -503,7 +503,7 @@ public class OmopMedicationRequest extends BaseOmopResource<MedicationRequest, D
 	}
 
 	@Override
-	public DrugExposure constructOmop(Long omopId, MedicationRequest fhirResource) {
+	public DrugExposure constructOmop(Long omopId, MedicationRequest fhirResource) throws Exception {
 		DrugExposure drugExposure = null;
 
 		// Set patient.

@@ -112,7 +112,7 @@ public class PatientResourceProvider implements IResourceProvider {
 		return myMapper;
 	}
 
-	private Integer getTotalSize(List<ParameterWrapper> paramList) {
+	private Integer getTotalSize(List<ParameterWrapper> paramList) throws Exception {
 		final Long totalSize;
 		if (paramList.size() == 0) {
 			totalSize = getMyMapper().getSize();
@@ -126,9 +126,10 @@ public class PatientResourceProvider implements IResourceProvider {
 	/**
 	 * The "@Create" annotation indicates that this method implements "create=type",
 	 * which adds a new instance of a resource to the server.
+	 * @throws Exception 
 	 */
 	@Create()
-	public MethodOutcome createPatient(@ResourceParam USCorePatient thePatient) {
+	public MethodOutcome createPatient(@ResourceParam USCorePatient thePatient) throws Exception {
 		validateResource(thePatient);
 
 		Long id = null;
@@ -142,7 +143,7 @@ public class PatientResourceProvider implements IResourceProvider {
 	}
 
 	@Delete()
-	public void deletePatient(@IdParam IdType theId) {
+	public void deletePatient(@IdParam IdType theId) throws Exception {
 		if (getMyMapper().removeByFhirId(theId) <= 0) {
 			throw new ResourceNotFoundException(theId);
 		}
@@ -177,7 +178,7 @@ public class PatientResourceProvider implements IResourceProvider {
  			"Patient:link" }) final Set<Include> theIncludes,
 
  			@IncludeParam(allow = { "Encounter:subject",
- 			"Observation:subject" }, reverse = true) final Set<Include> theReverseIncludes) {
+ 			"Observation:subject" }, reverse = true) final Set<Include> theReverseIncludes) throws Exception {
 
  		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper> ();
 
@@ -209,6 +210,7 @@ public class PatientResourceProvider implements IResourceProvider {
 	 *                      criteria.
 	 * @return This method returns a list of Patients in bundle. This list may
 	 *         contain multiple matching resources, or it may also be empty.
+	 * @throws Exception 
 	 */
 	@Search(allowUnknownParams=true)
 	public IBundleProvider findPatientsByParams(RequestDetails theRequestDetails, 
@@ -234,7 +236,7 @@ public class PatientResourceProvider implements IResourceProvider {
 					"Patient:link" }) final Set<Include> theIncludes,
 
 			@IncludeParam(allow = { "Encounter:subject",
-					"Observation:subject" }, reverse = true) final Set<Include> theReverseIncludes) {
+					"Observation:subject" }, reverse = true) final Set<Include> theReverseIncludes) throws Exception {
 		
 		/*
 		 * Create parameter map, which will be used later to construct predicate. The
@@ -333,9 +335,10 @@ public class PatientResourceProvider implements IResourceProvider {
 	 * @param theId The read operation takes one parameter, which must be of type
 	 *              IdDt and must be annotated with the "@Read.IdParam" annotation.
 	 * @return Returns a resource matching this identifier, or null if none exists.
+	 * @throws Exception 
 	 */
 	@Read()
-	public Patient readPatient(@IdParam IdType theId) {
+	public Patient readPatient(@IdParam IdType theId) throws Exception {
 		Patient retval = (Patient) getMyMapper().toFHIR(theId);
 		if (retval == null) {
 			throw new ResourceNotFoundException(theId);
@@ -351,9 +354,10 @@ public class PatientResourceProvider implements IResourceProvider {
 	 * @param theId      This is the ID of the patient to update
 	 * @param thePatient This is the actual resource to save
 	 * @return This method returns a "MethodOutcome"
+	 * @throws Exception 
 	 */
 	@Update()
-	public MethodOutcome updatePatient(@IdParam IdType theId, @ResourceParam USCorePatient thePatient) {
+	public MethodOutcome updatePatient(@IdParam IdType theId, @ResourceParam USCorePatient thePatient) throws Exception {
 		validateResource(thePatient);
 
 		Long fhirId = null;
@@ -371,10 +375,11 @@ public class PatientResourceProvider implements IResourceProvider {
 
 	/**
 	 * $everything operation for a single patient.
+	 * @throws Exception 
 	 */
 	@Operation(name = "$everything", idempotent = true, bundleType = BundleTypeEnum.SEARCHSET)
 	public IBundleProvider patientEverythingOperation(RequestDetails theRequestDetails, @IdParam IdType thePatientId, @OperationParam(name = "start") DateType theStart,
-			@OperationParam(name = "end") DateType theEnd) {
+			@OperationParam(name = "end") DateType theEnd) throws Exception {
 
 		if (thePatientId == null) {
 			ThrowFHIRExceptions.unprocessableEntityException("Patient Id must be present");
@@ -527,12 +532,17 @@ public class PatientResourceProvider implements IResourceProvider {
 			}
 
 			System.out.println("SORT!!!!!! "+orderParams);
-			if (paramList.size() == 0) {
-				getMyMapper().searchWithoutParams(fromIndex, toIndex, retv, includes, orderParams);
-			} else {
-				getMyMapper().searchWithParams(fromIndex, toIndex, paramList, retv, includes, orderParams);
-			}
 
+			try {
+				if (paramList.size() == 0) {
+					getMyMapper().searchWithoutParams(fromIndex, toIndex, retv, includes, orderParams);
+				} else {
+					getMyMapper().searchWithParams(fromIndex, toIndex, paramList, retv, includes, orderParams);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
 			return retv;
 		}
 

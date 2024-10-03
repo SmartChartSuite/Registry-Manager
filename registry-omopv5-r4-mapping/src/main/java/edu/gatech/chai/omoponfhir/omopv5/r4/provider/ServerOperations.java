@@ -126,7 +126,7 @@ public class ServerOperations {
 		try {
 			resultEntries = myMapper.createEntries(entries);
 			messageHeaderResponse.setCode(ResponseType.OK);
-		} catch (FHIRException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			messageHeaderResponse.setCode(ResponseType.OK);
 			OperationOutcome outcome = new OperationOutcome();
@@ -158,7 +158,7 @@ public class ServerOperations {
 			@OperationParam(name = "patient-identifier") TokenParam thePatientIdentifier,
 			@OperationParam(name = "set-status") StringParam theSetStatus,
 			@OperationParam(name = "set-tries-left") NumberParam theTriesLeft,
-			@OperationParam(name = "lab-results") Bundle theLabResults) {
+			@OperationParam(name = "lab-results") Bundle theLabResults) throws Exception {
 
 		Integer triesLeft = StaticValues.MAX_TRY;
 		if (theTriesLeft != null) {
@@ -353,7 +353,7 @@ public class ServerOperations {
 	public Bundle rcApiResponseTest(RequestDetails theRequestDetails,
 			@OperationParam(name = "name") StringParam theName,
 			@OperationParam(name = "caseId") NumberParam theCaseId,
-			@OperationParam(name = "resource") Bundle theResource) {
+			@OperationParam(name = "resource") Bundle theResource) throws Exception {
 
 		CaseInfo myCase = caseInfoService.findById(theCaseId.getValue().longValue());
 		if (myCase == null) {

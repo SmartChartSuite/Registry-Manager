@@ -110,7 +110,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		super(context, FObservationView.class, FObservationViewService.class, ObservationResourceProvider.getType());
 		initialize(context);
 
-		getSize(true);
+		// getSize(true);
 	}
 
 	public OmopObservation() {
@@ -138,7 +138,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	}
 
 	@Override
-	public Observation constructFHIR(Long fhirId, FObservationView fObservationView) {
+	public Observation constructFHIR(Long fhirId, FObservationView fObservationView) throws Exception {
 		Observation observation = new Observation();
 		observation.setId(new IdType(fhirId));
 
@@ -461,7 +461,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		return observation;
 	}
 
-	private List<Measurement> handleBloodPressure(Long omopId, Observation fhirResource) {
+	private List<Measurement> handleBloodPressure(Long omopId, Observation fhirResource) throws Exception {
 		List<Measurement> retVal = new ArrayList<Measurement>();
 
 		// This is measurement. And, fhirId is for systolic.
@@ -764,7 +764,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	}
 
 	@Override
-	public Long removeByFhirId(IdType fhirId) {
+	public Long removeByFhirId(IdType fhirId) throws Exception {
 		Long id_long_part = fhirId.getIdPartAsLong();
 		Long myId = IdMapping.getOMOPfromFHIR(id_long_part, getMyFhirResourceType());
 		if (myId < 0) {
@@ -810,7 +810,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	}
 
 	public List<Measurement> constructOmopMeasurement(Long omopId, Observation fhirResource, String system,
-			String codeString) {
+			String codeString) throws Exception {
 		List<Measurement> retVal = new ArrayList<Measurement>();
 
 		// If we have BP information, we handle this separately.
@@ -1034,7 +1034,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	}
 
 	public edu.gatech.chai.omopv5.model.entity.Observation constructOmopObservation(Long omopId,
-			Observation fhirResource) {
+			Observation fhirResource) throws Exception {
 		edu.gatech.chai.omopv5.model.entity.Observation observation = null;
 		if (omopId == null) {
 			// This is CREATE.
@@ -1293,7 +1293,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	}
 
 	public Map<String, Object> constructOmopMeasurementObservation(Long omopId, Observation fhirResource,
-			boolean isSurvey) {
+			boolean isSurvey) throws Exception {
 		/*
 		 * returns a map that contains either OMOP measurement entity classes or
 		 * OMOP observation entity. The return map consists as follows,
@@ -1402,7 +1402,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	}
 
 	@Override
-	public Long toDbase(Observation fhirResource, IdType fhirId) throws FHIRException {
+	public Long toDbase(Observation fhirResource, IdType fhirId) throws Exception {
 		Long fhirIdLong = null;
 		Long omopId = null;
 		if (fhirId != null) {
@@ -1666,7 +1666,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	}
 
 	private void createFactRelationship(Date noteDate, FPerson noteFPerson, String noteText, Long domainConceptId1,
-			Long domainConceptId2, Long relationshipId, Long factId1, Long factId2) {
+			Long domainConceptId2, Long relationshipId, Long factId1, Long factId2) throws Exception {
 		// Create relationship.
 		FactRelationship factRelationship = new FactRelationship();
 
@@ -1748,7 +1748,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	}
 
 	private void createFactRelationship(Long domainConceptId1, Long factId1, Reference targetReference,
-			Long relationshipConceptId) {
+			Long relationshipConceptId) throws Exception {
 		// Check if targetReference is not null.
 		if (targetReference == null || targetReference.isEmpty()) {
 			logger.error("Observariont.focus has a null or empty reference");
@@ -1827,7 +1827,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 			Arrays.asList("!="), Arrays.asList(String.valueOf(OmopObservation.DIASTOLIC_CONCEPT_ID)), "or");
 
 	@Override
-	public Long getSize() {
+	public Long getSize() throws Exception {
 		List<ParameterWrapper> mapList = new ArrayList<ParameterWrapper>();
 
 		Long size = getSize(mapList);
@@ -1837,14 +1837,14 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 	}
 
 	@Override
-	public Long getSize(List<ParameterWrapper> mapList) {
+	public Long getSize(List<ParameterWrapper> mapList) throws Exception {
 		mapList.add(exceptionParam4Search);
 		return getMyOmopService().getSize(mapList);
 	}
 
 	@Override
 	public void searchWithoutParams(int fromIndex, int toIndex, List<IBaseResource> listResources,
-			List<String> includes, String sort) {
+			List<String> includes, String sort) throws Exception {
 
 		List<ParameterWrapper> paramList = new ArrayList<ParameterWrapper>();
 		searchWithParams(fromIndex, toIndex, paramList, listResources, includes, sort);
@@ -1852,7 +1852,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 
 	@Override
 	public void searchWithParams(int fromIndex, int toIndex, List<ParameterWrapper> paramList,
-			List<IBaseResource> listResources, List<String> includes, String sort) {
+			List<IBaseResource> listResources, List<String> includes, String sort) throws Exception {
 		paramList.add(exceptionParam4Search);
 
 		// long start = System.currentTimeMillis();
@@ -1897,7 +1897,7 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		return myDate;
 	}
 
-	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) {
+	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) throws Exception {
 		List<ParameterWrapper> mapList = new ArrayList<ParameterWrapper>();
 		ParameterWrapper paramWrapper = new ParameterWrapper();
 		if (or)

@@ -52,7 +52,7 @@ public class OmopDevice extends BaseOmopResource<Device, DeviceExposure, DeviceE
 		initialize(context);
 
 		// Get count and put it in the counts.
-		getSize(true);
+		// getSize(true);
 	}
 	
 	public OmopDevice() {
@@ -167,7 +167,7 @@ public class OmopDevice extends BaseOmopResource<Device, DeviceExposure, DeviceE
 	}
 
 	@Override
-	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) {
+	public List<ParameterWrapper> mapParameter(String parameter, Object value, boolean or) throws Exception {
 		List<ParameterWrapper> mapList = new ArrayList<ParameterWrapper>();
 		ParameterWrapper paramWrapper = new ParameterWrapper();
 		if (or) paramWrapper.setUpperRelationship("or");
