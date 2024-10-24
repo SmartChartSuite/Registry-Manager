@@ -47,7 +47,7 @@ import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ExtensionUtil;
  *
  */
 @Interceptor
-public class SMARTonFHIRConformanceStatement {
+public class MyCapabilityStatement {
 	static String oauthURI = "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris";
 	static String authorizeURI = "authorize";
 	static String tokenURI = "token";
@@ -58,7 +58,7 @@ public class SMARTonFHIRConformanceStatement {
 
 	private ConfigValues configValues;
 
-	public SMARTonFHIRConformanceStatement() {
+	public MyCapabilityStatement() {
 		String authorizeUrl = System.getenv("SMART_AUTHSERVERURL");
 		String tokenUrl = System.getenv("SMART_TOKENSERVERURL");
 
@@ -106,8 +106,8 @@ public class SMARTonFHIRConformanceStatement {
 		cs
          .getSoftware()
 		 .setName("Registry OMOPonFHIR")
-         .setVersion("v1.6.0")
-         .setReleaseDateElement(new DateTimeType("2024-10-03"));
+         .setVersion("v1.7.1")
+         .setReleaseDateElement(new DateTimeType("2024-10-24"));
 
 		cs.setPublisher("Georgia Tech Research Institute - HEAT");
 

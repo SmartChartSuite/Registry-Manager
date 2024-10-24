@@ -1305,6 +1305,12 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		List<Measurement> measurements = null;
 		edu.gatech.chai.omopv5.model.entity.Observation observation = null;
 
+		// Observation.coding is required in mapping to OMOP. 
+		// However, if coding is not available, then mark it as 0L instead of 
+		// throwing error.
+		if (fhirResource.getCode().getCoding().isEmpty()) {
+			fhirResource.getCode().addCoding(new Coding("urn:gtri:error-code", "code-missing", "code is missing"));
+		}
 		for (Coding coding : fhirResource.getCode().getCoding()) {
 			String code = coding.getCode();
 			if (code == null) {
@@ -1481,6 +1487,10 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		}
 
 		Map<String, Object> entityMap = constructOmopMeasurementObservation(omopId, fhirResource, isSurvey);
+		if (entityMap == null) {
+			return null;
+		}
+
 		Long retId = null;
 
 		Date date = null;

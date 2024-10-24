@@ -60,14 +60,6 @@ public class ProcedureResourceProvider implements IResourceProvider {
 	public ProcedureResourceProvider() {
 		myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
 		myMapper = new OmopProcedure(myAppCtx);
-
-		String pageSizeStr = myAppCtx.getServletContext().getInitParameter("preferredPageSize");
-		if (pageSizeStr != null && pageSizeStr.isEmpty() == false) {
-			int pageSize = Integer.parseInt(pageSizeStr);
-			if (pageSize > 0) {
-				preferredPageSize = pageSize;
-			}
-		}
 	}
 
 	@Override

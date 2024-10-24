@@ -67,14 +67,6 @@ public class SpecimenResourceProvider implements IResourceProvider {
 	public SpecimenResourceProvider() {
 		myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
 		myMapper = new OmopSpecimen(myAppCtx);
-		
-		String pageSizeStr = myAppCtx.getServletContext().getInitParameter("preferredPageSize");
-		if (pageSizeStr != null && !pageSizeStr.isEmpty()) {
-			int pageSize = Integer.parseInt(pageSizeStr);
-			if (pageSize > 0) {
-				preferredPageSize = pageSize;
-			} 
-		}
 	}
 	
 	public static String getType() {

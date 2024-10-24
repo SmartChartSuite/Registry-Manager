@@ -15,12 +15,15 @@
  *******************************************************************************/
 package edu.gatech.chai.omoponfhir.config;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor;
 import ca.uhn.fhir.rest.server.util.ITestingUiClientFactory;
-import jakarta.servlet.http.HttpServletRequest;
 
 public class MyAuthClientFactory implements ITestingUiClientFactory {
 
@@ -30,6 +33,7 @@ public class MyAuthClientFactory implements ITestingUiClientFactory {
 		// Create a client
 		IGenericClient client = theFhirContext.newRestfulGenericClient(theServerBaseUrl);
 
+		String apiKey = theRequest.getParameter("apiKey");
 		String authBasic = System.getenv("AUTH_BASIC");
 		String authBearer = System.getenv("AUTH_BEARER");
 		if (authBasic != null && !authBasic.isEmpty()) {
@@ -41,8 +45,12 @@ public class MyAuthClientFactory implements ITestingUiClientFactory {
 
 				client.registerInterceptor(new BasicAuthInterceptor(username, password));
 			}
-		} else if (authBearer != null && !authBearer.isEmpty()) {
-			client.registerInterceptor(new BearerTokenAuthInterceptor(authBearer));
+		} else if (authBearer != null && (authBearer.startsWith("Bearer ") || authBearer.startsWith("bearer "))) {
+			// Bearer API key. This overwrites the apiKey from theRequest parameter
+			apiKey = authBearer.substring(7);
+			if (isNotBlank(apiKey)) {
+				client.registerInterceptor(new BearerTokenAuthInterceptor(apiKey));
+			}
 		}
 
 //		theFhirContext.getRestfulClientFactory().setConnectionRequestTimeout(600000);

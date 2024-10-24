@@ -40,27 +40,12 @@ public class ConceptMapResourceProvider implements IResourceProvider {
 	private static final Logger logger = LoggerFactory.getLogger(ConceptMapResourceProvider.class);
 
 	private WebApplicationContext myAppCtx;
-	private String myDbType;
 	private OmopConceptMap myMapper;
 	private int preferredPageSize = 30;
 
 	public ConceptMapResourceProvider() {
 		myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
-		myDbType = myAppCtx.getServletContext().getInitParameter("backendDbType");
-		if (myDbType.equalsIgnoreCase("omopv5") == true) {
-			myMapper = new OmopConceptMap(myAppCtx);
-		} else {
-			myMapper = new OmopConceptMap(myAppCtx);
-		}
-
-		String pageSizeStr = myAppCtx.getServletContext().getInitParameter("preferredPageSize");
-		if (pageSizeStr != null && pageSizeStr.isEmpty() == false) {
-			int pageSize = Integer.parseInt(pageSizeStr);
-			if (pageSize > 0) {
-				preferredPageSize = pageSize;
-			}
-		}
-		
+		myMapper = new OmopConceptMap(myAppCtx);
 	}
 
 	@Override

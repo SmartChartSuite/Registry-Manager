@@ -66,14 +66,6 @@ public class AllergyIntoleranceResourceProvider implements IResourceProvider {
 	public AllergyIntoleranceResourceProvider() {
 		myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
 		myMapper = new OmopAllergyIntolerance(myAppCtx);
-
-		String pageSizeStr = myAppCtx.getServletContext().getInitParameter("preferredPageSize");
-		if (pageSizeStr != null && pageSizeStr.isEmpty() == false) {
-			int pageSize = Integer.parseInt(pageSizeStr);
-			if (pageSize > 0) {
-				preferredPageSize = pageSize;
-			}
-		}
 	}
 
 	public static String getType() {

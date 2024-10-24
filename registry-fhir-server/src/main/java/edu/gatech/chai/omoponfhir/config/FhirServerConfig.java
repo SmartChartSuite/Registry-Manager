@@ -36,11 +36,11 @@ import edu.gatech.chai.omopv5.dba.config.DatabaseConfiguration;
 @ComponentScans(value = { 
 	@ComponentScan("edu.gatech.chai.omopv5.dba.config"),
 	@ComponentScan("edu.gatech.chai.omopv5.dba.service"),
-	@ComponentScan("edu.gatech.chai.omoponfhir.smart.dao"),
 	@ComponentScan("edu.gatech.chai.omoponfhir.local.task"),
 	@ComponentScan("edu.gatech.chai.omoponfhir.omopv5.r4.provider"),
 	@ComponentScan("edu.gatech.chai.omoponfhir.config"),
-	@ComponentScan("edu.gatech.chai.omoponfhir.omopv5.r4.utilities")})
+	@ComponentScan("edu.gatech.chai.omoponfhir.omopv5.r4.utilities"),
+	@ComponentScan("edu.gatech.chai.omoponfhir.r4.security")})
 @ImportResource({
     "classpath:database-config.xml"
 })

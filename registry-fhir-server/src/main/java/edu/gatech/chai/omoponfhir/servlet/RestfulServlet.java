@@ -17,11 +17,11 @@ package edu.gatech.chai.omoponfhir.servlet;
 
 import java.util.*;
 
-import edu.gatech.chai.omoponfhir.security.OIDCInterceptor;
 import edu.gatech.chai.omoponfhir.config.FhirServerConfig;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.*;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.StaticValues;
-import edu.gatech.chai.omoponfhir.r4.security.SMARTonFHIRConformanceStatement;
+import edu.gatech.chai.omoponfhir.r4.security.MyCapabilityStatement;
+import edu.gatech.chai.omoponfhir.security.AuthenticationInterceptor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -208,17 +208,19 @@ public class RestfulServlet extends RestfulServer {
 		 */
 		registerInterceptor(new ResponseHighlighterInterceptor());
 
-		/*
-		 * OpenID check interceptor to support SMART on FHIR
-		 */
-		OIDCInterceptor oIDCInterceptor = new OIDCInterceptor();
-		registerInterceptor(oIDCInterceptor);
+		// /*
+		//  * OpenID check interceptor to support SMART on FHIR
+		//  */
+		// OIDCInterceptor oIDCInterceptor = new OIDCInterceptor();
+		// registerInterceptor(oIDCInterceptor);
+		AuthenticationInterceptor authInterceptor = new AuthenticationInterceptor();
+		registerInterceptor(authInterceptor);
 
 		/*
 		 * Register Custom CompatibilityStatement
 		 */
-		SMARTonFHIRConformanceStatement smartOnFHIRConformanceStatement = new SMARTonFHIRConformanceStatement();
-		registerInterceptor(smartOnFHIRConformanceStatement);
+		MyCapabilityStatement myConformanceStatement = new MyCapabilityStatement();
+		registerInterceptor(myConformanceStatement);
 
 		/*
 		 * Tells the server to return pretty-printed responses by default

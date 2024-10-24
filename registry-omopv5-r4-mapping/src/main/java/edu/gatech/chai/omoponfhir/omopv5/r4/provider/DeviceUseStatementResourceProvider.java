@@ -59,25 +59,11 @@ public class DeviceUseStatementResourceProvider implements IResourceProvider {
 
 	private WebApplicationContext myAppCtx;
 	private OmopDeviceUseStatement myMapper;
-	private String myDbType;
 	private int preferredPageSize = 30;
 
 	public DeviceUseStatementResourceProvider() {
 		myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
-		myDbType = myAppCtx.getServletContext().getInitParameter("backendDbType");
-		if (myDbType.equalsIgnoreCase("omopv5") == true) {
-			myMapper = new OmopDeviceUseStatement(myAppCtx);
-		} else {
-			myMapper = new OmopDeviceUseStatement(myAppCtx);
-		}
-		
-		String pageSizeStr = myAppCtx.getServletContext().getInitParameter("preferredPageSize");
-		if (pageSizeStr != null && pageSizeStr.isEmpty() == false) {
-			int pageSize = Integer.parseInt(pageSizeStr);
-			if (pageSize > 0) {
-				preferredPageSize = pageSize;
-			} 
-		}
+		myMapper = new OmopDeviceUseStatement(myAppCtx);
 	}
 	
 	public static String getType() {

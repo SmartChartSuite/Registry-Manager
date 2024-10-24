@@ -54,26 +54,12 @@ import edu.gatech.chai.omopv5.dba.service.ParameterWrapper;
 public class DocumentReferenceResourceProvider implements IResourceProvider {
 
 	private WebApplicationContext myAppCtx;
-	private String myDbType;
 	private OmopDocumentReference myMapper;
 	private int preferredPageSize = 30;
 
 	public DocumentReferenceResourceProvider() {
 		myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
-		myDbType = myAppCtx.getServletContext().getInitParameter("backendDbType");
-		if (myDbType.equalsIgnoreCase("omopv5") == true) {
-			myMapper = new OmopDocumentReference(myAppCtx);
-		} else {
-			myMapper = new OmopDocumentReference(myAppCtx);
-		}
-		
-		String pageSizeStr = myAppCtx.getServletContext().getInitParameter("preferredPageSize");
-		if (pageSizeStr != null && pageSizeStr.isEmpty() == false) {
-			int pageSize = Integer.parseInt(pageSizeStr);
-			if (pageSize > 0) {
-				preferredPageSize = pageSize;
-			} 
-		}
+		myMapper = new OmopDocumentReference(myAppCtx);
 	}
 	
 	public static String getType() {

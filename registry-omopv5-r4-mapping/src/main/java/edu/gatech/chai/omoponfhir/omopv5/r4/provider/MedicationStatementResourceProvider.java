@@ -63,14 +63,6 @@ public class MedicationStatementResourceProvider implements IResourceProvider {
 	public MedicationStatementResourceProvider() {
 		myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
 		myMapper = new OmopMedicationStatement(myAppCtx);
-
-		String pageSizeStr = myAppCtx.getServletContext().getInitParameter("preferredPageSize");
-		if (pageSizeStr != null && pageSizeStr.isEmpty() == false) {
-			int pageSize = Integer.parseInt(pageSizeStr);
-			if (pageSize > 0) {
-				preferredPageSize = pageSize;
-			}
-		}
 	}
 
 	public static String getType() {

@@ -52,26 +52,12 @@ import edu.gatech.chai.omopv5.dba.service.ParameterWrapper;
 public class EncounterResourceProvider implements IResourceProvider {
 
 	private WebApplicationContext myAppCtx;
-	private String myDbType;
 	private OmopEncounter myMapper;
 	private int preferredPageSize = 30;
 
 	public EncounterResourceProvider() {
 		myAppCtx = ContextLoaderListener.getCurrentWebApplicationContext();
-		myDbType = myAppCtx.getServletContext().getInitParameter("backendDbType");
-		if (myDbType.equalsIgnoreCase("omopv5") == true) {
-			myMapper = new OmopEncounter(myAppCtx);
-		} else {
-			myMapper = new OmopEncounter(myAppCtx);
-		}
-
-		String pageSizeStr = myAppCtx.getServletContext().getInitParameter("preferredPageSize");
-		if (pageSizeStr != null && pageSizeStr.isEmpty() == false) {
-			int pageSize = Integer.parseInt(pageSizeStr);
-			if (pageSize > 0) {
-				preferredPageSize = pageSize;
-			}
-		}
+		myMapper = new OmopEncounter(myAppCtx);
 	}
 
 	public static String getType() {
