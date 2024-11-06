@@ -1023,7 +1023,7 @@ public class OmopPatient extends BaseOmopResource<USCorePatient, FPerson, FPerso
 			Address address = addresses.get(0);
 			// We should check the state.
 			String state = address.getState();
-			if (state.length() != 2) {
+			if (state != null && state.length() != 2) {
 				String twoState = AddressUtil.getTwoLetter(conceptService, state);
 				if (twoState == null || twoState.isEmpty()) {
 					if (state.length() < 2) {

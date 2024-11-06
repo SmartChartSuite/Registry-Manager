@@ -106,8 +106,8 @@ public class MyCapabilityStatement {
 		cs
          .getSoftware()
 		 .setName("Registry OMOPonFHIR")
-         .setVersion("v1.7.1")
-         .setReleaseDateElement(new DateTimeType("2024-10-24"));
+         .setVersion("v1.7.2")
+         .setReleaseDateElement(new DateTimeType("2024-11-06"));
 
 		cs.setPublisher("Georgia Tech Research Institute - HEAT");
 
