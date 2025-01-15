@@ -113,6 +113,9 @@ public class LocationServiceImp extends BaseEntityServiceImp<Location> implement
 			valueList.add("'" + zip + "'");
 		}
 
+		if (where_clause.isBlank()) {
+			return null;
+		}
 
 		queryString += " " + where_clause;
 		

@@ -32,6 +32,9 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.MedicationRequest;
 import org.hl7.fhir.r4.model.MedicationStatement;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Procedure;
+import org.hl7.fhir.r4.model.Procedure.ProcedureFocalDeviceComponent;
+import org.hl7.fhir.r4.model.Procedure.ProcedurePerformerComponent;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -53,6 +56,7 @@ import edu.gatech.chai.omoponfhir.omopv5.r4.provider.MedicationRequestResourcePr
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.MedicationStatementResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.ObservationResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.provider.PatientResourceProvider;
+import edu.gatech.chai.omoponfhir.omopv5.r4.provider.ProcedureResourceProvider;
 import edu.gatech.chai.omoponfhir.omopv5.r4.utilities.ExtensionUtil;
 import edu.gatech.chai.omopv5.model.entity.CaseInfo;
 
@@ -452,6 +456,58 @@ public class OmopServerOperations {
 				}
 				responseEntries.add(newEntry);
 				logger.debug("Added observation(focus-contained) info to referenceIds " + entry.getFullUrl() + "->" + fhirId);
+			} 
+		}
+
+		// Process Procedure
+		for (BundleEntryComponent entry : entries) {
+			Resource resource = entry.getResource();
+			
+			if (resource.getResourceType() == ResourceType.Procedure) {
+				Procedure procedure = (Procedure) resource;
+
+				if (procedure.getSubject().isEmpty() && caseInfo != null) {
+					procedure.getSubject().setReferenceElement(new IdType("Patient", caseInfo.getFPerson().getId()));
+				} else {
+					updateReference(procedure.getSubject());
+				}
+
+				updateReferences(procedure.getBasedOn());
+				updateReferences(procedure.getPartOf());
+				updateReference(procedure.getEncounter());
+				updateReference(procedure.getRecorder());
+				updateReference(procedure.getAsserter());
+
+				List<ProcedurePerformerComponent> performers = procedure.getPerformer();
+				for (ProcedurePerformerComponent performer : performers) {
+					updateReference(performer.getActor());
+					updateReference(performer.getOnBehalfOf());
+				}
+
+				updateReference(procedure.getLocation());
+				updateReference(procedure.getLocation());
+				updateReferences(procedure.getReasonReference());
+				updateReferences(procedure.getReport());
+				updateReferences(procedure.getComplicationDetail());
+
+				List<ProcedureFocalDeviceComponent> focalDevices = procedure.getFocalDevice();
+				for (ProcedureFocalDeviceComponent focalDevice : focalDevices) {
+					updateReference(focalDevice.getManipulated());
+				}
+
+				updateReferences(procedure.getUsedReference());
+
+				Long fhirId = OmopProcedure.getInstance().toDbase(procedure, null);
+				BundleEntryComponent newEntry;
+				if (fhirId == null || fhirId == 0L) {
+					newEntry = addResponseEntry("400 Bad Request", null);
+					newEntry.setResource(procedure);
+				} else {
+					referenceIds.put(entry.getFullUrl(), ProcedureResourceProvider.getType() + "/" + fhirId);
+					newEntry = addResponseEntry("201 Created", "Observation/" + fhirId);
+				}
+				responseEntries.add(newEntry);
+				logger.debug("Added procedure info to referenceIds " + entry.getFullUrl() + "->" + fhirId);
 			} 
 		}
 

@@ -45,6 +45,8 @@ import org.hl7.fhir.r4.model.Type;
 import org.hl7.fhir.r4.model.Observation.ObservationComponentComponent;
 import org.hl7.fhir.r4.model.Observation.ObservationReferenceRangeComponent;
 import org.hl7.fhir.r4.model.Observation.ObservationStatus;
+import org.hl7.fhir.r4.model.Quantity.QuantityComparator;
+import org.hl7.fhir.r4.model.codesystems.QuantityComparatorEnumFactory;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.instance.model.api.IBaseResource;
@@ -143,10 +145,21 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		observation.setId(new IdType(fhirId));
 
 		String omopVocabulary = fObservationView.getObservationConcept().getVocabularyId();
-		String systemUriString = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, omopVocabulary);
+		String systemUriString = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService,
+				omopVocabulary);
 		if ("None".equals(systemUriString)) {
 			// If we can't find FHIR Uri or system name, just use Omop Vocabulary Id.
 			systemUriString = omopVocabulary;
+		}
+
+		// See if we have comparator.
+		QuantityComparator comparator = null;
+		Concept operatorConcept = fObservationView.getObservationOperatorConcept();
+		if (operatorConcept != null) {
+			String opName = operatorConcept.getConceptName();
+			if (opName != null && !opName.isEmpty()) {
+				comparator = QuantityComparator.fromCode(opName);
+			}
 		}
 
 		// If we have unit, this should be used across all the value.
@@ -167,7 +180,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 
 		if (unitConcept != null && unitConcept.getId() != 0L) {
 			String omopUnitVocabularyId = unitConcept.getVocabularyId();
-			unitSystemUri = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, omopUnitVocabularyId);
+			unitSystemUri = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService,
+					omopUnitVocabularyId);
 			if ("None".equals(unitSystemUri)) {
 				unitSystemUri = omopUnitVocabularyId;
 			}
@@ -211,6 +225,11 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 			if (fObservationView.getValueAsNumber() != null) {
 				Quantity quantity = new Quantity(fObservationView.getValueAsNumber().doubleValue());
 
+				// Comparator if exists
+				if (comparator != null) {
+					quantity.setComparator(comparator);
+				}
+
 				// Unit is defined as a concept code in omop v4, then unit and
 				// code are the same in this case
 				if (unitSystemUri != null || unitCode != null || unitUnit != null) {
@@ -242,6 +261,12 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 
 				if (diastolicDb.getValueAsNumber() != null) {
 					Quantity quantity = new Quantity(diastolicDb.getValueAsNumber().doubleValue());
+
+					// Comparator if exists
+					if (comparator != null) {
+						quantity.setComparator(comparator);
+					}
+
 					// Unit is defined as a concept code in omop v4, then unit
 					// and code are the same in this case
 					if (diastolicDb.getUnitConcept() != null && diastolicDb.getUnitConcept().getId() != 0L) {
@@ -261,7 +286,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 							if (diastolicUnitConcept != null && diastolicUnitConcept.getId() != 0L) {
 								quantity.setUnit(diastolicUnitConcept.getConceptName());
 								quantity.setCode(diastolicUnitConcept.getConceptCode());
-								String unitSystem = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, diastolicUnitConcept.getVocabularyId());
+								String unitSystem = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(
+										conceptService, diastolicUnitConcept.getVocabularyId());
 								if ("None".equals(unitSystem))
 									unitSystem = diastolicUnitConcept.getVocabularyId();
 								quantity.setSystem(unitSystem);
@@ -283,6 +309,12 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 					&& (fObservationView.getValueAsString() == null
 							&& fObservationView.getValueAsConcept() == null)) {
 				Quantity quantity = new Quantity(fObservationView.getValueAsNumber().doubleValue());
+
+				// Comparator if exists
+				if (comparator != null) {
+					quantity.setComparator(comparator);
+				}
+
 				if (unitSystemUri != null || unitCode != null || unitUnit != null) {
 					quantity.setUnit(unitUnit);
 					quantity.setCode(unitCode);
@@ -325,7 +357,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 					&& fObservationView.getValueAsConcept().getId() != 0L) {
 				// vocabulary is a required attribute for concept, then it's
 				// expected to not be null
-				String valueSystem = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService, fObservationView.getValueAsConcept().getVocabularyId());
+				String valueSystem = CodeableConceptUtil.getFhirSystemNameFromOmopVocabulary(conceptService,
+						fObservationView.getValueAsConcept().getVocabularyId());
 				if ("None".equals(valueSystem))
 					valueSystem = fObservationView.getValueAsConcept().getVocabularyId();
 				Coding coding = new Coding(valueSystem, fObservationView.getValueAsConcept().getConceptCode(),
@@ -584,7 +617,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 
 				String unitSystem = ((Quantity) systolicValue).getSystem();
 				String unitCode = ((Quantity) systolicValue).getCode();
-				String omopVocabularyId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, unitSystem);
+				String omopVocabularyId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+						unitSystem);
 				if (omopVocabularyId != null) {
 					Concept unitConcept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService,
 							omopVocabularyId, unitCode);
@@ -616,7 +650,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 
 				String unitSystem = ((Quantity) diastolicValue).getSystem();
 				String unitCode = ((Quantity) diastolicValue).getCode();
-				String omopVocabularyId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, unitSystem);
+				String omopVocabularyId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+						unitSystem);
 				if (omopVocabularyId != null) {
 					Concept unitConcept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService,
 							omopVocabularyId, unitCode);
@@ -880,6 +915,33 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 				measurement.setValueAsNumber(qtyValue.doubleValue());
 				measurement.setValueSourceValue(String.valueOf(qtyValue));
 			}
+
+			// For operator, check comparator.
+			QuantityComparator comparator = ((Quantity) valueType).getComparator();
+			if (comparator != null) {
+				if (comparator == QuantityComparator.LESS_THAN) {
+					Concept operatorConcept = CodeableConceptUtil.getOmopConceptWithOmopNameAndDomain(conceptService, "<", "Meas Value Operator");
+					if (operatorConcept != null) {
+						measurement.setOperationConcept(operatorConcept);
+					}
+				} else if (comparator == QuantityComparator.LESS_OR_EQUAL) {
+					Concept operatorConcept = CodeableConceptUtil.getOmopConceptWithOmopNameAndDomain(conceptService, "<=", "Meas Value Operator");
+					if (operatorConcept != null) {
+						measurement.setOperationConcept(operatorConcept);
+					}
+				} else if (comparator == QuantityComparator.GREATER_THAN) {
+					Concept operatorConcept = CodeableConceptUtil.getOmopConceptWithOmopNameAndDomain(conceptService, ">", "Meas Value Operator");
+					if (operatorConcept != null) {
+						measurement.setOperationConcept(operatorConcept);
+					}
+				} else if (comparator == QuantityComparator.GREATER_OR_EQUAL) {
+					Concept operatorConcept = CodeableConceptUtil.getOmopConceptWithOmopNameAndDomain(conceptService, ">=", "Meas Value Operator");
+					if (operatorConcept != null) {
+						measurement.setOperationConcept(operatorConcept);
+					}
+				}
+			}
+
 			// For unit, OMOP need unit concept
 			String unitCode = ((Quantity) valueType).getCode();
 			String unitSystem = ((Quantity) valueType).getSystem();
@@ -891,7 +953,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 					// If system is empty, then we check UCUM for the unit.
 					omopVocabulary = OmopCodeableConceptMapping.UCUM.getOmopVocabulary();
 				} else {
-					omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, unitSystem);
+					omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+							unitSystem);
 				}
 				concept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, omopVocabulary,
 						unitCode);
@@ -924,7 +987,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 					continue;
 				}
 
-				String omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, fhirSystem);
+				String omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+						fhirSystem);
 				concept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, omopVocabulary,
 						fhirCode);
 
@@ -969,7 +1033,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 							// If system is empty, then we check UCUM for the unit.
 							omopVocabulary = OmopCodeableConceptMapping.UCUM.getOmopVocabulary();
 						} else {
-							omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, high.getSystem());
+							omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+									high.getSystem());
 						}
 						rangeUnitConcept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService,
 								omopVocabulary, high.getCode());
@@ -992,7 +1057,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 							// If system is empty, then we check UCUM for the unit.
 							omopVocabulary = OmopCodeableConceptMapping.UCUM.getOmopVocabulary();
 						} else {
-							omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, low.getSystem());
+							omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+									low.getSystem());
 						}
 						rangeUnitConcept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService,
 								omopVocabulary, low.getCode());
@@ -1081,7 +1147,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 				// See if we can handle this coding.
 				try {
 					if (fhirSystemUri != null && !fhirSystemUri.isEmpty()) {
-						OmopSystem = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, fhirSystemUri);
+						OmopSystem = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+								fhirSystemUri);
 						if (!"None".equals(OmopSystem)) {
 							// We can at least handle this. Save it
 							// We may find another one we can handle. Let it replace.
@@ -1142,7 +1209,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 					omopVocabulary = OmopCodeableConceptMapping.UCUM.getOmopVocabulary();
 				} else {
 					try {
-						omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, unitSystem);
+						omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+								unitSystem);
 					} catch (FHIRException e) {
 						e.printStackTrace();
 					}
@@ -1177,7 +1245,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 				}
 
 				stringValue = fhirSystem + "^" + fhirCode + "^" + coding.getDisplay();
-				String omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, fhirSystem);
+				String omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+						fhirSystem);
 				concept = CodeableConceptUtil.getOmopConceptWithOmopVacabIdAndCode(conceptService, omopVocabulary,
 						fhirCode);
 
@@ -1200,7 +1269,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 				String[] valueStringData = valueString.split("\\^");
 				if (valueStringData.length > 0) {
 					for (int i = 0; i < valueStringData.length; i++) {
-						String omopVocId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, valueStringData[i]);
+						String omopVocId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+								valueStringData[i]);
 						if (!"None".equals(omopVocId)) {
 							valueString = valueString.replace(valueStringData[i], omopVocId);
 						}
@@ -1305,8 +1375,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		List<Measurement> measurements = null;
 		edu.gatech.chai.omopv5.model.entity.Observation observation = null;
 
-		// Observation.coding is required in mapping to OMOP. 
-		// However, if coding is not available, then mark it as 0L instead of 
+		// Observation.coding is required in mapping to OMOP.
+		// However, if coding is not available, then mark it as 0L instead of
 		// throwing error.
 		if (fhirResource.getCode().getCoding().isEmpty()) {
 			fhirResource.getCode().addCoding(new Coding("urn:gtri:error-code", "code-missing", "code is missing"));
@@ -1331,7 +1401,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 				String domain = conceptForCode.getDomainId();
 				String systemName = conceptForCode.getVocabularyId();
 				if (!isSurvey && !isObservationByValueType(fhirResource) && ((domain.equalsIgnoreCase("measurement")
-						&& systemName.equalsIgnoreCase(CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system)))
+						&& systemName.equalsIgnoreCase(
+								CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system)))
 						|| isMeasurementByValuetype(fhirResource))) {
 					/*
 					 * check if we already have this entry by looking up the
@@ -1505,7 +1576,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 				String[] structuredSourceData = text2use.split("\\^");
 				if (structuredSourceData.length > 0) {
 					for (int i = 0; i < structuredSourceData.length; i++) {
-						String omopVocId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, structuredSourceData[i]);
+						String omopVocId = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+								structuredSourceData[i]);
 						if (!"None".equals(omopVocId)) {
 							text2use = text2use.replace(structuredSourceData[i], omopVocId);
 						}
@@ -1563,8 +1635,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 						+ "observation.value_as_string = @value AND "
 						+ "observation.observation_source_value = @valueSource AND "
 						+ "observation.person_id = @person";
-						// + "observation.person_id = @person AND "
-						// + "observation.observation_date = @obs_date";
+				// + "observation.person_id = @person AND "
+				// + "observation.observation_date = @obs_date";
 
 				List<String> parameterList = new ArrayList<String>();
 				parameterList.add("obs_concept");
@@ -1942,7 +2014,8 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 				String omopVocabulary = null;
 				if (system != null && !system.isEmpty()) {
 					try {
-						omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService, system);
+						omopVocabulary = CodeableConceptUtil.getOmopVocabularyFromFhirSystemName(conceptService,
+								system);
 					} catch (FHIRException e) {
 						e.printStackTrace();
 						break;

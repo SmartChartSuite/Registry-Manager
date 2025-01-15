@@ -55,6 +55,11 @@ public class AddressUtil {
 		String city = address.getCity();
 		String state = address.getState();
 
+		if (line1 == null && line2 == null && city == null && state == null && zipCode == null) {
+			// For some reason we got all null values for address. Just return null
+			return null;
+		}
+		
 		Location existingLocation = locationService.searchByAddress(line1, line2, city, state, zipCode);
 		if (existingLocation != null) {
 			return existingLocation;

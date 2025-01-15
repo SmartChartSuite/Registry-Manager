@@ -87,6 +87,27 @@ public class CodeableConceptUtil {
 		return conceptIds.get(0);
 	}
 
+	public static Concept getOmopConceptWithOmopNameAndDomain(ConceptService conceptService, String conceptName, String domainId) throws Exception {		
+		ParameterWrapper param = new ParameterWrapper(
+				"String",
+				Arrays.asList("conceptName", "domainId"),
+				Arrays.asList("=", "="),
+				Arrays.asList(conceptName, domainId),
+				"and"
+				);
+		
+		List<ParameterWrapper> params = new ArrayList<ParameterWrapper>();
+		params.add(param);
+
+		List<Concept> conceptIds = conceptService.searchWithParams(0, 0, params, null);
+		if (conceptIds.isEmpty()) {
+			return null;
+		}
+		
+		// We should have only one entry... so... 
+		return conceptIds.get(0);
+	}
+
 	public static Concept getOmopConceptWithOmopVacabIdAndCode(ConceptService conceptService, String omopVocabularyId, String code) throws Exception {
 		if (omopVocabularyId == null) return null;
 		
