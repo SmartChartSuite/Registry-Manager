@@ -1593,6 +1593,9 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 
 			Long retvalSystolic = null;
 			Long retvalDiastolic = null;
+
+			domainConceptId = 21L;
+
 			for (Measurement m : measurements) {
 				if (m != null) {
 					m.setMeasurementTypeConcept(typeConcept);
@@ -1612,6 +1615,12 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 
 					date = m.getMeasurementDate();
 					fPerson = m.getFPerson();
+
+					// we may have note in the FHIR observation. Put them in the note and create 
+					// this in the fact relationship table. 
+					if (commentText != null && !commentText.isEmpty() && !isSurvey && !ExtensionUtil.isInUserSpace(m.getMeasurementConcept().getId())) {
+						createFactRelationship(date, fPerson, commentText, domainConceptId, 26L, 44818721L, retId, null);
+					}
 				}
 			}
 
@@ -1620,8 +1629,6 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 				retId = retvalSystolic;
 			else if (retvalDiastolic != null)
 				retId = retvalDiastolic;
-
-			domainConceptId = 21L;
 		} else {
 			isOMOPObservation = true;
 			observation = (edu.gatech.chai.omopv5.model.entity.Observation) entityMap.get("entity");
@@ -1736,9 +1743,10 @@ public class OmopObservation extends BaseOmopResource<Observation, FObservationV
 		}
 
 		// Check comments. If exists, put them in note table. And create relationship
-		// entry.
-		if (commentText != null && !commentText.isEmpty() && !isSurvey
-				&& !ExtensionUtil.isInUserSpace(observation.getObservationConcept().getId())) {
+		// entry. This applies to omop observation only. omop measurements are handled above
+		// in the measurement handler section.
+		if (commentText != null && !commentText.isEmpty() && !isSurvey && 
+			observation != null && !ExtensionUtil.isInUserSpace(observation.getObservationConcept().getId())) {
 			createFactRelationship(date, fPerson, commentText, domainConceptId, 26L, 44818721L, retId, null);
 		}
 
