@@ -14,7 +14,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 	<groupId>edu.gatech.chai</groupId>
 	<artifactId>registry-omopv5-sql</artifactId>
 	<packaging>jar</packaging>
-	<version>1.9.1</version>
+	<version>1.9.4</version>
 	<name>registry-omopv5-sql</name>
 	<description>Registry OMOP SQL for version 5.4</description>
 	<url>http://maven.apache.org</url>
@@ -29,7 +29,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spring_version>6.1.4</spring_version>
+		<spring_version>6.1.14</spring_version>
 		<hibernate_validator_version>8.0.0.Final</hibernate_validator_version>
 	</properties>
 
@@ -114,7 +114,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
-			<version>2.8.2</version>
+			<version>2.17.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
@@ -152,7 +152,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.1</version>
+				<version>3.1.2</version>
 				<configuration>
 					<skipTests>true</skipTests>
 				</configuration>
