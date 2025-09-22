@@ -16,7 +16,7 @@
 	<groupId>edu.gatech.chai</groupId>
 	<artifactId>registry-fhir-server</artifactId>
 	<packaging>war</packaging>
-	<version>1.7.6</version>
+	<version>1.7.7</version>
 
 	<name>registry-fhir-server</name>
 
@@ -31,8 +31,8 @@
 	</repositories>
 
 	<properties>
-		<hapi_stable_version>7.6.1</hapi_stable_version>
-		<registry_mapping_version>1.9.6</registry_mapping_version>
+		<hapi_stable_version>8.4.0</hapi_stable_version>
+		<registry_mapping_version>1.9.7</registry_mapping_version>
 
 		<!-- configure timestamp in MANIFEST.MF for maven-war-provider -->
 		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
@@ -40,15 +40,14 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- Dependency Versions -->
-		<derby_version>10.14.2.0</derby_version>
 		<jersey_version>3.0.3</jersey_version>
-		<jetty_version>12.0.9</jetty_version>
+		<jetty_version>12.0.17</jetty_version>
 		<jackson_version>2.17.1</jackson_version>
-		<lucene_version>9.8.0</lucene_version>
-		<logback_version>1.4.14</logback_version>
+		<lucene_version>9.11.1</lucene_version>
+		<logback_version>1.5.16</logback_version>
 		<maven_assembly_plugin_version>3.3.0</maven_assembly_plugin_version>
 		<maven_license_plugin_version>1.8</maven_license_plugin_version>
-		<spring_version>6.1.14</spring_version>
+		<spring_version>6.1.21</spring_version>
 		<thymeleaf-version>3.1.2.RELEASE</thymeleaf-version>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<ebay_cors_filter_version>1.0.1</ebay_cors_filter_version>
@@ -133,7 +132,7 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-oauth2-client</artifactId>
-			<version>6.3.3</version>
+			<version>6.5.5</version>
 		</dependency>
 		
 		<!-- Used for CORS support -->
@@ -208,19 +207,19 @@
 
 		<!-- webjars -->
 		<dependency>
-			<groupId>org.webjars.npm</groupId>
-			<artifactId>ace-builds</artifactId>
-			<version>1.22.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.webjars.npm</groupId>
+			<groupId>org.webjars</groupId>
 			<artifactId>bootstrap</artifactId>
 			<version>5.3.3</version>
 		</dependency>
 		<dependency>
+			<groupId>org.webjars.npm</groupId>
+			<artifactId>ace-builds</artifactId>
+			<version>1.36.3</version>
+		</dependency>
+		<dependency>
 			<groupId>org.webjars</groupId>
 			<artifactId>Eonasdan-bootstrap-datetimepicker</artifactId>
-			<version>4.17.47</version>
+			<version>4.17.49</version>
 			<exclusions>
 				<exclusion>
 					<groupId>*</groupId>
@@ -231,7 +230,7 @@
 		<dependency>
 			<groupId>org.webjars</groupId>
 			<artifactId>font-awesome</artifactId>
-			<version>5.8.2</version>
+			<version>5.15.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.bower</groupId>
@@ -257,7 +256,7 @@
 		<dependency>
 			<groupId>org.webjars.bower</groupId>
 			<artifactId>jquery</artifactId>
-			<version>3.6.0</version>
+			<version>3.5.1</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.webjars/webjars-locator -->
 		<dependency>
@@ -266,14 +265,14 @@
 			<version>2.29.4</version>
 		</dependency>
 		<dependency>
-			<groupId>org.webjars.npm</groupId>
+			<groupId>org.webjars</groupId>
 			<artifactId>popper.js</artifactId>
-			<version>1.16.1</version>
+			<version>2.11.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars</groupId>
 			<artifactId>swagger-ui</artifactId>
-			<version>4.1.3</version>
+			<version>5.21.0</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
@@ -314,21 +313,21 @@
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
-			<version>2.9.0</version>
+			<version>2.12.0</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-oauth2-jose -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-oauth2-jose</artifactId>
-			<version>6.3.3</version>
+			<version>6.5.5</version>
 		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
-			<version>4.5.13</version>
+			<version>4.5.14</version>
 		</dependency>
 
 		<dependency>

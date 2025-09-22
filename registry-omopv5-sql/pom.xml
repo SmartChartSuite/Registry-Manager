@@ -14,7 +14,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 	<groupId>edu.gatech.chai</groupId>
 	<artifactId>registry-omopv5-sql</artifactId>
 	<packaging>jar</packaging>
-	<version>1.9.4</version>
+	<version>1.9.5</version>
 	<name>registry-omopv5-sql</name>
 	<description>Registry OMOP SQL for version 5.4</description>
 	<url>http://maven.apache.org</url>
@@ -29,7 +29,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spring_version>6.1.14</spring_version>
+		<spring_version>6.1.21</spring_version>
 		<hibernate_validator_version>8.0.0.Final</hibernate_validator_version>
 	</properties>
 
@@ -56,18 +56,18 @@ http://www.apache.org/licenses/LICENSE-2.0
 		<dependency>
 			<groupId>org.javassist</groupId>
 			<artifactId>javassist</artifactId>
-			<version>3.20.0-GA</version>
+			<version>3.22.0-GA</version>
 		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.7.2</version>
+			<version>42.7.7</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->
 		<dependency>
 			<groupId>com.microsoft.sqlserver</groupId>
 			<artifactId>mssql-jdbc</artifactId>
-			<version>11.2.3.jre17</version>
+			<version>12.4.2.jre11</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -93,17 +93,17 @@ http://www.apache.org/licenses/LICENSE-2.0
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>2.0.3</version>
+			<version>2.0.16</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.12.0</version>
+			<version>3.18.0</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
+			<version>4.13.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -124,14 +124,14 @@ http://www.apache.org/licenses/LICENSE-2.0
 		<dependency>
 			<groupId>org.ohdsi.sql</groupId>
 			<artifactId>SqlRender</artifactId>
-			<version>1.16.1</version>
+			<version>1.19.2</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.google.cloud/google-cloud-bigquery -->
 		<dependency>
 			<groupId>com.google.cloud</groupId>
 			<artifactId>google-cloud-bigquery</artifactId>
-			<version>2.23.0</version>
+			<version>2.55.0</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/commons-lang/commons-lang -->

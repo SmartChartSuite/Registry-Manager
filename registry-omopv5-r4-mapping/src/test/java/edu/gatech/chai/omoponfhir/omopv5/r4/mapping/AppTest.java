@@ -15,37 +15,33 @@
  *******************************************************************************/
 package edu.gatech.chai.omoponfhir.omopv5.r4.mapping;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+// import junit.framework.Test;
+// import junit.framework.TestCase;
+// import junit.framework.TestSuite;
+// import org.junit.jupiter.api.Test;
 
 /**
  * Unit test for simple App.
  */
 public class AppTest 
-    extends TestCase
 {
     /**
      * Create the test case
      *
      * @param testName name of the test case
      */
-    public AppTest( String testName )
-    {
-        super( testName );
-    }
-
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite()
-    {
-        return new TestSuite( AppTest.class );
-    }
+    public AppTest() {}
 
     /**
      * Rigourous Test :-)
      */
+    @Test
+    @Disabled("Not implemented yet")
     public void testApp()
     {
         assertTrue( true );
