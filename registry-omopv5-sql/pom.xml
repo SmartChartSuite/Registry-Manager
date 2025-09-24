@@ -37,7 +37,7 @@ http://www.apache.org/licenses/LICENSE-2.0
         <repository>
             <id>ohdsi</id>
             <name>OHDSI Maven Repository</name>
-            <url>https://repo.ohdsi.org/maven/releases</url>
+            <url>https://repo.ohdsi.org/nexus/content/repositories/releases</url>
         </repository>
     </repositories>
 
